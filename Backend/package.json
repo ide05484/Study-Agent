@@ -1,0 +1,24 @@
+{
+  "name": "study-agent-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "supabase start",
+    "stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "functions:serve": "supabase functions serve",
+    "gen:types": "supabase gen types typescript --local > ../Frontend/src/interfaces/database.ts",
+    "llm-test": "tsx scripts/llm-test.ts"
+  },
+  "dependencies": {
+    "openai": "^7.4.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "supabase": "^2.121.0",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
+  }
+}
