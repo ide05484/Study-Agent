@@ -8,6 +8,9 @@ export interface Book {
   current_page: number
 }
 
+// 교재 분량은 페이지 기준. 회차·Chapter 단위는 교재 DB를 쌓은 뒤 도입한다
+export type NewBook = Pick<Book, 'subject' | 'title' | 'total_pages'>
+
 export type TaskStatus = 'pending' | 'done' | 'partial' | 'skipped'
 
 export interface DailyTask {
@@ -17,6 +20,11 @@ export interface DailyTask {
   start_page: number
   end_page: number
   status: TaskStatus
+}
+
+// daily_tasks + books 조인 결과
+export interface DailyTaskWithBook extends DailyTask {
+  book: Pick<Book, 'subject' | 'title'>
 }
 
 export interface StudyLog {
