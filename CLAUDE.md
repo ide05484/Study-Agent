@@ -22,7 +22,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - [DEPLOY.md](DEPLOY.md) — push 기반 자동 배포 설정 (Vercel + GitHub Actions → Supabase)
 - [DESIGN.md](DESIGN.md) — 화면 구성, 레이아웃, 색상 토큰, 컴포넌트 규칙. UI 작업 전에 확인한다.
 
-서비스 흐름은 SERVICE_FLOW.md에, 화면 구성은 DESIGN.md에 정의한다.
+서비스 흐름은 SERVICE_FLOW.md에, 화면 구성은 DESIGN.md에 정의한다. 개발 순서와 단계별 계획은 [docs/superpowers/plans/](docs/superpowers/plans/2026-10-27-roadmap.md)에 둔다.
+
+## 작업 방식
+
+- 계획과 구현은 따로 한다. 계획을 세운 뒤 구현은 사용자가 시작하라고 할 때 시작한다.
+- 변경이 생기면 작업 단위(계획 수립, 계획의 Task 하나 등)가 끝날 때 `develop`에 커밋한다. push는 사용자가 요청할 때만 한다.
+
+## 작업 기록
+
+계획 수립·변경, 계획 Task 완료, 설계 결정, 클라우드 작업, 문제 해결을 할 때마다 [History/](History/README.md)에 기록을 남긴다. 무엇을 어떻게 했는지, 어떤 상황을 고려해 어떻게 풀었는지, 무엇을 제안해 사용자가 무엇을 결정했는지를 적는다. 형식과 규칙은 History/README.md를 따르고, 새 파일을 만들면 그 목록에 추가한다. 서브에이전트가 구현한 작업도 메인 세션이 리뷰 결과까지 포함해 기록한다.
 
 브랜치: `develop`에서 작업하고 `main`에 병합·push하면 운영 배포된다. `Backend/supabase/**` 변경이 `main`에 들어가면 마이그레이션과 Edge Functions가 자동 배포되므로, 이미 배포된 마이그레이션 파일은 수정하지 않는다.
 

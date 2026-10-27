@@ -209,6 +209,7 @@ erDiagram
 | [DESIGN.md](DESIGN.md) | 화면 구성, 색상 토큰, 타이포그래피, 컴포넌트 규칙 |
 | [docs/coach](docs/coach/coach-tone.md) · [docs/study-methods](docs/study-methods/README.md) | 코치 말투, 과목별 공부법 (프롬프트 원본) |
 | [LOCAL_DEV.md](LOCAL_DEV.md) · [DEPLOY.md](DEPLOY.md) | 로컬 실행, 배포 |
+| [History](History/README.md) | 작업 기록: 단계별로 고려한 상황, 해결 방법, 결정 과정 |
 
 ## 👥 참여 인원
 
