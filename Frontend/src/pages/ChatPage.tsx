@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Navigate, useParams } from 'react-router'
+import TodayPlan from '../components/chat/TodayPlan.tsx'
 import { useChat } from '../hooks/useChat.ts'
 import type { ChatRole } from '../interfaces/chat.ts'
 import { isDateKey, todayKey } from '../libs/date.ts'
@@ -41,6 +42,7 @@ function ChatRoom({ date, readOnly }: { date: string; readOnly: boolean }) {
 
   return (
     <section className="flex h-full flex-col">
+      {!readOnly && <TodayPlan date={date} />}
       <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-4">
         <Bubble role="assistant">{WELCOME_MESSAGE}</Bubble>
         {messages.map((m) => (

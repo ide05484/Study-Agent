@@ -11,6 +11,7 @@
   --accent: #c4530f;
   --on-accent: #ffffff;
   --accent-soft: #fbe6d6;
+  --marker: #f9c99a;
   --danger: #c2362b;
 
   --heat-0: #ece7e1;
@@ -30,6 +31,7 @@
     --accent: #f0883e;
     --on-accent: #1c1917;
     --accent-soft: #3d2618;
+    --marker: #7a4421;
     --danger: #f07a6e;
 
     --heat-0: #2a2622;
@@ -41,7 +43,7 @@
 }
 
 @theme inline {
-  --font-sans: system-ui, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-sans: 'Noto Sans KR Variable', system-ui, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
 
   --color-bg: var(--bg);
   --color-surface: var(--surface);
@@ -76,4 +78,19 @@
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-accent;
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* 형광펜 자국: 글자 아래쪽 절반에만 칠한다. 오늘 분량·핵심 숫자처럼 꼭 봐야 할 곳에만 쓴다 */
+@utility marker {
+  background-image: linear-gradient(transparent 55%, var(--marker) 55%);
+  box-decoration-break: clone;
+  padding-inline: 2px;
 }

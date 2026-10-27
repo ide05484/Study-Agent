@@ -1,8 +1,9 @@
 // 여러 화면에서 반복되는 Tailwind 클래스 묶음
 
-export const cardClass = 'rounded-2xl bg-surface p-4'
+// 화면 안의 영역은 카드 대신 플래너처럼 괘선으로 나눈다
+export const sectionClass = 'border-b border-line py-5 last:border-b-0'
 
-export const sectionTitleClass = 'mb-3 text-base font-bold'
+export const sectionTitleClass = 'mb-3 text-[15px] font-bold'
 
 export const buttonClass =
   'min-h-11 rounded-xl bg-accent px-4 font-semibold text-on-accent disabled:opacity-50'

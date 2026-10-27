@@ -1,20 +1,15 @@
----
-name: study-methods
-description: 보건직 공무원 시험 과목별(국어, 영어, 공중보건, 보건행정) 공부법 기준. 코치가 공부법을 제안하는 답변이나 LLM 프롬프트를 만들거나 고칠 때, 과목별 학습 단계·회독 전략·오답 관리·모의고사 활용·성적 정체 처방을 다룰 때, 공부 설정 화면의 "과목별 공부법" 내용을 채울 때 반드시 사용한다. 사용자가 "영어 점수가 안 올라", "공중보건 암기가 안 돼"처럼 특정 과목 고민을 다루는 기능을 만들 때도 사용한다.
----
-
 # 보건직 과목별 공부법
 
-이 앱의 코치가 과목별 공부법을 제안할 때 따르는 기준이다. 이 문서와 `references/`가 **앱 공부법 내용의 원본**이다. 앱(Edge Function 프롬프트, 공부 설정 화면)에 넣을 때는 여기서 옮기고, 내용이 바뀌면 함께 맞춘다.
+이 앱의 코치가 과목별 공부법을 제안할 때 따르는 기준이다. 이 폴더가 **앱 공부법 내용의 원본**이다. 앱(Edge Function 프롬프트, 공부 설정 화면의 "기본 공부법")에 넣을 때는 여기서 옮기고, 내용이 바뀌면 함께 맞춘다.
 
 ## 과목
 
 | 과목 | DB 값 | 참고 파일 |
 |---|---|---|
-| 국어 | `korean` | [references/korean.md](references/korean.md) |
-| 영어 | `english` | [references/english.md](references/english.md) |
-| 공중보건 | `public_health` | [references/public-health.md](references/public-health.md) |
-| 보건행정 | `health_admin` | [references/health-admin.md](references/health-admin.md) |
+| 국어 | `korean` | [korean.md](korean.md) |
+| 영어 | `english` | [english.md](english.md) |
+| 공중보건 | `public_health` | [public-health.md](public-health.md) |
+| 보건행정 | `health_admin` | [health-admin.md](health-admin.md) |
 
 해당 과목 파일만 읽는다. 여러 과목의 균형(시간 배분)을 다룰 때만 여러 파일을 본다.
 
@@ -24,7 +19,7 @@ description: 보건직 공무원 시험 과목별(국어, 영어, 공중보건, 
 2. **데이터로 근거를 찾는다.** `mock_exam_scores`(과목별 점수 추이), `study_logs`(최근 공부량·틀린 문제 수), `books`·`daily_tasks`(진도·밀린 분량)를 본다.
 3. **학습 단계를 판단한다.** 남은 기간과 진도로 지금이 어느 단계인지 본다. 단계마다 맞는 공부법이 다르다.
 4. **처방은 1~2개만, 바로 할 수 있게.** 과목 파일의 "고민별 처방"에서 고르고, 오늘 분량과 연결한다.
-5. **말투는 coach-tone을 따른다.** 공감 → 근거 있는 칭찬 → 처방 → 다음 행동 질문.
+5. **말투는 [코치 톤](../coach-tone.md)을 따른다.** 공감 → 근거 있는 칭찬 → 처방 → 다음 행동 질문.
 
 ## 학습 단계 (공통)
 

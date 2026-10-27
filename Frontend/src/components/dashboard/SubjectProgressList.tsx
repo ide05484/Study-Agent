@@ -33,16 +33,16 @@ export default function SubjectProgressList({ items }: { items: SubjectProgress[
               >
                 <span className="block h-full rounded bg-accent" style={{ width: `${item.percent}%` }} />
               </span>
-              <span className="text-right text-sm">{item.percent}%</span>
+              <span className="text-right text-sm tabular-nums">{item.percent}%</span>
               <span className={`${chevronClass} ${open ? '-rotate-135' : ''}`} aria-hidden="true" />
             </button>
             {open && (
-              <ul id={`progress-${item.subject}`} className="mb-3 rounded-xl bg-surface p-3">
+              <ul id={`progress-${item.subject}`} className="mb-3 ml-1 border-l-2 border-line pl-3">
                 {item.remaining.map((book) => (
                   <li key={book.id} className="flex justify-between gap-2 py-1">
                     <span>{book.title}</span>
-                    <span className="text-sm text-muted">
-                      {book.current_page}/{book.total_pages}p
+                    <span className="text-sm text-muted tabular-nums">
+                      {book.current_page}/{book.total_pages}쪽
                     </span>
                   </li>
                 ))}

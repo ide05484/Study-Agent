@@ -27,7 +27,7 @@ export default function StudyHeatmap({ days }: { days: HeatDay[] }) {
           <span
             key={day.date}
             className={`aspect-square rounded-[3px] ${day.level === null ? '' : LEVEL_CLASSES[day.level]}`}
-            title={day.level === null ? undefined : `${formatDateTitle(day.date)} · ${LEVEL_LABELS[day.level]}`}
+            title={day.level === null ? undefined : `${formatDateTitle(day.date)}: ${LEVEL_LABELS[day.level]}`}
           />
         ))}
       </div>
