@@ -23,7 +23,7 @@ main에 병합(PR 또는 merge 후 push)
 
 ### 1. Supabase 프로젝트
 
-1. https://supabase.com/dashboard 에서 새 프로젝트를 만든다. 지역은 Seoul(ap-northeast-2)을 권장하며, DB 비밀번호를 기록해 둔다.
+1. https://supabase.com/dashboard 에서 **운영용** 새 프로젝트를 만든다. [LOCAL_DEV.md](LOCAL_DEV.md)의 개발용 프로젝트와는 분리한다. 지역은 Seoul(ap-northeast-2)을 권장하며, DB 비밀번호를 기록해 둔다.
 2. 아래 값을 확인한다.
    - **Project ref**: 프로젝트 URL `https://<ref>.supabase.co`의 `<ref>`
    - **Project URL / Publishable key**: Project Settings → API Keys
@@ -33,6 +33,7 @@ main에 병합(PR 또는 merge 후 push)
    npx supabase login
    npx supabase link --project-ref <ref>
    npx supabase secrets set --env-file supabase/functions/.env
+   npx supabase link --project-ref <개발용 ref>   # 끝나면 CLI 연결을 개발 프로젝트로 되돌린다
    ```
 
 ### 2. GitHub 저장소 Secrets

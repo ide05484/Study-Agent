@@ -14,14 +14,14 @@ export default function AppLayout() {
   const { pathname } = useLocation()
 
   return (
-    <div className="app">
+    <div className="relative mx-auto flex h-dvh max-w-[480px] flex-col overflow-hidden">
       <AppHeader
         title={pageTitle(pathname)}
         examDate={profileState.profile?.exam_date ?? null}
         sidebarOpen={sidebarOpen}
         onMenuClick={() => setSidebarOpen(true)}
       />
-      <main className="app-main">
+      <main className="min-h-0 flex-1 overflow-y-auto">
         <Outlet context={profileState} />
       </main>
       <Sidebar open={sidebarOpen} onClose={closeSidebar} />

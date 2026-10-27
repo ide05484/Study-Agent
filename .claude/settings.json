@@ -1,0 +1,8 @@
+{
+  "enabledPlugins": {
+    "frontend-design@anthropic-plugin-directory": true,
+    "superpowers@anthropic-plugin-directory": true,
+    "supabase@anthropic-plugin-directory": true,
+    "claude-memory@anthropic-plugin-directory": true
+  }
+}

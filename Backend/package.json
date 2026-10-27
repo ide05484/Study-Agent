@@ -4,11 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "db:push": "supabase db push",
+    "functions:deploy": "supabase functions deploy --use-api",
+    "secrets:set": "supabase secrets set --env-file supabase/functions/.env",
+    "gen:types": "supabase gen types typescript --linked > ../Frontend/src/interfaces/database.ts",
     "start": "supabase start",
     "stop": "supabase stop",
     "db:reset": "supabase db reset",
     "functions:serve": "supabase functions serve",
-    "gen:types": "supabase gen types typescript --local > ../Frontend/src/interfaces/database.ts",
+    "gen:types:local": "supabase gen types typescript --local > ../Frontend/src/interfaces/database.ts",
     "llm-test": "tsx scripts/llm-test.ts"
   },
   "dependencies": {

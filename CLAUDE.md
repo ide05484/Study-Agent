@@ -46,6 +46,8 @@ Backend/
 
 Frontend 의존 방향은 `pages → hooks → api → libs`이고, 타입은 `interfaces`에서 가져온다. 페이지에서 Supabase를 직접 호출하지 않는다.
 
+스타일은 Tailwind CSS v4 유틸리티 클래스로 작성한다. 색상은 DESIGN.md의 토큰(`bg-surface`, `text-muted`, `bg-accent` 등)만 쓰고, 규칙은 DESIGN.md의 "라이브러리·도구"를 따른다.
+
 ### 데이터 흐름
 
 - 프론트엔드는 `@supabase/supabase-js`로 DB에 직접 접근하고, 모든 테이블은 `user_id = auth.uid()` RLS로 보호된다. LLM 호출과 알림 발송처럼 비밀 키가 필요한 작업만 Edge Function을 거친다.
@@ -54,12 +56,13 @@ Frontend 의존 방향은 `pages → hooks → api → libs`이고, 타입은 `i
   - `plan-generator` — `profiles.exam_date` 전날까지 교재별 남은 페이지를 나눠 `daily_tasks`를 다시 만든다. 교재 추가·삭제, 시험일 변경 뒤에는 반드시 호출한다. 응답은 [interfaces/plan.ts](Frontend/src/interfaces/plan.ts)의 `PlanResponse`.
   - `daily-briefing` — pg_cron이 `profiles.notify_time`에 호출하며, 오늘의 `daily_tasks`로 응원 메시지를 만들어 PWA 푸시(`push_subscriptions`) 또는 카카오톡으로 보낸다. 보낸 메시지는 채팅에도 남긴다. (cron 등록은 아직 안 됨)
 - LLM은 OpenAI Responses API(`client.responses.create`)를 사용하며 프롬프트는 한국어로 쓴다. Edge Function에서는 `_shared/openai.ts`의 클라이언트를 쓴다.
+- 코치 답변·알림·화면 문구의 말투는 `.claude/skills/coach-tone`을 따른다. 과목별 공부법 내용은 `.claude/skills/study-methods`가 원본이다.
 
 ### 꼭 맞춰야 하는 것
 
 - 과목 값은 DB enum `public.subject`(`korean`, `english`, `public_health`, `health_admin`), [Frontend/src/interfaces/subject.ts](Frontend/src/interfaces/subject.ts), [Backend/supabase/functions/_shared/subjects.ts](Backend/supabase/functions/_shared/subjects.ts)가 일치해야 한다.
 - `interfaces/`의 도메인 타입은 DB 컬럼과 맞춰 둔다. `npm run gen:types`로 `interfaces/database.ts`가 생기면 그 타입을 기준으로 삼는다.
-- 스키마 변경은 `npx supabase migration new <이름>`으로 새 마이그레이션을 추가한다. 클라우드 배포 전인 초기 스키마 초안은 직접 수정해도 된다.
+- 스키마 변경은 `npx supabase migration new <이름>`으로 새 마이그레이션을 추가한다. 개발 프로젝트에 `db push`하기 전인 초기 스키마 초안은 직접 수정해도 된다.
 
 ## 명령어
 
@@ -70,13 +73,14 @@ npm run build     # tsc -b 타입 체크 + vite build (+ PWA 서비스워커)
 npm run lint      # oxlint
 ```
 
-Backend (`Backend/`, Docker 필요):
+Backend (`Backend/`). 개발은 Docker 없이 클라우드의 개발용 Supabase 프로젝트를 쓴다(`npx supabase link` 필요, [LOCAL_DEV.md](LOCAL_DEV.md)):
 ```bash
-npm start / npm run stop   # 로컬 Supabase 시작/종료
-npm run db:reset           # 마이그레이션 재적용 + seed
-npm run functions:serve    # Edge Functions 로컬 실행 (supabase/functions/.env)
+npm run db:push            # 마이그레이션 → 개발 프로젝트 DB
+npm run functions:deploy   # Edge Functions 배포
+npm run secrets:set        # supabase/functions/.env → 함수 비밀 값
 npm run gen:types          # DB 타입 → Frontend/src/interfaces/database.ts
 npm run llm-test           # OpenAI 호출 실험
 ```
+`db push`·`functions deploy`·`secrets set`은 클라우드를 바꾸므로 사용자가 요청할 때만 실행한다. Docker 로컬 Supabase용 `start`/`stop`/`db:reset`/`functions:serve`/`gen:types:local`도 남아 있다.
 
 테스트 프레임워크는 아직 없다.

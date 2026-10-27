@@ -10,10 +10,10 @@ interface AppHeaderProps {
 
 export default function AppHeader({ title, examDate, sidebarOpen, onMenuClick }: AppHeaderProps) {
   return (
-    <header className="app-header">
+    <header className="grid min-h-14 grid-cols-[1fr_auto_1fr] items-center border-b border-line px-2">
       <button
         type="button"
-        className="icon-button"
+        className="grid size-11 place-items-center rounded-xl"
         aria-label="메뉴 열기"
         aria-expanded={sidebarOpen}
         aria-controls="app-sidebar"
@@ -23,9 +23,13 @@ export default function AppHeader({ title, examDate, sidebarOpen, onMenuClick }:
           <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       </button>
-      <h1 className="app-title">{title}</h1>
+      <h1 className="text-center text-[17px] font-bold">{title}</h1>
       {/* 시험일 미설정이면 D-?로 표시하고, 누르면 공부 설정에서 시험일을 정한다 */}
-      <Link to="/settings" className="app-dday" aria-label={examDate ? `시험까지 ${formatDDay(examDate)}` : '시험일 설정'}>
+      <Link
+        to="/settings"
+        className="justify-self-end px-2 py-2.5 font-bold text-accent"
+        aria-label={examDate ? `시험까지 ${formatDDay(examDate)}` : '시험일 설정'}
+      >
         {formatDDay(examDate)}
       </Link>
     </header>

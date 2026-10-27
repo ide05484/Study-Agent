@@ -1,8 +1,15 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Navigate, useParams } from 'react-router'
 import { useChat } from '../hooks/useChat.ts'
+import type { ChatRole } from '../interfaces/chat.ts'
 import { isDateKey, todayKey } from '../libs/date.ts'
 import { WELCOME_MESSAGE } from '../libs/menu.ts'
+
+// 말풍선: 코치는 왼쪽·surface, 사용자는 오른쪽·accent-soft. 꼬리 쪽 모서리만 4px
+const BUBBLE_CLASS: Record<ChatRole, string> = {
+  assistant: 'self-start rounded-bl-sm bg-surface',
+  user: 'self-end rounded-br-sm bg-accent-soft',
+}
 
 // 채팅방은 하루에 하나. `/`는 오늘 채팅방, `/chat/:date`는 지난 채팅방(읽기 전용)
 // 오늘의 분량 안내, 학습 기록 보고, 과목별 코치 QnA가 모두 이 채팅에서 이뤄진다
@@ -33,28 +40,34 @@ function ChatRoom({ date, readOnly }: { date: string; readOnly: boolean }) {
   }
 
   return (
-    <section className="chat">
-      <div className="chat-messages">
-        <div className="chat-bubble chat-bubble--assistant">{WELCOME_MESSAGE}</div>
+    <section className="flex h-full flex-col">
+      <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-4">
+        <Bubble role="assistant">{WELCOME_MESSAGE}</Bubble>
         {messages.map((m) => (
-          <div key={m.id} className={`chat-bubble chat-bubble--${m.role}`}>
+          <Bubble key={m.id} role={m.role}>
             {m.content}
-          </div>
+          </Bubble>
         ))}
-        {error && <p className="error-text">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
         <div ref={bottomRef} />
       </div>
       {readOnly ? (
-        <p className="chat-readonly">지난 대화는 볼 수만 있어요.</p>
+        <p className="border-t border-line px-4 py-3.5 text-center text-sm text-muted">지난 대화는 볼 수만 있어요.</p>
       ) : (
-        <form className="chat-composer" onSubmit={handleSubmit}>
+        <form className="flex gap-2 border-t border-line px-3 py-2" onSubmit={handleSubmit}>
           <input
+            className="min-w-0 flex-1 rounded-full border border-line bg-bg px-4 py-2.5"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder="예) 보건행정 30~70p, 기출 20문제 중 5개 틀림"
             aria-label="메시지 입력"
           />
-          <button type="submit" aria-label="보내기" disabled={sending || !draft.trim()}>
+          <button
+            type="submit"
+            className="grid size-11 flex-none place-items-center rounded-full bg-accent text-on-accent disabled:opacity-40"
+            aria-label="보내기"
+            disabled={sending || !draft.trim()}
+          >
             <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M4 12h14M12 5l7 7-7 7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -62,5 +75,13 @@ function ChatRoom({ date, readOnly }: { date: string; readOnly: boolean }) {
         </form>
       )}
     </section>
+  )
+}
+
+function Bubble({ role, children }: { role: ChatRole; children: string }) {
+  return (
+    <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 break-words whitespace-pre-wrap ${BUBBLE_CLASS[role]}`}>
+      {children}
+    </div>
   )
 }

@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import type { NewBook } from '../../interfaces/study.ts'
 import type { Subject } from '../../interfaces/subject.ts'
 import { SUBJECT_LABELS, SUBJECTS } from '../../libs/subjects.ts'
+import { buttonClass, fieldClass, ghostButtonClass } from '../ui/classes.ts'
 
 interface BookAddFormProps {
   onAdd: (input: NewBook) => Promise<boolean>
@@ -27,8 +28,13 @@ export default function BookAddForm({ onAdd, onCancel }: BookAddFormProps) {
   }
 
   return (
-    <form className="book-form" onSubmit={handleSubmit}>
-      <select className="field" value={subject} onChange={(e) => setSubject(e.target.value as Subject)} aria-label="과목">
+    <form className="mt-3 grid gap-2" onSubmit={handleSubmit}>
+      <select
+        className={fieldClass}
+        value={subject}
+        onChange={(e) => setSubject(e.target.value as Subject)}
+        aria-label="과목"
+      >
         {SUBJECTS.map((s) => (
           <option key={s} value={s}>
             {SUBJECT_LABELS[s]}
@@ -36,14 +42,14 @@ export default function BookAddForm({ onAdd, onCancel }: BookAddFormProps) {
         ))}
       </select>
       <input
-        className="field"
+        className={fieldClass}
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="교재명 (예: 봉투모의고사)"
         aria-label="교재명"
       />
       <input
-        className="field"
+        className={fieldClass}
         type="number"
         inputMode="numeric"
         min={1}
@@ -52,11 +58,11 @@ export default function BookAddForm({ onAdd, onCancel }: BookAddFormProps) {
         placeholder="총 페이지"
         aria-label="총 페이지"
       />
-      <div className="form-actions">
-        <button type="button" className="button button--ghost" onClick={onCancel}>
+      <div className="flex justify-end gap-2">
+        <button type="button" className={ghostButtonClass} onClick={onCancel}>
           취소
         </button>
-        <button type="submit" className="button" disabled={!valid || saving}>
+        <button type="submit" className={buttonClass} disabled={!valid || saving}>
           추가
         </button>
       </div>
