@@ -56,7 +56,7 @@ Frontend 의존 방향은 `pages → hooks → api → libs`이고, 타입은 `i
   - `plan-generator` — `profiles.exam_date` 전날까지 교재별 남은 페이지를 나눠 `daily_tasks`를 다시 만든다. 교재 추가·삭제, 시험일 변경 뒤에는 반드시 호출한다. 응답은 [interfaces/plan.ts](Frontend/src/interfaces/plan.ts)의 `PlanResponse`.
   - `daily-briefing` — pg_cron이 `profiles.notify_time`에 호출하며, 오늘의 `daily_tasks`로 응원 메시지를 만들어 PWA 푸시(`push_subscriptions`) 또는 카카오톡으로 보낸다. 보낸 메시지는 채팅에도 남긴다. (cron 등록은 아직 안 됨)
 - LLM은 OpenAI Responses API(`client.responses.create`)를 사용하며 프롬프트는 한국어로 쓴다. Edge Function에서는 `_shared/openai.ts`의 클라이언트를 쓴다.
-- 코치 답변·알림·화면 문구의 말투는 [docs/coach/coach-tone.md](docs/coach/coach-tone.md)를, 과목별 공부법은 [docs/coach/study-methods/](docs/coach/study-methods/README.md)를 원본으로 삼는다. 프롬프트나 화면 문구를 쓰기 전에 확인한다.
+- 코치 답변·알림·화면 문구의 말투는 [docs/coach/coach-tone.md](docs/coach/coach-tone.md)를, 과목별 공부법은 [docs/study-methods/](docs/study-methods/README.md)를 원본으로 삼는다. 프롬프트나 화면 문구를 쓰기 전에 확인한다.
 
 ### 꼭 맞춰야 하는 것
 
