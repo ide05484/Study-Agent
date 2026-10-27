@@ -1,0 +1,96 @@
+@import 'tailwindcss';
+
+/* 색상 토큰: 웜그레이 모노톤 + 주황 포인트 (DESIGN.md 색상 표와 맞춘다)
+   값은 CSS 변수로 두고 다크 모드에서 바꾸며, 아래 @theme이 Tailwind 색상(bg-surface, text-muted 등)으로 연결한다 */
+:root {
+  --bg: #faf9f7;
+  --surface: #f3f0ec;
+  --text: #292524;
+  --text-muted: #78716c;
+  --border: #e7e2dc;
+  --accent: #c4530f;
+  --on-accent: #ffffff;
+  --accent-soft: #fbe6d6;
+  --marker: #f9c99a;
+  --danger: #c2362b;
+
+  --heat-0: #ece7e1;
+  --heat-1: #fbd9bc;
+  --heat-2: #f6b07a;
+  --heat-3: #ec8640;
+  --heat-4: #c4530f;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1917;
+    --surface: #262220;
+    --text: #ede9e5;
+    --text-muted: #a8a29e;
+    --border: #38322e;
+    --accent: #f0883e;
+    --on-accent: #1c1917;
+    --accent-soft: #3d2618;
+    --marker: #7a4421;
+    --danger: #f07a6e;
+
+    --heat-0: #2a2622;
+    --heat-1: #4a2f1d;
+    --heat-2: #7a4421;
+    --heat-3: #b75e24;
+    --heat-4: #f08a3e;
+  }
+}
+
+@theme inline {
+  --font-sans: 'Noto Sans KR Variable', system-ui, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-fg: var(--text);
+  --color-muted: var(--text-muted);
+  --color-line: var(--border);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+
+  --color-heat-0: var(--heat-0);
+  --color-heat-1: var(--heat-1);
+  --color-heat-2: var(--heat-2);
+  --color-heat-3: var(--heat-3);
+  --color-heat-4: var(--heat-4);
+}
+
+@layer base {
+  html {
+    line-height: 1.5;
+  }
+
+  body {
+    @apply bg-bg font-sans text-fg;
+  }
+
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-accent;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* 형광펜 자국: 글자 아래쪽 절반에만 칠한다. 오늘 분량·핵심 숫자처럼 꼭 봐야 할 곳에만 쓴다 */
+@utility marker {
+  background-image: linear-gradient(transparent 55%, var(--marker) 55%);
+  box-decoration-break: clone;
+  padding-inline: 2px;
+}
