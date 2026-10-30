@@ -56,20 +56,20 @@
 **Interfaces:**
 - Produces: `supabase`가 `createClient<Database>`로 타입이 붙은 클라이언트. 클라우드 개발 프로젝트에 테이블·RLS·`handle_new_user` 트리거가 있고, 함수 비밀 값 `OPENAI_API_KEY`가 등록되어 있다. Auth에 검증용 테스트 계정 1개(화면에는 쓰지 않고 Task 6에서 API를 호출할 때만 쓴다).
 
-- [ ] **Step 1: 연결 상태 확인**
+> 2026-10-30 변경: 사용자 결정으로 클라우드 작업은 Supabase MCP로 한다. 단, 함수 비밀 값은 키가 대화에 남지 않도록 CLI(`--project-ref`, link 없이)로 등록한다. 이 환경에서는 CLI 로그인 정보가 PowerShell에서만 읽힌다.
 
-Run (`Backend/`): `npx supabase projects list`
-Expected: 개발 프로젝트 `ishtebcswgyagbbaakpx` 행에 연결 표시(●). 없으면 LOCAL_DEV.md 순서대로 `npx supabase login` → `npx supabase link --project-ref ishtebcswgyagbbaakpx`.
+- [x] **Step 1: 연결 상태 확인**
 
-- [ ] **Step 2: ☁️ 마이그레이션 반영**
+MCP `get_project`, `list_tables`, `list_migrations`로 개발 프로젝트 `ishtebcswgyagbbaakpx`가 `ACTIVE_HEALTHY`이고 테이블·이력이 비어 있는지 확인한다.
 
-Run: `npm run db:push`
-Expected: `Applying migration 20261022082116_init_schema.sql...` 후 `Finished supabase db push.`
+- [x] **Step 2: ☁️ 마이그레이션 반영**
 
-- [ ] **Step 3: ☁️ 함수 비밀 값 등록**
+MCP `apply_migration`으로 `20261022082116_init_schema.sql` 내용을 적용한 뒤, MCP가 적용 시각으로 기록한 이력 버전을 `execute_sql`로 `20261022082116`으로 바꾼다(CLI `db push`와 이력을 맞추기 위해). 테이블 9개 RLS·정책, `on_auth_user_created` 트리거, `get_advisors(security)`를 확인한다.
+보안 어드바이저가 `handle_new_user()` 실행 권한 경고를 내서 새 마이그레이션 `20261030081740_revoke_handle_new_user_execute.sql`을 추가해 같은 방식으로 적용했다.
 
-`Backend/supabase/functions/.env`에 `OPENAI_API_KEY=` 줄이 있는지 확인한다(값은 출력하지 않는다). 그다음
-Run: `npm run secrets:set`
+- [x] **Step 3: ☁️ 함수 비밀 값 등록**
+
+`.env`에서 값이 있는 `OPENAI_API_KEY`, `KAKAO_REST_API_KEY` 줄만 임시 파일로 뽑아 `npx supabase secrets set --env-file <임시 파일> --project-ref ishtebcswgyagbbaakpx`로 등록하고 임시 파일을 지운다(값은 출력하지 않는다).
 Expected: `Finished supabase secrets set.`
 
 - [ ] **Step 4: ☁️ 검증용 테스트 계정 만들기 (사용자)**
@@ -100,12 +100,12 @@ where not exists (
 ```
 Expected: `INSERT 0 8` (다시 실행하면 `INSERT 0 0`). 그 계정에 `exam_date`가 있으면 Task 6 Step 3처럼 `plan-generator`를 호출해 분량을 만든다.
 
-- [ ] **Step 5: DB 타입 생성과 클라이언트 연결**
+- [x] **Step 5: DB 타입 생성과 클라이언트 연결**
 
-Run (`Backend/`): `npm run gen:types`
+Run (`Backend/`): `npx supabase gen types typescript --project-id ishtebcswgyagbbaakpx > ../Frontend/src/interfaces/database.ts` (link 없이 `gen:types`와 같은 결과. MCP `generate_typescript_types`로도 확인 가능)
 `libs/supabase.ts`의 TODO를 지우고 `createClient<Database>(supabaseUrl, supabaseKey)`로 바꾼다(`import type { Database } from '../interfaces/database.ts'`).
 
-- [ ] **Step 6: 빌드로 타입 확인**
+- [x] **Step 6: 빌드로 타입 확인**
 
 Run (`Frontend/`): `npm run build` 그리고 `npm run lint`
 Expected: 둘 다 오류 0. 타입 오류가 나면 `api/`의 해당 쿼리만 고친다(`interfaces/`의 도메인 타입은 유지).

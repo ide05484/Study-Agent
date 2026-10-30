@@ -38,8 +38,15 @@ cd ../Frontend && npm install
    npm run db:push
    ```
 4. Edge Function 비밀 값을 등록하고 함수를 배포한다.
+   `supabase/functions/.env`를 만들고 아래 키를 채운다(git에 올라가지 않는다). 값이 없는 키는 줄을 비워 두거나 지운다.
+   ```
+   OPENAI_API_KEY=
+   KAKAO_REST_API_KEY=
+   VAPID_PUBLIC_KEY=
+   VAPID_PRIVATE_KEY=
+   VAPID_SUBJECT=
+   ```
    ```bash
-   cp supabase/functions/.env.example supabase/functions/.env   # OPENAI_API_KEY 등 채우기
    npm run secrets:set
    npm run functions:deploy
    ```
@@ -51,8 +58,12 @@ cd ../Frontend && npm install
 
 `Frontend/`에서 실행한다.
 
+`Frontend/.env.local`을 만들고 개발 프로젝트의 값을 넣는다.
+```
+VITE_SUPABASE_URL=https://<ref>.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=
+```
 ```bash
-cp .env.example .env.local   # 개발 프로젝트의 Project URL / Publishable key로 교체
 npm run dev                  # http://localhost:5173
 ```
 
@@ -80,6 +91,7 @@ PWA(서비스워커, 설치, 푸시)는 `npm run dev`에서는 동작하지 않�
 | DB 타입 갱신 | `npm run gen:types` → `Frontend/src/interfaces/database.ts` |
 
 - 이미 `db push`한 마이그레이션 파일은 고치지 않는다. 적용 이력이 남아 있어 다시 반영되지 않는다.
+- Supabase MCP의 `apply_migration`으로 적용했다면 이력 버전이 적용 시각으로 기록된다. `supabase_migrations.schema_migrations`의 `version`을 로컬 파일 이름의 타임스탬프로 바꿔 둬야 CLI `db push`가 같은 파일을 다시 적용하지 않는다.
 - 개발 DB를 처음부터 다시 만들려면 `npx supabase db reset --linked`를 쓴다. **개발 프로젝트의 데이터가 모두 지워진다.**
 - Edge Function 로그는 대시보드 → Edge Functions → 함수 선택 → Logs에서 본다.
 
@@ -87,7 +99,7 @@ PWA(서비스워커, 설치, 푸시)는 `npm run dev`에서는 동작하지 않�
 
 | 증상 | 해결 |
 |---|---|
-| 화면이 하얗고 콘솔에 `VITE_SUPABASE_URL ... 설정되어 있지 않습니다` | `Frontend/.env.local`이 없다. `cp .env.example .env.local` 후 값을 채우고 서버 재시작 |
+| 화면이 하얗고 콘솔에 `VITE_SUPABASE_URL ... 설정되어 있지 않습니다` | `Frontend/.env.local`이 없다. 2절대로 만들고 값을 채운 뒤 서버 재시작 |
 | `Failed to fetch` | `.env.local`의 URL·키를 확인한다. 무료 프로젝트는 오래 쓰지 않으면 일시 정지되므로 대시보드에서 Restore |
 | `relation "public.…" does not exist` | 스키마를 아직 적용하지 않았다. `npm run db:push` |
 | Edge Function 호출이 404 | 함수를 배포하지 않았다. `npm run functions:deploy` |
