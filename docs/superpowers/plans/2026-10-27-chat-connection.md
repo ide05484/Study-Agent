@@ -20,7 +20,7 @@
 - LLM 모델은 `_shared/openai.ts`의 `MODEL = "gpt-5.6"` 하나로 관리한다.
 - `db push`, `functions deploy`, `secrets set`, 대시보드에서 계정 만들기처럼 클라우드를 바꾸는 단계는 **사용자 승인 후** 실행한다(단계에 ☁️ 표시).
 - 카카오 앱 키가 있어야 하는 단계는 🔑로 표시한다. 키가 아직 없으면 그 단계만 건너뛰고 History에 "보류"로 남긴 뒤 다음 Task로 간다.
-- 각 Task 끝에서 반드시 커밋한다(사용자 승인됨). push는 하지 않는다. 메시지 끝에 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+- 각 Task 끝에서 반드시 커밋한다(사용자 승인됨). push는 하지 않는다. 커밋 메시지에 `Co-Authored-By` 줄은 넣지 않는다(2026-10-30 사용자 결정).
 - Task가 끝날 때마다 [History](../../../History/README.md) 규칙대로 작업 기록을 남긴다.
 - 이 단계의 범위 밖: 일정 기반 분량 재배분, 채팅으로 교재 추가, 지난 날짜 기록, 카카오톡 메시지 발송(알림 단계).
 
@@ -72,12 +72,12 @@ MCP `apply_migration`으로 `20261022082116_init_schema.sql` 내용을 적용한
 `.env`에서 값이 있는 `OPENAI_API_KEY`, `KAKAO_REST_API_KEY` 줄만 임시 파일로 뽑아 `npx supabase secrets set --env-file <임시 파일> --project-ref ishtebcswgyagbbaakpx`로 등록하고 임시 파일을 지운다(값은 출력하지 않는다).
 Expected: `Finished supabase secrets set.`
 
-- [ ] **Step 4: ☁️ 검증용 테스트 계정 만들기 (사용자)**
+- [x] **Step 4: ☁️ 검증용 테스트 계정 만들기 (사용자)**
 
 카카오 키가 오기 전에도 `chat` 함수를 호출해 볼 수 있게 하는 계정이다. 앱 화면에는 이메일 로그인이 없다.
 Supabase 대시보드 → Authentication → Users → Add user → 이메일·비밀번호 입력, "Auto Confirm User" 체크. 이어서 Table Editor의 `profiles`에 그 사용자 id의 행이 생겼는지 확인한다(트리거 동작 확인). 비밀번호는 저장소 파일에 적지 않는다.
 
-- [ ] **Step 4.5: ☁️ 해커스 교재 넣기 (2026-10-30 추가)**
+- [x] **Step 4.5: ☁️ 해커스 교재 넣기 (2026-10-30 추가, 검증용 계정 완료 / 카카오 계정은 Task 2 Step 8 뒤)**
 
 사용자가 고른 해커스 공무원 교재를 `books`에 넣는다. 지금은 검증용 계정에 넣고, Task 2 Step 8에서 카카오 로그인으로 사용자 행이 생기면 같은 SQL을 그 사용자 id로 한 번 더 실행한다. 저장소 파일로 남기지 않고 Supabase SQL Editor(또는 MCP `execute_sql`)에서 `<USER_ID>`만 바꿔 실행한다. 같은 제목이 이미 있으면 넣지 않으므로 다시 실행해도 중복되지 않는다. 쪽수는 알라딘 상품 정보(2026-10-30 확인) 기준이고, 여러 권 세트는 합계 쪽수로 한 행에 넣는다.
 
@@ -110,7 +110,7 @@ Run (`Backend/`): `npx supabase gen types typescript --project-id ishtebcswgyagb
 Run (`Frontend/`): `npm run build` 그리고 `npm run lint`
 Expected: 둘 다 오류 0. 타입 오류가 나면 `api/`의 해당 쿼리만 고친다(`interfaces/`의 도메인 타입은 유지).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add Frontend/src/interfaces/database.ts Frontend/src/libs/supabase.ts Frontend/src/api
