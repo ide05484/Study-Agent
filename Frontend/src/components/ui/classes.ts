@@ -5,8 +5,7 @@ export const sectionClass = 'border-b border-line py-5 last:border-b-0'
 
 export const sectionTitleClass = 'mb-3 text-[15px] font-bold'
 
-export const buttonClass =
-  'min-h-11 rounded-xl bg-accent px-4 font-semibold text-on-accent disabled:opacity-50'
+export const buttonClass = 'min-h-11 rounded-xl bg-accent px-4 font-semibold text-on-accent disabled:opacity-50'
 
 export const ghostButtonClass = 'min-h-11 rounded-xl border border-line bg-bg px-4 text-fg disabled:opacity-50'
 

@@ -1,7 +1,13 @@
 import { useState } from 'react'
 import BookAddForm from '../components/settings/BookAddForm.tsx'
 import ExamDateForm from '../components/settings/ExamDateForm.tsx'
-import { chevronClass, fieldClass, ghostButtonClass, sectionClass, sectionTitleClass } from '../components/ui/classes.ts'
+import {
+  chevronClass,
+  fieldClass,
+  ghostButtonClass,
+  sectionClass,
+  sectionTitleClass,
+} from '../components/ui/classes.ts'
 import { useBooks } from '../hooks/useBooks.ts'
 import { useProfileContext } from '../hooks/useProfile.ts'
 import { SUBJECT_LABELS, SUBJECTS } from '../libs/subjects.ts'
@@ -29,7 +35,9 @@ export default function SettingsPage() {
         <h2 className={sectionTitleClass}>D-Day까지 남은 공부 분량</h2>
         {loading && <p className="text-sm text-muted">불러오는 중…</p>}
         {!loading && books.length === 0 && (
-          <p className="text-sm text-muted">등록된 교재가 없어요. 교재를 추가하면 시험일까지 매일 분량을 나눠 드려요.</p>
+          <p className="text-sm text-muted">
+            등록된 교재가 없어요. 교재를 추가하면 시험일까지 매일 분량을 나눠 드려요.
+          </p>
         )}
         <div className="flex flex-col gap-3">
           {SUBJECTS.map((subject) => {

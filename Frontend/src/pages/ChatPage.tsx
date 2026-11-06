@@ -71,7 +71,14 @@ function ChatRoom({ date, readOnly }: { date: string; readOnly: boolean }) {
             disabled={sending || !draft.trim()}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 12h14M12 5l7 7-7 7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M4 12h14M12 5l7 7-7 7"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </button>
         </form>

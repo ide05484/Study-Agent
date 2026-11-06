@@ -108,9 +108,7 @@ function countStreak(studied: Set<string>, today: string): number {
 function buildWeekly(tasks: DailyTaskWithBook[]): WeeklyGoal[] {
   return SUBJECTS.map((subject) => ({
     subject,
-    pages: tasks
-      .filter((t) => t.book.subject === subject)
-      .reduce((sum, t) => sum + t.end_page - t.start_page + 1, 0),
+    pages: tasks.filter((t) => t.book.subject === subject).reduce((sum, t) => sum + t.end_page - t.start_page + 1, 0),
   })).filter((goal) => goal.pages > 0)
 }
 

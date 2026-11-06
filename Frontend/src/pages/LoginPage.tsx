@@ -54,9 +54,7 @@ export default function LoginPage() {
             로그인하지 못했어요. 다시 시도해 주세요.
           </p>
         )}
-        <p className="mt-4 text-center text-sm text-muted">
-          카카오 계정으로 로그인하면 공부 기록이 계정에 저장돼요.
-        </p>
+        <p className="mt-4 text-center text-sm text-muted">카카오 계정으로 로그인하면 공부 기록이 계정에 저장돼요.</p>
       </div>
     </div>
   )
