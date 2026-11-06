@@ -19,7 +19,7 @@ model: sonnet
 ## 시작 전
 
 1. 지시서를 읽는다.
-2. 저장소 루트의 `CLAUDE.md`를 읽는다. UI 작업이면 `DESIGN.md`, 문구·프롬프트 작업이면 `docs/coach/coach-tone.md`도 읽는다.
+2. 저장소 루트의 `CLAUDE.md`와 `CONVENTIONS.md`(코드 작성 규칙)를 읽는다. UI 작업이면 `DESIGN.md`, 문구·프롬프트 작업이면 `docs/coach/coach-tone.md`도 읽는다.
 3. 고칠 파일과 주변 코드(같은 폴더의 기존 파일)를 읽고 패턴을 따른다.
 4. 지시서가 모호하거나 코드와 어긋나면 추측하지 않는다. `NEEDS_CONTEXT`로 바로 보고한다.
 

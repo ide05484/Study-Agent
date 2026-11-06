@@ -21,6 +21,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - [LOCAL_DEV.md](LOCAL_DEV.md) — 로컬 실행·빌드 확인, 자주 나는 문제
 - [DEPLOY.md](DEPLOY.md) — push 기반 자동 배포 설정 (Vercel + GitHub Actions → Supabase)
 - [DESIGN.md](DESIGN.md) — 화면 구성, 레이아웃, 색상 토큰, 컴포넌트 규칙. UI 작업 전에 확인한다.
+- [CONVENTIONS.md](CONVENTIONS.md) — 코드 작성 규칙(이름, 포맷, import, api·훅·컴포넌트 패턴, Edge Function, SQL, Git). 코드를 쓰거나 리뷰하기 전에 확인한다.
 
 서비스 흐름은 SERVICE_FLOW.md에, 화면 구성은 DESIGN.md에 정의한다. 개발 순서와 단계별 계획은 [docs/superpowers/plans/](docs/superpowers/plans/2026-10-27-roadmap.md)에 둔다.
 
