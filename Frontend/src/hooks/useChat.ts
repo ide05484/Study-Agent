@@ -4,8 +4,15 @@ import type { ChatMessage } from '../interfaces/chat.ts'
 import { todayKey } from '../libs/date.ts'
 import { toErrorMessage } from '../libs/errors.ts'
 
+export interface ChatState {
+  messages: ChatMessage[]
+  sending: boolean
+  error: string | null
+  send: (content: string) => Promise<void>
+}
+
 // date 날짜의 채팅방 메시지. 날짜가 바뀌면 호출하는 쪽에서 key로 다시 마운트한다
-export function useChat(date: string) {
+export function useChat(date: string): ChatState {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -41,7 +48,7 @@ export function useChat(date: string) {
 }
 
 // 사이드바 채팅방 목록. 열릴 때마다 다시 불러오며, 오늘 채팅방은 항상 맨 위에 둔다
-export function useChatDates(open: boolean) {
+export function useChatDates(open: boolean): { dates: string[]; error: string | null } {
   const [dates, setDates] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
 

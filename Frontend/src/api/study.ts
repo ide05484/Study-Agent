@@ -34,7 +34,7 @@ export async function fetchDailyTasks(from: string, to: string): Promise<DailyTa
     .gte('task_date', from)
     .lte('task_date', to)
   if (error) throw error
-  return data as unknown as DailyTaskWithBook[]
+  return data as DailyTaskWithBook[]
 }
 
 // 학습 기록이 있는 날짜 목록

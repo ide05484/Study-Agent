@@ -79,6 +79,20 @@ npm run preview   # 빌드 결과를 http://localhost:4173 에서 확인
 
 PWA(서비스워커, 설치, 푸시)는 `npm run dev`에서는 동작하지 않는다. `build` → `preview`로 확인한다.
 
+### 카카오 로그인 설정
+
+카카오 키를 받았을 때 아래 순서로 설정한다.
+
+1. [Kakao Developers](https://developers.kakao.com)에서 앱을 만든다.
+2. 앱 설정 → 앱 → 플랫폼 키 → REST API 키를 확인한다(= Client ID). **그 REST API 키 안의** "카카오 로그인 Redirect URI"에 `https://ishtebcswgyagbbaakpx.supabase.co/auth/v1/callback`을 등록한다. Redirect URI는 키마다 따로 등록하므로, Supabase에 넣은 키와 다른 키에 등록하면 KOE006이 난다. "호출 허용 IP 주소"는 비워 둔다(이 키로 카카오를 부르는 Supabase Auth 서버의 IP는 고정되어 있지 않다).
+3. 같은 키의 "카카오 로그인 Client Secret"을 확인하고(= Client Secret) 활성화한다.
+4. 앱 → 일반 → 비즈니스 정보에서 **개인 개발자 비즈 앱**으로 전환한다(사업자등록 없이 가능). Supabase는 `scopes`를 지정해도 `account_email`을 항상 요청하므로, 이 동의항목이 없으면 KOE205가 난다.
+5. 제품 설정 → 카카오 로그인 → 사용 설정 ON. 동의항목에 `profile_nickname`, `profile_image`를 설정하고, 카카오계정(이메일)은 **선택 동의**로 둔다. 이메일은 쓰지 않으며, 사용자가 거부해도 로그인된다.
+6. Supabase 대시보드 → Authentication → Providers → Kakao: Enabled, Client ID·Secret 입력, "Allow users without an email" ON.
+7. Authentication → URL Configuration: Site URL `http://localhost:5173`, Redirect URLs에 `http://localhost:5173/login`.
+
+- 키와 Secret은 Supabase 대시보드에만 넣고 저장소 파일에는 적지 않는다.
+
 ## 3. 스키마·함수를 바꿨을 때
 
 `Backend/`에서 실행한다.

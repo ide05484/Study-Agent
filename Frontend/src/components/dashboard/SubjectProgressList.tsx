@@ -4,8 +4,12 @@ import type { Subject } from '../../interfaces/subject.ts'
 import { SUBJECT_LABELS } from '../../libs/subjects.ts'
 import { chevronClass } from '../ui/classes.ts'
 
+interface SubjectProgressListProps {
+  items: SubjectProgress[]
+}
+
 // 과목별 가로 진도율 막대. 누르면 아코디언으로 남은 교재 목록이 펼쳐지며, 한 번에 한 과목만 연다
-export default function SubjectProgressList({ items }: { items: SubjectProgress[] }) {
+export default function SubjectProgressList({ items }: SubjectProgressListProps) {
   const [openSubject, setOpenSubject] = useState<Subject | null>(null)
 
   return (

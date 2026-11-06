@@ -132,20 +132,20 @@ git commit -m "chore: 개발 프로젝트 DB 타입 연결"
   - `hooks/useSession.ts`: `useSession(): { session: Session | null; loading: boolean }`
   - `RequireAuth`: 세션 확인 중이면 아무것도 그리지 않고, 세션이 없으면 `<Navigate to="/login" replace />`, 있으면 `<AppLayout />`.
 
-- [ ] **Step 1: `api/auth.ts`와 `useSession` 구현**
+- [x] **Step 1: `api/auth.ts`와 `useSession` 구현**
 
-`signInWithKakao`는 ``supabase.auth.signInWithOAuth({ provider: 'kakao', options: { redirectTo: `${window.location.origin}/login` } })``. 돌아오는 곳을 `/login`으로 두는 이유: 취소·오류로 돌아오면 URL의 `error` 값을 로그인 화면이 바로 읽고, 성공하면 로그인 화면이 `/`로 보낸다. `scopes`는 지정하지 않는다(Step 8에서 KOE205가 나면 그때 `'profile_nickname profile_image'`로 지정).
+`signInWithKakao`는 ``supabase.auth.signInWithOAuth({ provider: 'kakao', options: { redirectTo: `${window.location.origin}/login` } })``. 돌아오는 곳을 `/login`으로 두는 이유: 취소·오류로 돌아오면 URL의 `error` 값을 로그인 화면이 바로 읽고, 성공하면 로그인 화면이 `/`로 보낸다. `scopes`는 지정하지 않는다. (2026-11-06 수정: Supabase는 `scopes`를 기본 항목 `account_email profile_image profile_nickname` 뒤에 덧붙이기만 하므로 `account_email`을 뺄 수 없다. KOE205는 카카오 앱을 개인 개발자 비즈 앱으로 전환하고 이메일을 선택 동의로 두어 해결한다.)
 `useSession`은 마운트 때 `getSession()`으로 초기값을 정하고 `onSessionChange`로 갱신한다.
 
-- [ ] **Step 2: 라우터와 가드**
+- [x] **Step 2: 라우터와 가드**
 
 `router.tsx`: `{ path: '/login', element: <LoginPage /> }`를 최상위에 추가하고, 기존 `/` 경로의 element를 `<RequireAuth />`로 바꾼다. `AppLayout`이 마운트될 때는 항상 세션이 있으므로 `useProfile`은 그대로 둔다.
 
-- [ ] **Step 3: 카카오 버튼 색 토큰**
+- [x] **Step 3: 카카오 버튼 색 토큰**
 
 카카오 로그인 디자인 가이드 색은 DESIGN 토큰에 없으므로 추가한다. `index.css` `:root`에 `--kakao: #fee500`, `--on-kakao: rgb(0 0 0 / 0.85)`(다크 모드에서도 같은 값), `@theme inline`에 `--color-kakao`, `--color-on-kakao`. DESIGN.md 색상 표에 "카카오 로그인 버튼 전용"으로 적는다.
 
-- [ ] **Step 4: `LoginPage` 화면**
+- [x] **Step 4: `LoginPage` 화면**
 
 최대 폭 480px, `bg-bg`. 위쪽에 제목·소개, 아래쪽에 버튼과 안내. 버튼은 `bg-kakao text-on-kakao`, `min-h-12`, `rounded-xl`, 왼쪽에 검정 말풍선 심볼(인라인 SVG, `aria-hidden`). 누르면 이동하는 동안 비활성. 세션이 있으면 `<Navigate to="/" replace />`. URL의 search 또는 hash에 `error`가 있으면 실패 문구를 보인다. 문구는 아래로 고정한다.
 
@@ -157,24 +157,24 @@ git commit -m "chore: 개발 프로젝트 DB 타입 연결"
 | 실패(`text-danger`) | 로그인하지 못했어요. 다시 시도해 주세요. |
 | 하단 안내(`text-muted`) | 카카오 계정으로 로그인하면 공부 기록이 계정에 저장돼요. |
 
-- [ ] **Step 5: 사이드바 로그아웃**
+- [x] **Step 5: 사이드바 로그아웃**
 
 `Sidebar` 채팅방 목록 아래 `border-t border-line` 영역에 "로그아웃" 버튼(`min-h-11`, `text-muted`). 누르면 `signOut()` 후 가드가 `/login`으로 보낸다.
 
-- [ ] **Step 6: 문서 갱신**
+- [x] **Step 6: 문서 갱신**
 
 - DESIGN.md: 화면 목록에 `/login`, "4. 로그인" 절(Step 4 구성과 문구), TODO의 "로그인 화면 구성" 삭제.
 - LOCAL_DEV.md에 "카카오 로그인 설정" 절 추가 (사용자가 키를 받을 때 따라 할 순서):
   1. [Kakao Developers](https://developers.kakao.com)에서 앱 만들기
   2. 앱 설정 → 앱 → 플랫폼 키 → REST API 키 확인(= Client ID). 같은 화면의 "카카오 로그인 Redirect URI"에 `https://ishtebcswgyagbbaakpx.supabase.co/auth/v1/callback` 등록
   3. 같은 키의 "카카오 로그인 Client Secret" 확인(= Client Secret)하고 활성화
-  4. 제품 설정 → 카카오 로그인 → 사용 설정 ON, 동의항목에 `profile_nickname`, `profile_image` 설정 (`account_email`은 비즈 앱만 가능하므로 받지 않는다)
+  4. 제품 설정 → 카카오 로그인 → 사용 설정 ON, 동의항목에 `profile_nickname`, `profile_image` 설정 (`account_email`은 비즈 앱만 가능하므로 받지 않는다) — 2026-11-06 수정: 개인 개발자 비즈 앱 전환 후 `account_email` 선택 동의도 설정해야 한다. 최신 순서는 LOCAL_DEV.md
   5. Supabase 대시보드 → Authentication → Providers → Kakao: Enabled, Client ID·Secret 입력, "Allow users without an email" ON
   6. Authentication → URL Configuration: Site URL `http://localhost:5173`, Redirect URLs에 `http://localhost:5173/login`
   - 키와 Secret은 Supabase 대시보드에만 넣고 저장소 파일에는 적지 않는다.
 - DEPLOY.md: 운영 프로젝트도 같은 순서로 설정하되 Redirect URI는 운영 프로젝트 ref, Redirect URLs에는 운영 도메인 `/login`. 운영 프로젝트는 Email provider를 끈다(검증용 계정은 개발 프로젝트에만).
 
-- [ ] **Step 7: 키 없이 하는 확인**
+- [ ] **Step 7: 키 없이 하는 확인** (2026-11-06 build·lint 완료, 브라우저 확인은 사용자 대기)
 
 Run (`Frontend/`): `npm run build` 그리고 `npm run lint` → 오류 0.
 수동(`npm run dev`): 로그아웃 상태로 `/settings` 접속 → `/login`으로 이동. 버튼 → Supabase 주소로 이동(Provider가 아직 꺼져 있으면 "provider is not enabled" 오류가 정상). `/login?error=access_denied` 직접 접속 → 실패 문구.
@@ -184,11 +184,11 @@ Run (`Frontend/`): `npm run build` 그리고 `npm run lint` → 오류 0.
 Step 6의 카카오 설정을 마친 뒤:
 1. 카카오 로그인 → 동의 → `/`로 이동. Table Editor `profiles`에 새 사용자 행 생성.
 2. 로그아웃 → 다시 로그인 → 동의 화면에서 취소 → `/login`에 실패 문구.
-3. 카카오 화면에 KOE205(설정하지 않은 동의항목)가 나오면 Step 1의 `scopes`를 지정하고 다시 확인한다.
+3. 카카오 화면에 KOE205(설정하지 않은 동의항목)가 나오면 카카오 앱을 개인 개발자 비즈 앱으로 전환하고 `account_email`을 선택 동의로 설정한다(`scopes` 지정으로는 해결되지 않음, 2026-11-06 확인). KOE006이 나오면 Supabase Client ID와 같은 REST API 키에 Redirect URI가 등록되어 있는지 본다.
 4. 공부 설정에서 시험일 저장 성공, 헤더 D-day 표시.
 키가 아직 없으면 이 Step을 건너뛰고 History에 보류로 남긴다.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add Frontend/src DESIGN.md LOCAL_DEV.md DEPLOY.md

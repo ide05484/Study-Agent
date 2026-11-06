@@ -37,7 +37,7 @@ export interface DashboardData {
   subjects: SubjectProgress[]
 }
 
-export function useDashboard() {
+export function useDashboard(): { data: DashboardData | null; error: string | null } {
   const [data, setData] = useState<DashboardData | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -108,9 +108,7 @@ function countStreak(studied: Set<string>, today: string): number {
 function buildWeekly(tasks: DailyTaskWithBook[]): WeeklyGoal[] {
   return SUBJECTS.map((subject) => ({
     subject,
-    pages: tasks
-      .filter((t) => t.book.subject === subject)
-      .reduce((sum, t) => sum + t.end_page - t.start_page + 1, 0),
+    pages: tasks.filter((t) => t.book.subject === subject).reduce((sum, t) => sum + t.end_page - t.start_page + 1, 0),
   })).filter((goal) => goal.pages > 0)
 }
 

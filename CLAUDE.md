@@ -21,6 +21,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - [LOCAL_DEV.md](LOCAL_DEV.md) — 로컬 실행·빌드 확인, 자주 나는 문제
 - [DEPLOY.md](DEPLOY.md) — push 기반 자동 배포 설정 (Vercel + GitHub Actions → Supabase)
 - [DESIGN.md](DESIGN.md) — 화면 구성, 레이아웃, 색상 토큰, 컴포넌트 규칙. UI 작업 전에 확인한다.
+- [CONVENTIONS.md](CONVENTIONS.md) — 코드 작성 규칙(이름, 포맷, import, api·훅·컴포넌트 패턴, Edge Function, SQL, Git). 코드를 쓰거나 리뷰하기 전에 확인한다.
 
 서비스 흐름은 SERVICE_FLOW.md에, 화면 구성은 DESIGN.md에 정의한다. 개발 순서와 단계별 계획은 [docs/superpowers/plans/](docs/superpowers/plans/2026-10-27-roadmap.md)에 둔다.
 
@@ -29,6 +30,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 계획과 구현은 따로 한다. 계획을 세운 뒤 구현은 사용자가 시작하라고 할 때 시작한다.
 - 변경이 생기면 작업 단위(계획 수립, 계획의 Task 하나 등)가 끝날 때 `develop`에 커밋한다. push는 사용자가 요청할 때만 한다.
 - 커밋 메시지와 PR 본문에 `Co-Authored-By: Claude …` 같은 Claude 표시 줄을 넣지 않는다.
+- 계획에서 "Subagent + 리뷰"로 정한 Task는 [.claude/agents/](.claude/agents/)의 `implementer`(구현)에게 맡기고, 리뷰는 `task-reviewer`(요구사항·절차·보안)와 `code-reviewer`(성능·로직·스타일)에게 같은 diff로 동시에 맡긴다. 메인 세션은 지시서·보고서·diff 파일로 일을 주고받고, 클라우드 작업과 History 기록은 직접 한다.
 
 ## 작업 기록
 
@@ -81,6 +83,7 @@ Frontend (`Frontend/`):
 npm run dev       # 개발 서버 http://localhost:5173
 npm run build     # tsc -b 타입 체크 + vite build (+ PWA 서비스워커)
 npm run lint      # oxlint
+npm run format    # Prettier로 포맷 (format:check는 확인만)
 ```
 
 Backend (`Backend/`). 개발은 Docker 없이 클라우드의 개발용 Supabase 프로젝트를 쓴다(`npx supabase link` 필요, [LOCAL_DEV.md](LOCAL_DEV.md)):

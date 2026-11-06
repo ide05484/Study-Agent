@@ -23,7 +23,12 @@ export default function ChatPage() {
   return <ChatRoom key={date} date={date} readOnly={date !== today} />
 }
 
-function ChatRoom({ date, readOnly }: { date: string; readOnly: boolean }) {
+interface ChatRoomProps {
+  date: string
+  readOnly: boolean
+}
+
+function ChatRoom({ date, readOnly }: ChatRoomProps) {
   const { messages, sending, error, send } = useChat(date)
   const [draft, setDraft] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -71,7 +76,14 @@ function ChatRoom({ date, readOnly }: { date: string; readOnly: boolean }) {
             disabled={sending || !draft.trim()}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 12h14M12 5l7 7-7 7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M4 12h14M12 5l7 7-7 7"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </button>
         </form>
@@ -80,7 +92,12 @@ function ChatRoom({ date, readOnly }: { date: string; readOnly: boolean }) {
   )
 }
 
-function Bubble({ role, children }: { role: ChatRole; children: string }) {
+interface BubbleProps {
+  role: ChatRole
+  children: string
+}
+
+function Bubble({ role, children }: BubbleProps) {
   return (
     <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 break-words whitespace-pre-wrap ${BUBBLE_CLASS[role]}`}>
       {children}
