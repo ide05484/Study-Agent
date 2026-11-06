@@ -13,6 +13,9 @@
   --accent-soft: #fbe6d6;
   --marker: #f9c99a;
   --danger: #c2362b;
+  /* 카카오 로그인 버튼 전용: 다크 모드에서도 같은 값 */
+  --kakao: #fee500;
+  --on-kakao: rgb(0 0 0 / 0.85);
 
   --heat-0: #ece7e1;
   --heat-1: #fbd9bc;
@@ -54,6 +57,8 @@
   --color-on-accent: var(--on-accent);
   --color-accent-soft: var(--accent-soft);
   --color-danger: var(--danger);
+  --color-kakao: var(--kakao);
+  --color-on-kakao: var(--on-kakao);
 
   --color-heat-0: var(--heat-0);
   --color-heat-1: var(--heat-1);

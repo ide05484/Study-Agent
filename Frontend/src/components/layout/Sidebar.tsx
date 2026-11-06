@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { NavLink } from 'react-router'
+import { signOut } from '../../api/auth.ts'
 import { useChatDates } from '../../hooks/useChat.ts'
 import { formatDateTitle, todayKey } from '../../libs/date.ts'
 import { MENU } from '../../libs/menu.ts'
@@ -69,6 +70,15 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           </ul>
           {error && <p className="p-4 text-center text-muted">목록을 불러오지 못했어요.</p>}
         </section>
+        <div className="mt-4 border-t border-line pt-4">
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            className="flex min-h-11 w-full items-center rounded-[10px] px-3 text-muted"
+          >
+            로그아웃
+          </button>
+        </div>
       </aside>
     </>
   )

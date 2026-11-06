@@ -61,7 +61,15 @@ GitHub 저장소 → Settings → Secrets and variables → Actions → New repo
 
 Supabase 대시보드 → Authentication → URL Configuration
 - Site URL: Vercel 운영 주소(`https://<프로젝트>.vercel.app`)
-- Redirect URLs: 운영 주소, `http://localhost:5173`
+- Redirect URLs: 운영 주소의 `/login`(`https://<프로젝트>.vercel.app/login`), `http://localhost:5173`
+
+### 5. 카카오 로그인
+
+운영 프로젝트도 [LOCAL_DEV.md의 "카카오 로그인 설정"](LOCAL_DEV.md#카카오-로그인-설정)과 같은 순서로 설정한다. 다른 점은 다음과 같다.
+
+- 카카오 "Redirect URI"에는 운영 프로젝트 ref의 주소(`https://<운영 프로젝트 ref>.supabase.co/auth/v1/callback`)를 등록한다.
+- Supabase Redirect URLs에는 운영 도메인의 `/login`을 넣는다.
+- 운영 프로젝트는 Authentication → Providers에서 Email provider를 끈다(검증용 이메일 계정은 개발 프로젝트에만 둔다).
 
 ## 평소 작업 흐름
 
