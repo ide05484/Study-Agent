@@ -28,6 +28,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - 계획과 구현은 따로 한다. 계획을 세운 뒤 구현은 사용자가 시작하라고 할 때 시작한다.
 - 변경이 생기면 작업 단위(계획 수립, 계획의 Task 하나 등)가 끝날 때 `develop`에 커밋한다. push는 사용자가 요청할 때만 한다.
+- 커밋 메시지와 PR 본문에 `Co-Authored-By: Claude …` 같은 Claude 표시 줄을 넣지 않는다.
 
 ## 작업 기록
 

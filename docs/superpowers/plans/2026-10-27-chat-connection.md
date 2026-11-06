@@ -20,7 +20,7 @@
 - LLM 모델은 `_shared/openai.ts`의 `MODEL = "gpt-5.6"` 하나로 관리한다.
 - `db push`, `functions deploy`, `secrets set`, 대시보드에서 계정 만들기처럼 클라우드를 바꾸는 단계는 **사용자 승인 후** 실행한다(단계에 ☁️ 표시).
 - 카카오 앱 키가 있어야 하는 단계는 🔑로 표시한다. 키가 아직 없으면 그 단계만 건너뛰고 History에 "보류"로 남긴 뒤 다음 Task로 간다.
-- 각 Task 끝에서 반드시 커밋한다(사용자 승인됨). push는 하지 않는다. 메시지 끝에 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+- 각 Task 끝에서 반드시 커밋한다(사용자 승인됨). push는 하지 않는다. 커밋 메시지에 `Co-Authored-By` 줄은 넣지 않는다(2026-10-30 사용자 결정).
 - Task가 끝날 때마다 [History](../../../History/README.md) 규칙대로 작업 기록을 남긴다.
 - 이 단계의 범위 밖: 일정 기반 분량 재배분, 채팅으로 교재 추가, 지난 날짜 기록, 카카오톡 메시지 발송(알림 단계).
 
@@ -56,38 +56,61 @@
 **Interfaces:**
 - Produces: `supabase`가 `createClient<Database>`로 타입이 붙은 클라이언트. 클라우드 개발 프로젝트에 테이블·RLS·`handle_new_user` 트리거가 있고, 함수 비밀 값 `OPENAI_API_KEY`가 등록되어 있다. Auth에 검증용 테스트 계정 1개(화면에는 쓰지 않고 Task 6에서 API를 호출할 때만 쓴다).
 
-- [ ] **Step 1: 연결 상태 확인**
+> 2026-10-30 변경: 사용자 결정으로 클라우드 작업은 Supabase MCP로 한다. 단, 함수 비밀 값은 키가 대화에 남지 않도록 CLI(`--project-ref`, link 없이)로 등록한다. 이 환경에서는 CLI 로그인 정보가 PowerShell에서만 읽힌다.
 
-Run (`Backend/`): `npx supabase projects list`
-Expected: 개발 프로젝트 `ishtebcswgyagbbaakpx` 행에 연결 표시(●). 없으면 LOCAL_DEV.md 순서대로 `npx supabase login` → `npx supabase link --project-ref ishtebcswgyagbbaakpx`.
+- [x] **Step 1: 연결 상태 확인**
 
-- [ ] **Step 2: ☁️ 마이그레이션 반영**
+MCP `get_project`, `list_tables`, `list_migrations`로 개발 프로젝트 `ishtebcswgyagbbaakpx`가 `ACTIVE_HEALTHY`이고 테이블·이력이 비어 있는지 확인한다.
 
-Run: `npm run db:push`
-Expected: `Applying migration 20261022082116_init_schema.sql...` 후 `Finished supabase db push.`
+- [x] **Step 2: ☁️ 마이그레이션 반영**
 
-- [ ] **Step 3: ☁️ 함수 비밀 값 등록**
+MCP `apply_migration`으로 `20261022082116_init_schema.sql` 내용을 적용한 뒤, MCP가 적용 시각으로 기록한 이력 버전을 `execute_sql`로 `20261022082116`으로 바꾼다(CLI `db push`와 이력을 맞추기 위해). 테이블 9개 RLS·정책, `on_auth_user_created` 트리거, `get_advisors(security)`를 확인한다.
+보안 어드바이저가 `handle_new_user()` 실행 권한 경고를 내서 새 마이그레이션 `20261030081740_revoke_handle_new_user_execute.sql`을 추가해 같은 방식으로 적용했다.
 
-`Backend/supabase/functions/.env`에 `OPENAI_API_KEY=` 줄이 있는지 확인한다(값은 출력하지 않는다). 그다음
-Run: `npm run secrets:set`
+- [x] **Step 3: ☁️ 함수 비밀 값 등록**
+
+`.env`에서 값이 있는 `OPENAI_API_KEY`, `KAKAO_REST_API_KEY` 줄만 임시 파일로 뽑아 `npx supabase secrets set --env-file <임시 파일> --project-ref ishtebcswgyagbbaakpx`로 등록하고 임시 파일을 지운다(값은 출력하지 않는다).
 Expected: `Finished supabase secrets set.`
 
-- [ ] **Step 4: ☁️ 검증용 테스트 계정 만들기 (사용자)**
+- [x] **Step 4: ☁️ 검증용 테스트 계정 만들기 (사용자)**
 
 카카오 키가 오기 전에도 `chat` 함수를 호출해 볼 수 있게 하는 계정이다. 앱 화면에는 이메일 로그인이 없다.
 Supabase 대시보드 → Authentication → Users → Add user → 이메일·비밀번호 입력, "Auto Confirm User" 체크. 이어서 Table Editor의 `profiles`에 그 사용자 id의 행이 생겼는지 확인한다(트리거 동작 확인). 비밀번호는 저장소 파일에 적지 않는다.
 
-- [ ] **Step 5: DB 타입 생성과 클라이언트 연결**
+- [x] **Step 4.5: ☁️ 해커스 교재 넣기 (2026-10-30 추가, 검증용 계정 완료 / 카카오 계정은 Task 2 Step 8 뒤)**
 
-Run (`Backend/`): `npm run gen:types`
+사용자가 고른 해커스 공무원 교재를 `books`에 넣는다. 지금은 검증용 계정에 넣고, Task 2 Step 8에서 카카오 로그인으로 사용자 행이 생기면 같은 SQL을 그 사용자 id로 한 번 더 실행한다. 저장소 파일로 남기지 않고 Supabase SQL Editor(또는 MCP `execute_sql`)에서 `<USER_ID>`만 바꿔 실행한다. 같은 제목이 이미 있으면 넣지 않으므로 다시 실행해도 중복되지 않는다. 쪽수는 알라딘 상품 정보(2026-10-30 확인) 기준이고, 여러 권 세트는 합계 쪽수로 한 행에 넣는다.
+
+```sql
+insert into public.books (user_id, subject, title, total_pages)
+select '<USER_ID>'::uuid, b.subject::public.subject, b.title, b.total_pages
+from (values
+  ('korean',        '2027 해커스공무원 국어 올인원 기본서', 456),
+  ('korean',        '2027 해커스공무원 신민숙 쉬운국어 한 권으로 끝', 260),
+  ('english',       '2027 해커스공무원 영어 올인원 기본서 (전3권)', 792),
+  ('english',       '2026 해커스공무원 비비안 영어 매일 하프모의고사 20회분', 204),
+  ('public_health', '해커스공무원 최성희 공중보건 기본서 (전2권)', 748),
+  ('public_health', '2025 해커스공무원 최성희 공중보건 실전동형모의고사', 128),
+  ('health_admin',  '해커스공무원 최성희 보건행정 기본서', 476),
+  ('health_admin',  '2025 해커스공무원 최성희 보건행정 실전동형모의고사', 128)
+) as b(subject, title, total_pages)
+where not exists (
+  select 1 from public.books x where x.user_id = '<USER_ID>'::uuid and x.title = b.title
+);
+```
+Expected: `INSERT 0 8` (다시 실행하면 `INSERT 0 0`). 그 계정에 `exam_date`가 있으면 Task 6 Step 3처럼 `plan-generator`를 호출해 분량을 만든다.
+
+- [x] **Step 5: DB 타입 생성과 클라이언트 연결**
+
+Run (`Backend/`): `npx supabase gen types typescript --project-id ishtebcswgyagbbaakpx > ../Frontend/src/interfaces/database.ts` (link 없이 `gen:types`와 같은 결과. MCP `generate_typescript_types`로도 확인 가능)
 `libs/supabase.ts`의 TODO를 지우고 `createClient<Database>(supabaseUrl, supabaseKey)`로 바꾼다(`import type { Database } from '../interfaces/database.ts'`).
 
-- [ ] **Step 6: 빌드로 타입 확인**
+- [x] **Step 6: 빌드로 타입 확인**
 
 Run (`Frontend/`): `npm run build` 그리고 `npm run lint`
 Expected: 둘 다 오류 0. 타입 오류가 나면 `api/`의 해당 쿼리만 고친다(`interfaces/`의 도메인 타입은 유지).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add Frontend/src/interfaces/database.ts Frontend/src/libs/supabase.ts Frontend/src/api
@@ -493,7 +516,7 @@ curl -s -X POST "https://ishtebcswgyagbbaakpx.supabase.co/functions/v1/chat" \
 ```
 Expected: `messages[1].content`가 `USAGE_GUIDE`와 같고 `"logged":false`.
 같은 방식으로 `{"content":""}` → 400 `invalid_content`.
-검증용 계정은 화면에 로그인할 수 없으므로 데이터는 Table Editor로 넣는다: `profiles.exam_date`를 2027-02-27로, `books`에 그 계정 `user_id`로 1행(`health_admin`, "보건행정 기본서", 300쪽)을 넣고, 같은 토큰으로 `plan-generator`를 호출해 오늘 분량을 만든다. 그다음 `{"content":"보건행정 30~70p, 기출 20문제 중 5개 틀림"}` → `"logged":true`, 대시보드 Table Editor에서 `study_logs` 1행(`study_date` = 오늘 한국 날짜), 해당 교재 `current_page = 70`.
+검증용 계정은 화면에 로그인할 수 없으므로 데이터는 Table Editor로 넣는다: `profiles.exam_date`를 2027-02-27로 두고(교재는 Task 1 Step 4.5에서 넣은 해커스 교재 8권), 같은 토큰으로 `plan-generator`를 호출해 오늘 분량을 만든다. 그다음 `{"content":"보건행정 기본서 30~70p, 기출 20문제 중 5개 틀림"}` → `"logged":true`, 대시보드 Table Editor에서 `study_logs` 1행(`study_date` = 오늘 한국 날짜), "해커스공무원 최성희 보건행정 기본서"의 `current_page = 70`. 보건행정 교재가 2권이므로 교재명 없이 "보건행정 30~70p"만 보내면 `book_id`가 비고 진도는 그대로여야 한다(Review Focus 3)는 것도 함께 확인한다.
 
 - [ ] **Step 4: 문서 갱신**
 
@@ -535,10 +558,10 @@ Run (`Frontend/`): `npm run build` 그리고 `npm run lint` → 오류 0
 
 - [ ] **Step 3: 🔑 브라우저 확인** (`npm run dev`, 카카오 로그인)
 
-카카오 키가 아직 없으면 이 Step을 건너뛰고 History에 보류로 남긴다. 키를 받으면 Task 2 Step 8과 함께 확인한다. 로그인 후 공부 설정에서 시험일과 보건행정 교재(300쪽)를 먼저 넣는다.
+카카오 키가 아직 없으면 이 Step을 건너뛰고 History에 보류로 남긴다. 키를 받으면 Task 2 Step 8과 함께 확인한다. 로그인 후 공부 설정에서 시험일을 넣는다(교재는 Task 1 Step 4.5의 SQL을 카카오 계정 id로 실행해 넣는다).
 
 1. "이거 어떻게 써?" → 사용법 안내 말풍선.
-2. "보건행정 30~70p, 기출 20문제 중 5개 틀림" → 진도율이 들어간 답, 상단 오늘의 분량에서 보건행정 항목 상태가 바뀜(펼쳐서 취소선 확인).
+2. "보건행정 기본서 30~70p, 기출 20문제 중 5개 틀림" → 진도율이 들어간 답, 상단 오늘의 분량에서 보건행정 항목 상태가 바뀜(펼쳐서 취소선 확인).
 3. "영어 성적이 안 올라" → 공부법 답변, 컨텍스트에 없는 점수를 지어내지 않는지 확인.
 4. "국어 봉투모의고사 120쪽 추가" → `BOOK_ADD_PENDING` 문구, `books`에 행이 생기지 않음.
 5. 새로고침 → 오늘 대화가 그대로 보이고, 사이드바 채팅방 목록에 오늘이 있음.
