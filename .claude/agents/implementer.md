@@ -44,7 +44,7 @@ model: sonnet
 
 ## 확인
 
-- Frontend 변경: `Frontend/`에서 `npm run build`, `npm run lint`. 둘 다 오류 0이어야 한다. 기존 500kB 청크 경고는 알려진 경고다.
+- Frontend 변경: `Frontend/`에서 `npm run format`을 돌린 뒤 `npm run format:check`, `npm run build`, `npm run lint`. 모두 오류 0이어야 한다. 기존 500kB 청크 경고는 알려진 경고다.
 - Backend Edge Function 변경: `Backend/`에서 `npm test`(있으면). 함수 진입점은 `npx deno check --no-lock --config supabase/functions/<함수>/deno.json supabase/functions/<함수>/index.ts`.
 - 지시서가 TDD(실패하는 테스트 먼저)를 요구하면 순서를 지킨다. 실패 출력과 통과 출력을 보고서에 남긴다.
 - 작업 중에는 바꾼 부분의 테스트만 돌린다. 커밋 전에 전체를 한 번 돌린다.

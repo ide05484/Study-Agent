@@ -83,6 +83,7 @@ Frontend (`Frontend/`):
 npm run dev       # 개발 서버 http://localhost:5173
 npm run build     # tsc -b 타입 체크 + vite build (+ PWA 서비스워커)
 npm run lint      # oxlint
+npm run format    # Prettier로 포맷 (format:check는 확인만)
 ```
 
 Backend (`Backend/`). 개발은 Docker 없이 클라우드의 개발용 Supabase 프로젝트를 쓴다(`npx supabase link` 필요, [LOCAL_DEV.md](LOCAL_DEV.md)):

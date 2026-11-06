@@ -53,7 +53,7 @@ Prettier로 맞춘다(`Frontend/.prettierrc.json`). 커밋 전에 `npm run forma
 - 한 줄은 120자(`printWidth`)를 넘기지 않는다. 120자 안에서는 다음 기준으로 판단한다.
   - 한 줄로 두는 게 로직을 이해하기 쉬우면 굳이 나누지 않는다.
   - 나누는 게 읽기 좋으면 나눈다. 예: 조건이 여러 개인 식, 단계가 많은 쿼리 체인, 인자가 많은 호출.
-- Prettier가 나누지 못하는 긴 주석과 문자열은 직접 나눈다.
+- Prettier가 나누지 못하는 긴 주석은 직접 나눈다. className, SVG path처럼 이어 붙이지 않고는 나눌 수 없는 문자열은 120자를 넘어도 그대로 둔다(3.8).
 - 자동 생성 파일(`src/interfaces/database.ts`)은 포맷하지 않는다(`.prettierignore`).
 
 ### 3.2 파일과 폴더
@@ -203,13 +203,6 @@ Prettier로 맞춘다(`Frontend/.prettierrc.json`). 커밋 전에 `npm run forma
 
 ## 정리 대상
 
-확정한 규칙과 어긋나는 기존 코드다. 2026-11-06 기준이며, 고치면 이 목록에서 지운다.
+확정한 규칙과 어긋나는 기존 코드다. 고치면 이 목록에서 지운다. Frontend 항목은 2026-11-06 정리 작업에서 모두 고쳤다(History 참고).
 
-- **훅 반환 타입 없음**: `hooks/useBooks.ts`, `hooks/useChat.ts`(`useChat`, `useChatDates`), `hooks/useDashboard.ts`, `hooks/useTodayTasks.ts`
-- **인라인 props 타입**: `components/chat/TodayPlan.tsx`, `components/dashboard/StudyHeatmap.tsx`, `components/dashboard/SubjectProgressList.tsx`
-- **화면에 나갈 수 있는 합니다체 문구**: `api/plan.ts:8`, `hooks/useProfile.ts:36`, `libs/errors.ts:6`, `libs/supabase.ts:16`
-- **120자를 넘는 줄**: `api/auth.ts:4`, `components/chat/TodayPlan.tsx:12,18`, `components/dashboard/SubjectProgressList.tsx:7`, `components/layout/Sidebar.tsx:44`, `libs/supabase.ts:8`, `pages/ChatPage.tsx:57,69`
-- **`as unknown as` 이유 주석 없음**: `api/study.ts:37` (조인 결과 타입)
-- **실패가 보이지 않는 `void` 호출**: `components/layout/Sidebar.tsx`의 `void signOut()` (Task 2 리뷰 Minor)
-- **페이지·컴포넌트에서 `api/` 직접 호출 (3.6)**: `pages/LoginPage.tsx`의 `signInWithKakao`, `components/layout/Sidebar.tsx`의 `signOut`
 - **템플릿 코드**: `Backend/supabase/functions/chat/index.ts`, `daily-briefing/index.ts`의 `console.log`와 영어 주석 (Task 6에서 교체 예정)
