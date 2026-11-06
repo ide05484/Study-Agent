@@ -134,7 +134,7 @@ git commit -m "chore: 개발 프로젝트 DB 타입 연결"
 
 - [x] **Step 1: `api/auth.ts`와 `useSession` 구현**
 
-`signInWithKakao`는 ``supabase.auth.signInWithOAuth({ provider: 'kakao', options: { redirectTo: `${window.location.origin}/login` } })``. 돌아오는 곳을 `/login`으로 두는 이유: 취소·오류로 돌아오면 URL의 `error` 값을 로그인 화면이 바로 읽고, 성공하면 로그인 화면이 `/`로 보낸다. `scopes`는 지정하지 않는다(Step 8에서 KOE205가 나면 그때 `'profile_nickname profile_image'`로 지정).
+`signInWithKakao`는 ``supabase.auth.signInWithOAuth({ provider: 'kakao', options: { redirectTo: `${window.location.origin}/login` } })``. 돌아오는 곳을 `/login`으로 두는 이유: 취소·오류로 돌아오면 URL의 `error` 값을 로그인 화면이 바로 읽고, 성공하면 로그인 화면이 `/`로 보낸다. `scopes`는 지정하지 않는다. (2026-11-06 수정: Supabase는 `scopes`를 기본 항목 `account_email profile_image profile_nickname` 뒤에 덧붙이기만 하므로 `account_email`을 뺄 수 없다. KOE205는 카카오 앱을 개인 개발자 비즈 앱으로 전환하고 이메일을 선택 동의로 두어 해결한다.)
 `useSession`은 마운트 때 `getSession()`으로 초기값을 정하고 `onSessionChange`로 갱신한다.
 
 - [x] **Step 2: 라우터와 가드**
@@ -168,7 +168,7 @@ git commit -m "chore: 개발 프로젝트 DB 타입 연결"
   1. [Kakao Developers](https://developers.kakao.com)에서 앱 만들기
   2. 앱 설정 → 앱 → 플랫폼 키 → REST API 키 확인(= Client ID). 같은 화면의 "카카오 로그인 Redirect URI"에 `https://ishtebcswgyagbbaakpx.supabase.co/auth/v1/callback` 등록
   3. 같은 키의 "카카오 로그인 Client Secret" 확인(= Client Secret)하고 활성화
-  4. 제품 설정 → 카카오 로그인 → 사용 설정 ON, 동의항목에 `profile_nickname`, `profile_image` 설정 (`account_email`은 비즈 앱만 가능하므로 받지 않는다)
+  4. 제품 설정 → 카카오 로그인 → 사용 설정 ON, 동의항목에 `profile_nickname`, `profile_image` 설정 (`account_email`은 비즈 앱만 가능하므로 받지 않는다) — 2026-11-06 수정: 개인 개발자 비즈 앱 전환 후 `account_email` 선택 동의도 설정해야 한다. 최신 순서는 LOCAL_DEV.md
   5. Supabase 대시보드 → Authentication → Providers → Kakao: Enabled, Client ID·Secret 입력, "Allow users without an email" ON
   6. Authentication → URL Configuration: Site URL `http://localhost:5173`, Redirect URLs에 `http://localhost:5173/login`
   - 키와 Secret은 Supabase 대시보드에만 넣고 저장소 파일에는 적지 않는다.
@@ -184,7 +184,7 @@ Run (`Frontend/`): `npm run build` 그리고 `npm run lint` → 오류 0.
 Step 6의 카카오 설정을 마친 뒤:
 1. 카카오 로그인 → 동의 → `/`로 이동. Table Editor `profiles`에 새 사용자 행 생성.
 2. 로그아웃 → 다시 로그인 → 동의 화면에서 취소 → `/login`에 실패 문구.
-3. 카카오 화면에 KOE205(설정하지 않은 동의항목)가 나오면 Step 1의 `scopes`를 지정하고 다시 확인한다.
+3. 카카오 화면에 KOE205(설정하지 않은 동의항목)가 나오면 카카오 앱을 개인 개발자 비즈 앱으로 전환하고 `account_email`을 선택 동의로 설정한다(`scopes` 지정으로는 해결되지 않음, 2026-11-06 확인). KOE006이 나오면 Supabase Client ID와 같은 REST API 키에 Redirect URI가 등록되어 있는지 본다.
 4. 공부 설정에서 시험일 저장 성공, 헤더 D-day 표시.
 키가 아직 없으면 이 Step을 건너뛰고 History에 보류로 남긴다.
 
