@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Navigate } from 'react-router'
-import { signInWithKakao } from '../api/auth.ts'
+import { useKakaoLogin } from '../hooks/useAuth.ts'
 import { useSession } from '../hooks/useSession.ts'
 
 // 카카오 로그인에서 취소·오류로 돌아오면 URL의 search 또는 hash에 error가 실린다
@@ -12,20 +12,14 @@ function hasAuthError(): boolean {
 
 export default function LoginPage() {
   const { session, loading } = useSession()
-  const [redirecting, setRedirecting] = useState(false)
-  const [failed, setFailed] = useState(hasAuthError)
+  const { redirecting, error, login } = useKakaoLogin()
+  const [urlError, setUrlError] = useState(hasAuthError)
 
   if (session) return <Navigate to="/" replace />
 
-  const handleLogin = async () => {
-    setRedirecting(true)
-    setFailed(false)
-    try {
-      await signInWithKakao()
-    } catch {
-      setRedirecting(false)
-      setFailed(true)
-    }
+  const handleLogin = () => {
+    setUrlError(false)
+    void login()
   }
 
   return (
@@ -49,7 +43,7 @@ export default function LoginPage() {
           </svg>
           카카오 로그인
         </button>
-        {failed && (
+        {(urlError || error) && (
           <p role="alert" className="mt-3 text-center text-danger">
             로그인하지 못했어요. 다시 시도해 주세요.
           </p>

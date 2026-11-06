@@ -9,9 +9,13 @@ function pagesLabel(task: DailyTaskWithBook): string {
   return task.start_page === task.end_page ? `${task.start_page}쪽` : `${task.start_page}–${task.end_page}쪽`
 }
 
+interface TodayPlanProps {
+  date: string
+}
+
 // 오늘 채팅방 상단에 고정되는 오늘의 분량. 채팅을 가리지 않도록 기본은 한 줄로 접혀 있고,
 // 접힌 상태에서도 아직 안 한 첫 분량을 형광펜으로 보여준다
-export default function TodayPlan({ date }: { date: string }) {
+export default function TodayPlan({ date }: TodayPlanProps) {
   const { tasks, error } = useTodayTasks(date)
   const [open, setOpen] = useState(false)
 

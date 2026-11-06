@@ -23,7 +23,12 @@ export default function ChatPage() {
   return <ChatRoom key={date} date={date} readOnly={date !== today} />
 }
 
-function ChatRoom({ date, readOnly }: { date: string; readOnly: boolean }) {
+interface ChatRoomProps {
+  date: string
+  readOnly: boolean
+}
+
+function ChatRoom({ date, readOnly }: ChatRoomProps) {
   const { messages, sending, error, send } = useChat(date)
   const [draft, setDraft] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -87,7 +92,12 @@ function ChatRoom({ date, readOnly }: { date: string; readOnly: boolean }) {
   )
 }
 
-function Bubble({ role, children }: { role: ChatRole; children: string }) {
+interface BubbleProps {
+  role: ChatRole
+  children: string
+}
+
+function Bubble({ role, children }: BubbleProps) {
   return (
     <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 break-words whitespace-pre-wrap ${BUBBLE_CLASS[role]}`}>
       {children}

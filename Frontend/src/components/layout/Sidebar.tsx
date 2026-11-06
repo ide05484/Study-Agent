@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { NavLink } from 'react-router'
-import { signOut } from '../../api/auth.ts'
+import { useSignOut } from '../../hooks/useAuth.ts'
 import { useChatDates } from '../../hooks/useChat.ts'
 import { formatDateTitle, todayKey } from '../../libs/date.ts'
 import { MENU } from '../../libs/menu.ts'
@@ -19,6 +19,7 @@ function linkClass({ isActive }: { isActive: boolean }): string {
 // 왼쪽에서 밀려 나오는 메뉴: 현재 공부상태 / 공부 설정 변경 / 채팅방 목록(일자별)
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const { dates, error } = useChatDates(open)
+  const { error: signOutError, signOut } = useSignOut()
   const today = todayKey()
 
   useEffect(() => {
@@ -78,6 +79,11 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           >
             로그아웃
           </button>
+          {signOutError && (
+            <p className="px-3 pt-1 text-sm text-danger" role="alert">
+              {signOutError}
+            </p>
+          )}
         </div>
       </aside>
     </>

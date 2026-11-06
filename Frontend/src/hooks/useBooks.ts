@@ -5,8 +5,18 @@ import type { Book, NewBook } from '../interfaces/study.ts'
 import { toErrorMessage } from '../libs/errors.ts'
 import { describePlanResult } from '../libs/plan.ts'
 
+export interface BooksState {
+  books: Book[]
+  loading: boolean
+  error: string | null
+  notice: string | null
+  // 성공하면 true. 실패 사유는 error로 노출한다
+  add: (input: NewBook) => Promise<boolean>
+  remove: (id: string) => Promise<void>
+}
+
 // 공부 설정 화면의 남은 공부 분량(교재) 관리. 추가·삭제할 때마다 계획을 다시 나눈다
-export function useBooks() {
+export function useBooks(): BooksState {
   const [books, setBooks] = useState<Book[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

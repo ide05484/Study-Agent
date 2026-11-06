@@ -14,8 +14,12 @@ const LEVEL_CLASSES: Record<HeatLevel, string> = {
 
 const LEVELS: HeatLevel[] = [0, 1, 2, 3, 4]
 
+interface StudyHeatmapProps {
+  days: HeatDay[]
+}
+
 // GitHub 잔디처럼 하루 한 칸. 세로 7칸(월~일) × 가로 주 단위, 달성률에 따라 heat-0~4
-export default function StudyHeatmap({ days }: { days: HeatDay[] }) {
+export default function StudyHeatmap({ days }: StudyHeatmapProps) {
   return (
     <div>
       <div

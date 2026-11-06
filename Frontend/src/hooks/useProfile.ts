@@ -33,7 +33,7 @@ export function useProfile(): ProfileState {
 
   const saveExamDate = useCallback(
     async (examDate: string | null) => {
-      if (!profile) throw new Error('로그인이 필요합니다.')
+      if (!profile) throw new Error('로그인이 필요해요.')
       await updateExamDate(profile.id, examDate)
       setProfile({ ...profile, exam_date: examDate })
       try {

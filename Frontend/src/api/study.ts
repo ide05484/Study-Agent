@@ -34,6 +34,7 @@ export async function fetchDailyTasks(from: string, to: string): Promise<DailyTa
     .gte('task_date', from)
     .lte('task_date', to)
   if (error) throw error
+  // supabase-js가 조인 별칭(book:books(...))을 배열로 추론해서, 단일 객체인 DailyTaskWithBook으로 바꾼다
   return data as unknown as DailyTaskWithBook[]
 }
 

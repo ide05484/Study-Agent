@@ -37,7 +37,7 @@ export interface DashboardData {
   subjects: SubjectProgress[]
 }
 
-export function useDashboard() {
+export function useDashboard(): { data: DashboardData | null; error: string | null } {
   const [data, setData] = useState<DashboardData | null>(null)
   const [error, setError] = useState<string | null>(null)
 

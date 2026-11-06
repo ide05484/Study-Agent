@@ -5,7 +5,7 @@ import { toErrorMessage } from '../libs/errors.ts'
 import { SUBJECTS } from '../libs/subjects.ts'
 
 // 채팅방 상단 "오늘의 분량": date 하루의 계획을 과목 순서대로
-export function useTodayTasks(date: string) {
+export function useTodayTasks(date: string): { tasks: DailyTaskWithBook[] | null; error: string | null } {
   const [tasks, setTasks] = useState<DailyTaskWithBook[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
