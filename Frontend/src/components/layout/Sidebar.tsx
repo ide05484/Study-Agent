@@ -19,8 +19,13 @@ function linkClass({ isActive }: { isActive: boolean }): string {
 // 왼쪽에서 밀려 나오는 메뉴: 현재 공부상태 / 공부 설정 변경 / 채팅방 목록(일자별)
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const { dates, error } = useChatDates(open)
-  const { error: signOutError, signOut } = useSignOut()
+  const { signingOut, error: signOutError, signOut, clearError } = useSignOut()
   const today = todayKey()
+
+  // 사이드바를 닫으면 지난 로그아웃 오류를 지운다
+  useEffect(() => {
+    if (!open) clearError()
+  }, [open, clearError])
 
   useEffect(() => {
     if (!open) return
@@ -75,7 +80,8 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           <button
             type="button"
             onClick={() => void signOut()}
-            className="flex min-h-11 w-full items-center rounded-[10px] px-3 text-muted"
+            disabled={signingOut}
+            className="flex min-h-11 w-full items-center rounded-[10px] px-3 text-muted disabled:opacity-50"
           >
             로그아웃
           </button>

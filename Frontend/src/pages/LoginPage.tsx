@@ -43,7 +43,7 @@ export default function LoginPage() {
           </svg>
           카카오 로그인
         </button>
-        {(urlError || error) && (
+        {(urlError || error !== null) && (
           <p role="alert" className="mt-3 text-center text-danger">
             로그인하지 못했어요. 다시 시도해 주세요.
           </p>
