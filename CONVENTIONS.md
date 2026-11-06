@@ -8,7 +8,7 @@
 
 이 문서는 위 문서에 없는 코드 작성 규칙을 다룬다. 겹치는 내용은 링크만 둔다.
 
-**(제안)** 표시는 기존 코드가 두 가지 방식으로 섞여 있어 하나로 정하자고 제안한 항목이다. 확정하면 표시를 지운다. 확정한 규칙과 다른 기존 코드는 맨 아래 "정리 대상"에 모아 둔다.
+2026-11-06 사용자가 포매터, 줄 길이, 훅 반환 타입, props 타입, 오류 문구 말투를 확정했다(맨 아래 "결정 기록").
 
 ---
 
@@ -45,12 +45,16 @@
 
 ### 3.1 포맷
 
-포매터는 아직 없다. 기존 코드는 아래 형식으로 맞춰져 있다.
+Prettier로 맞춘다(`Frontend/.prettierrc.json`). 커밋 전에 `npm run format`을 돌린다. `npm run format:check`로 확인할 수 있다.
 
 - 들여쓰기 2칸, 작은따옴표(`'`), 세미콜론 없음
 - 여러 줄 객체·배열·인자 끝에 쉼표
-- 한 줄 최대 120자 **(제안)**
 - JSX 속성 값은 큰따옴표(`className="..."`)
+- 한 줄은 120자(`printWidth`)를 넘기지 않는다. 120자 안에서는 다음 기준으로 판단한다.
+  - 한 줄로 두는 게 로직을 이해하기 쉬우면 굳이 나누지 않는다.
+  - 나누는 게 읽기 좋으면 나눈다. 예: 조건이 여러 개인 식, 단계가 많은 쿼리 체인, 인자가 많은 호출.
+- Prettier가 나누지 못하는 긴 주석과 문자열은 직접 나눈다.
+- 자동 생성 파일(`src/interfaces/database.ts`)은 포맷하지 않는다(`.prettierignore`).
 
 ### 3.2 파일과 폴더
 
@@ -81,7 +85,7 @@
 - `catch (e)`의 `e`는 `unknown`으로 다루고, 화면에 보일 문구는 `toErrorMessage(e)`로 만든다.
 - `as`는 Supabase 쿼리 결과를 도메인 타입으로 바꿀 때만 쓴다. `as unknown as`, `!`(non-null 단언)는 이유를 주석으로 남길 때만 쓴다.
 - 객체 모양은 `interface`로 쓴다. 합집합, `Pick`/`Omit` 조합, 함수 타입은 `type`으로 쓴다.
-- 공개 함수(export)에는 반환 타입을 적는다. 훅도 같다 **(제안)**.
+- 공개 함수(export)에는 반환 타입을 적는다. 훅도 같다. 훅의 반환 객체가 크면 `interface XxxState`로 선언한다(`ProfileState`처럼).
 - enum은 쓰지 않는다. 문자열 리터럴 합집합과 `as const` 객체를 쓴다.
 
 ### 3.5 api 계층 (`api/`)
@@ -121,7 +125,7 @@
 
 ### 3.7 컴포넌트와 페이지
 
-- props 타입은 컴포넌트 위에 `interface XxxProps`로 선언한다. props가 하나뿐이어도 같다 **(제안)**.
+- props 타입은 컴포넌트 위에 `interface XxxProps`로 선언한다. props가 하나뿐이어도 같다. 인라인 타입(`{ date }: { date: string }`)은 쓰지 않는다.
 - 훅은 모두 호출한 뒤에 조건부 `return`을 둔다.
 - 로딩, 빈 상태, 오류 상태를 각각 보이게 한다. 데이터가 아직 없으면 `null`을 돌려도 된다.
 - 목록 `key`는 데이터 id를 쓴다. 배열 index는 쓰지 않는다.
@@ -140,7 +144,8 @@
 ### 3.9 문구
 
 - 화면에 보이는 문구는 해요체로 쓴다(coach-tone.md). 오류 문구도 같다. 예: "목록을 불러오지 못했어요."
-- 개발자만 보는 문구(환경 변수 누락처럼 화면에 나가지 않는 throw)는 말투를 따지지 않는다.
+- `throw new Error('...')`의 문구도 `toErrorMessage`를 거쳐 화면에 나갈 수 있으면 해요체로 쓴다.
+- 개발자만 보는 문구(환경 변수 누락처럼 앱 시작 때 멈추는 throw)는 말투를 따지지 않는다.
 
 ## 4. Backend (Supabase Edge Functions, Deno)
 
@@ -186,19 +191,19 @@
 
 ---
 
-## 정해야 할 것
+## 결정 기록
 
-| 항목 | 지금 | 제안 |
+| 날짜 | 항목 | 결정 |
 |---|---|---|
-| Frontend 포매터 | 없음 | Prettier 도입(`singleQuote`, `semi: false`, `printWidth: 120`), `npm run format` 추가. 들이면 전체 파일을 한 번 포맷한다 |
-| Frontend 한 줄 길이 | 120자를 넘는 줄이 있음 | 120자 |
-| 훅 반환 타입 | 적은 훅과 안 적은 훅이 섞임 | 모두 적는다 (3.4) |
-| props 타입 | 인라인 `{ date: string }`과 `XxxProps`가 섞임 | 모두 `XxxProps` (3.7) |
-| 오류 문구 말투 | 합니다체와 해요체가 섞임 | 화면에 나가는 문구는 해요체 (3.9) |
+| 2026-11-06 | Frontend 포매터 | Prettier 도입 (3.1) |
+| 2026-11-06 | 한 줄 길이 | 120자 안에서, 한 줄이 이해에 도움이 되면 두고 나누는 게 읽기 좋으면 나눈다 (3.1) |
+| 2026-11-06 | 훅 반환 타입 | 적는다 (3.4) |
+| 2026-11-06 | props 타입 | `XxxProps` 인터페이스 (3.7) |
+| 2026-11-06 | 오류 문구 말투 | 화면에 나가는 문구는 해요체 (3.9) |
 
-## 정리 대상 (확정 후 고칠 곳)
+## 정리 대상
 
-위 규칙을 확정하면 아래를 한 번에 고친다. 2026-11-06 기준이다.
+확정한 규칙과 어긋나는 기존 코드다. 2026-11-06 기준이며, 고치면 이 목록에서 지운다.
 
 - **훅 반환 타입 없음**: `hooks/useBooks.ts`, `hooks/useChat.ts`(`useChat`, `useChatDates`), `hooks/useDashboard.ts`, `hooks/useTodayTasks.ts`
 - **인라인 props 타입**: `components/chat/TodayPlan.tsx`, `components/dashboard/StudyHeatmap.tsx`, `components/dashboard/SubjectProgressList.tsx`
@@ -206,4 +211,5 @@
 - **120자를 넘는 줄**: `api/auth.ts:4`, `components/chat/TodayPlan.tsx:12,18`, `components/dashboard/SubjectProgressList.tsx:7`, `components/layout/Sidebar.tsx:44`, `libs/supabase.ts:8`, `pages/ChatPage.tsx:57,69`
 - **`as unknown as` 이유 주석 없음**: `api/study.ts:37` (조인 결과 타입)
 - **실패가 보이지 않는 `void` 호출**: `components/layout/Sidebar.tsx`의 `void signOut()` (Task 2 리뷰 Minor)
+- **페이지·컴포넌트에서 `api/` 직접 호출 (3.6)**: `pages/LoginPage.tsx`의 `signInWithKakao`, `components/layout/Sidebar.tsx`의 `signOut`
 - **템플릿 코드**: `Backend/supabase/functions/chat/index.ts`, `daily-briefing/index.ts`의 `console.log`와 영어 주석 (Task 6에서 교체 예정)
