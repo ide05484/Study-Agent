@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react'
+import { addDays, todayKey } from '../../libs/date.ts'
 import { toErrorMessage } from '../../libs/errors.ts'
-import { buttonClass, fieldClass } from '../ui/classes.ts'
+import { buttonClass } from '../ui/classes.ts'
+import DatePicker from '../ui/DatePicker.tsx'
 
 interface ExamDateFormProps {
   examDate: string | null
@@ -33,13 +35,13 @@ export default function ExamDateForm({ examDate, disabled, onSave }: ExamDateFor
       <label className="text-sm font-semibold" htmlFor="exam-date">
         시험일
       </label>
-      <input
+      <DatePicker
         id="exam-date"
-        type="date"
-        className={fieldClass}
+        label="시험일 고르기"
         value={draft}
-        onChange={(e) => setDraft(e.target.value)}
+        minDate={addDays(todayKey(), 1)}
         disabled={disabled}
+        onChange={setDraft}
       />
       <button type="submit" className={buttonClass} disabled={disabled || saving || draft === (examDate ?? '')}>
         저장

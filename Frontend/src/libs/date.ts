@@ -55,6 +55,23 @@ export function formatDateTitle(key: string): string {
   return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일 (${WEEKDAYS[d.getUTCDay()]})`
 }
 
+// 예) 2027년 2월 27일 (토)
+export function formatFullDate(key: string): string {
+  return `${key.slice(0, 4)}년 ${formatDateTitle(key)}`
+}
+
+// 달력(react-calendar)은 브라우저 시간대의 Date를 다루므로, 날짜 키와는 연·월·일 값으로만 바꾼다
+export function keyToLocalDate(key: string): Date {
+  const [year, month, day] = key.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
+export function localDateToKey(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${date.getFullYear()}-${month}-${day}`
+}
+
 export function formatDDay(examDate: string | null): string {
   if (!examDate) return 'D-?'
   const days = diffDays(todayKey(), examDate)
