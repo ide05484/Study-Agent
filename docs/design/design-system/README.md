@@ -95,7 +95,7 @@
 ## 구현과 연결
 
 - 코드에서는 Tailwind v4 색상 이름을 쓴다: `bg`→`bg-bg`, `text`→`text-fg`, `text-muted`→`text-muted`, `border`→`border-line`. 토큰 값은 `Frontend/src/index.css`의 CSS 변수와 같다.
-- 컴포넌트 미리보기는 지금 코드(`Frontend/src/components/`)를 보고 손으로 다시 그린 정적 화면이다. 코드에는 아직 `Button` 같은 공용 컴포넌트가 없고 `components/ui/classes.ts`의 클래스 묶음을 쓴다.
+- 컴포넌트 미리보기는 지금 코드(`Frontend/src/components/`)를 보고 손으로 다시 그린 정적 화면이다. 공용 컴포넌트는 `Frontend/src/components/ui/`(`Button`, `TextField`, `Section` 등)에 있다.
 
 ## 파일
 

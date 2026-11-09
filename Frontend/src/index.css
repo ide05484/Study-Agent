@@ -28,9 +28,10 @@
 }
 
 /* 다크 값은 아래 두 블록이 같다. 하나를 고치면 다른 하나도 고친다
-   (.theme-dark는 시스템 설정과 상관없이 다크로 보이게 할 때 요소에 붙인다) */
+   (.theme-light·.theme-dark는 시스템 설정과 상관없이 그 테마로 보이게 할 때 요소에 붙인다.
+   미디어 블록의 :not(.theme-light)는 <html class="theme-light">일 때 다크 OS가 라이트를 덮지 못하게 한다) */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not(.theme-light) {
     --bg: #1c1917;
     --surface: #262220;
     --text: #ede9e5;

@@ -37,7 +37,6 @@
 | 불리언을 돌려주는 함수 | `is`/`has` 접두사 | `isDateKey`, `hasAuthError` |
 | 이벤트 처리 함수 (컴포넌트 안) | `handle` + 동작 | `handleSubmit`, `handleLogin` |
 | 콜백 props | `on` + 동작 | `onAdd`, `onCancel`, `onMenuClick` |
-| Tailwind 클래스 묶음 상수 | camelCase + `Class` | `sectionClass`, `buttonClass` |
 
 - 로컬 변수는 camelCase로 쓴다. DB에 넣는 객체 키만 snake_case로 쓴다. 예: `const user_id = await requireUserId()`처럼 insert에 바로 펼칠 때.
 
@@ -62,7 +61,7 @@ Prettier로 맞춘다(`Frontend/.prettierrc.json`). 커밋 전에 `npm run forma
 |---|---|---|
 | `pages/` | `XxxPage.tsx` (PascalCase) | `export default function XxxPage()` |
 | `components/<영역>/` | `ComponentName.tsx` (PascalCase) | `export default function ComponentName()` |
-| `components/ui/` | `classes.ts` 등 (camelCase) | named export |
+| `components/ui/` | `ComponentName.tsx` (PascalCase) | `export default function ComponentName()` |
 | `hooks/` | `useXxx.ts` | named export `export function useXxx()` |
 | `api/` | 도메인 이름 소문자 (`study.ts`, `chat.ts`) | named export `export async function` |
 | `interfaces/` | 도메인 이름 camelCase (`mockExam.ts`) | `export interface`, `export type` |
@@ -139,7 +138,7 @@ Prettier로 맞춘다(`Frontend/.prettierrc.json`). 커밋 전에 `npm run forma
 
 - 유틸리티 클래스만 쓰고, 색상은 토큰 클래스만 쓴다.
 - 클래스 이름을 문자열로 이어 붙여 만들지 않는다(`bg-heat-${n}` ✕). 조건부로 붙일 때는 전체 이름을 적는다(`${open ? '-rotate-135' : ''}`).
-- 여러 화면에서 반복되는 묶음은 `components/ui/classes.ts`에 둔다.
+- 여러 화면에서 반복되는 버튼·입력·섹션 모양은 `components/ui/`의 컴포넌트(`Button`, `TextField`, `Section` 등)를 쓴다.
 
 ### 3.9 문구
 
