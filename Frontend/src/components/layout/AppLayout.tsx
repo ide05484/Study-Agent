@@ -31,7 +31,7 @@ export default function AppLayout() {
 
 // 채팅 화면은 채팅방 날짜, 메뉴 화면은 메뉴 이름, 그 외 주소는 "페이지 없음"
 function pageTitle(pathname: string): string {
-  const menu = MENU.find((item) => item.to === pathname)
+  const menu = MENU.find((item) => matchPath({ path: item.to, end: true }, pathname))
   if (menu) return menu.label
   if (pathname === '/') return formatDateTitle(todayKey())
   const date = matchPath('/chat/:date', pathname)?.params.date
