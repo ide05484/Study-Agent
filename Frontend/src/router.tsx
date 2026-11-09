@@ -3,6 +3,7 @@ import RequireAuth from './components/layout/RequireAuth.tsx'
 import ChatPage from './pages/ChatPage.tsx'
 import DashboardPage from './pages/DashboardPage.tsx'
 import LoginPage from './pages/LoginPage.tsx'
+import NotFoundPage from './pages/NotFoundPage.tsx'
 import SettingsPage from './pages/SettingsPage.tsx'
 
 export const router = createBrowserRouter([
@@ -15,6 +16,7 @@ export const router = createBrowserRouter([
       { path: 'chat/:date', element: <ChatPage /> },
       { path: 'dashboard', element: <DashboardPage /> },
       { path: 'settings', element: <SettingsPage /> },
+      { path: '*', element: <NotFoundPage /> },
     ],
   },
 ])

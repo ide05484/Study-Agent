@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Navigate } from 'react-router'
+import Mascot from '../components/ui/Mascot.tsx'
 import { useKakaoLogin } from '../hooks/useAuth.ts'
 import { useSession } from '../hooks/useSession.ts'
 
@@ -24,9 +25,10 @@ export default function LoginPage() {
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-[480px] flex-col justify-between bg-bg px-6 py-12">
-      <header className="pt-16">
+      <header className="flex flex-col items-start gap-5 pt-10">
+        <Mascot mood="cheer" size={140} />
         <h1 className="text-[26px] font-bold">보건직 합격 코치</h1>
-        <p className="mt-3 text-muted">오늘 공부할 분량을 정해 드리고, 공부 기록과 고민을 같이 봐요.</p>
+        <p className="text-muted">코치 합격이가 오늘 공부할 분량을 정해 드리고, 공부 기록과 고민을 같이 봐요.</p>
       </header>
       <div>
         <button
