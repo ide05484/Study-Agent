@@ -28,7 +28,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 작업 방식
 
 - 계획과 구현은 따로 한다. 계획을 세운 뒤 구현은 사용자가 시작하라고 할 때 시작한다.
-- 변경이 생기면 작업 단위(계획 수립, 계획의 Task 하나 등)가 끝날 때 `develop`에 커밋한다. push는 사용자가 요청할 때만 한다.
+- 작업은 `develop`에서 딴 `feature/<snake_case_이름>` 브랜치에서 한다. `develop`에 직접 커밋하지 않는다. 지금 브랜치가 `develop`이나 `main`이면, 파일을 고치기 전에 사용자에게 브랜치 이름을 묻고 만든다.
+- 변경이 생기면 작업 단위(계획 수립, 계획의 Task 하나 등)가 끝날 때 그 feature 브랜치에 커밋한다. push와 `develop` 병합은 사용자가 요청할 때만 한다.
 - 커밋 메시지와 PR 본문에 `Co-Authored-By: Claude …` 같은 Claude 표시 줄을 넣지 않는다.
 - 계획에서 "Subagent + 리뷰"로 정한 Task는 [.claude/agents/](.claude/agents/)의 `implementer`(구현)에게 맡기고, 리뷰는 `task-reviewer`(요구사항·절차·보안)와 `code-reviewer`(성능·로직·스타일)에게 같은 diff로 동시에 맡긴다. 메인 세션은 지시서·보고서·diff 파일로 일을 주고받고, 클라우드 작업과 History 기록은 직접 한다.
 
@@ -36,7 +37,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 계획 수립·변경, 계획 Task 완료, 설계 결정, 클라우드 작업, 문제 해결을 할 때마다 [History/](History/README.md)에 기록을 남긴다. 무엇을 어떻게 했는지, 어떤 상황을 고려해 어떻게 풀었는지, 무엇을 제안해 사용자가 무엇을 결정했는지를 적는다. 형식과 규칙은 History/README.md를 따르고, 새 파일을 만들면 그 목록에 추가한다. 서브에이전트가 구현한 작업도 메인 세션이 리뷰 결과까지 포함해 기록한다.
 
-브랜치: `develop`에서 작업하고 `main`에 병합·push하면 운영 배포된다. `Backend/supabase/**` 변경이 `main`에 들어가면 마이그레이션과 Edge Functions가 자동 배포되므로, 이미 배포된 마이그레이션 파일은 수정하지 않는다.
+브랜치: feature 브랜치를 `develop`에 병합하고, `develop`을 `main`에 병합·push하면 운영 배포된다. `Backend/supabase/**` 변경이 `main`에 들어가면 마이그레이션과 Edge Functions가 자동 배포되므로, 이미 배포된 마이그레이션 파일은 수정하지 않는다.
 
 ## 구조
 

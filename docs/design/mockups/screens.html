@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>보건직 합격 코치 화면 시안</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../design-system/tokens.css">
+<link rel="stylesheet" href="../design-system/components.css">
+<style>
+  html, body { margin: 0; background: #e9e5e0; }
+  .mk { padding: 40px; display: grid; gap: 56px; font-family: var(--font-sans); }
+  .mk-group h2 { margin: 0 0 20px; font-size: 20px; color: #292524; }
+  .mk-row { display: flex; gap: 40px; align-items: flex-start; flex-wrap: wrap; }
+  .mk-fig { margin: 0; display: grid; gap: 10px; }
+  .mk-fig figcaption { font-size: 14px; color: #57534e; font-weight: 600; }
+  .screen { position: relative; width: 390px; height: 844px; overflow: hidden; display: flex; flex-direction: column; background: var(--bg); color: var(--text); font-family: var(--font-sans); font-size: 16px; line-height: 1.5; border-radius: 24px; box-shadow: 0 1px 0 rgba(0,0,0,.04); }
+  body.only .mk-group { display: none; }
+  body.only .mk-group.is-shown { display: block; }
+  body.only .mk { padding: 32px; }
+</style>
+</head>
+<body>
+<main class="mk">
+
+<section class="mk-group" data-group="main">
+<h2>채팅과 메뉴</h2>
+<div class="mk-row">
+<figure class="mk-fig"><figcaption>오늘 채팅</figcaption>
+<div class="screen theme-light">
+  <header class="hc-header">
+    <button type="button" class="hc-icon-button" aria-label="메뉴 열기"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg></button>
+    <h1 class="hc-header-title">11월 9일 (월)</h1>
+    <a class="hc-dday" href="#" aria-label="시험까지 D-110">D-110</a>
+  </header>
+
+  <section class="hc-plan">
+    <button type="button" class="hc-plan-bar" aria-expanded="false">
+      <span class="hc-plan-title">오늘의 분량</span>
+      <span class="hc-plan-next"><span class="hc-marker">국어 12–14쪽</span><span class="hc-muted"> 외 2개</span></span>
+      <span class="hc-label hc-num">1/4</span>
+      <span class="hc-chevron" aria-hidden="true"></span>
+    </button>
+  </section>
+
+  <div style="flex: 1; min-height: 0; overflow: hidden; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+    <div class="hc-bubble is-coach">오늘 하루도 화이팅! 합격까지 달려봐요</div>
+    <div class="hc-bubble is-me">영어 보카 31~35p 끝!</div>
+    <div class="hc-bubble is-coach">기록했어요. 해커스 보카가 35/412쪽까지 왔어요. 오늘 분량 4개 중 1개를 끝냈네요. 다음은 국어 12–14쪽이에요. 언제쯤 시작할 수 있을까요?</div>
+    <div class="hc-bubble is-me">보건행정 기출은 자꾸 틀리는데 어떻게 봐야 해?</div>
+    <div class="hc-bubble is-coach">틀린 문제가 반복되면 답답하죠. 지난주 기출 20문제 중 15개를 맞혔으니 기본기는 잡혀 있어요. 오늘은 틀린 문제만 골라서 해설 근거가 기본서 어디에 있는지 표시해 봐요. 몇 문제 정도 다시 볼 시간이 있나요?</div>
+  </div>
+
+  <form class="hc-composer">
+    <input class="hc-composer-input" placeholder="예) 보건행정 30~70p, 기출 20문제 중 5개 틀림" aria-label="메시지 입력">
+    <button type="submit" class="hc-send" aria-label="보내기" disabled><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h14M12 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+  </form>
+</div>
+</figure>
+<figure class="mk-fig"><figcaption>사이드바 열림</figcaption>
+<div class="screen theme-light">
+  <header class="hc-header">
+    <button type="button" class="hc-icon-button" aria-label="메뉴 열기" aria-expanded="true"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg></button>
+    <h1 class="hc-header-title">11월 9일 (월)</h1>
+    <a class="hc-dday" href="#">D-110</a>
+  </header>
+  <section class="hc-plan">
+    <div class="hc-plan-bar"><span class="hc-plan-title">오늘의 분량</span><span class="hc-plan-next"><span class="hc-marker">국어 12–14쪽</span><span class="hc-muted"> 외 2개</span></span><span class="hc-label hc-num">1/4</span><span class="hc-chevron" aria-hidden="true"></span></div>
+  </section>
+  <div style="flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+    <div class="hc-bubble is-coach">오늘 하루도 화이팅! 합격까지 달려봐요</div>
+    <div class="hc-bubble is-me">영어 보카 31~35p 끝!</div>
+  </div>
+
+  <div style="position: absolute; inset: 0; background: var(--scrim)" aria-hidden="true"></div>
+  <aside class="hc-sidebar" style="position: absolute; top: 0; bottom: 0; left: 0" aria-label="메뉴">
+    <nav>
+      <a class="hc-nav-item" href="#">현재 공부상태</a>
+      <a class="hc-nav-item" href="#">공부 설정 변경</a>
+    </nav>
+    <section class="hc-nav-group">
+      <h2 class="hc-nav-heading">채팅방 목록</h2>
+      <a class="hc-nav-item is-active" href="#">11월 9일 (월) <span class="hc-badge">오늘</span></a>
+      <a class="hc-nav-item" href="#">11월 8일 (일)</a>
+      <a class="hc-nav-item" href="#">11월 7일 (토)</a>
+      <a class="hc-nav-item" href="#">11월 6일 (금)</a>
+      <a class="hc-nav-item" href="#">11월 5일 (목)</a>
+      <a class="hc-nav-item" href="#">11월 4일 (수)</a>
+    </section>
+    <div class="hc-nav-group">
+      <button type="button" class="hc-nav-item hc-muted" style="width: 100%">로그아웃</button>
+    </div>
+  </aside>
+</div>
+</figure>
+<figure class="mk-fig"><figcaption>지난 채팅 (읽기 전용)</figcaption>
+<div class="screen theme-light">
+  <header class="hc-header">
+    <button type="button" class="hc-icon-button" aria-label="메뉴 열기"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg></button>
+    <h1 class="hc-header-title">11월 6일 (금)</h1>
+    <a class="hc-dday" href="#">D-110</a>
+  </header>
+
+  <div style="flex: 1; min-height: 0; overflow: hidden; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+    <div class="hc-bubble is-coach">오늘 하루도 화이팅! 합격까지 달려봐요</div>
+    <div class="hc-bubble is-me">보건행정 기본서 30~70p, 기출 20문제 중 5개 틀림</div>
+    <div class="hc-bubble is-coach">기록했어요. 보건행정 기본서가 70/320쪽, 22%까지 왔어요. 기출은 20문제 중 15개를 맞혔네요. 틀린 5문제는 내일 해설만 한 번 더 볼까요?</div>
+    <div class="hc-bubble is-me">응 내일 아침에 볼게</div>
+    <div class="hc-bubble is-coach">좋아요. 다시 풀어 보고 몇 문제 맞혔는지 알려 주세요.</div>
+  </div>
+
+  <p class="hc-readonly">지난 대화는 볼 수만 있어요.</p>
+</div>
+</figure>
+<figure class="mk-fig"><figcaption>오늘 채팅 (다크, 오늘의 분량 펼침)</figcaption>
+<div class="screen theme-dark">
+  <header class="hc-header">
+    <button type="button" class="hc-icon-button" aria-label="메뉴 열기"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg></button>
+    <h1 class="hc-header-title">11월 9일 (월)</h1>
+    <a class="hc-dday" href="#">D-110</a>
+  </header>
+
+  <section class="hc-plan">
+    <button type="button" class="hc-plan-bar" aria-expanded="true" aria-controls="today-plan">
+      <span class="hc-plan-title">오늘의 분량</span>
+      <span class="hc-plan-next"><span class="hc-marker">국어 12–14쪽</span><span class="hc-muted"> 외 2개</span></span>
+      <span class="hc-label hc-num">1/4</span>
+      <span class="hc-chevron is-open" aria-hidden="true"></span>
+    </button>
+    <ul id="today-plan" class="hc-plan-list">
+      <li><span class="hc-muted">영어</span><span class="hc-done">해커스 보카</span><span class="hc-done hc-num">31–35쪽</span></li>
+      <li><span class="hc-muted">국어</span><span>해커스 국어 기본서</span><span class="hc-marker hc-num">12–14쪽</span></li>
+      <li><span class="hc-muted">공중보건</span><span>공중보건 기본서 1</span><span class="hc-marker hc-num">40–47쪽</span></li>
+      <li><span class="hc-muted">보건행정</span><span>보건행정 기출</span><span class="hc-marker hc-num">88쪽</span></li>
+    </ul>
+  </section>
+
+  <div style="flex: 1; min-height: 0; overflow: hidden; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+    <div class="hc-bubble is-coach">오늘 하루도 화이팅! 합격까지 달려봐요</div>
+    <div class="hc-bubble is-me">영어 보카 31~35p 끝!</div>
+    <div class="hc-bubble is-coach">기록했어요. 오늘 분량 4개 중 1개를 끝냈네요. 다음은 국어 12–14쪽이에요. 언제쯤 시작할 수 있을까요?</div>
+  </div>
+
+  <form class="hc-composer">
+    <input class="hc-composer-input" value="점심 먹고 바로 할게" aria-label="메시지 입력">
+    <button type="submit" class="hc-send" aria-label="보내기"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h14M12 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+  </form>
+</div>
+</figure>
+</div>
+</section>
+
+<section class="mk-group" data-group="study">
+<h2>공부 상태와 설정</h2>
+<div class="mk-row">
+<figure class="mk-fig"><figcaption>현재 공부상태</figcaption>
+<div class="screen theme-light">
+  <header class="hc-header">
+    <button type="button" class="hc-icon-button" aria-label="메뉴 열기"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg></button>
+    <h1 class="hc-header-title">현재 공부상태</h1>
+    <a class="hc-dday" href="#" style="color: var(--accent)">D-110</a>
+  </header>
+
+  <div style="flex: 1; min-height: 0; overflow: hidden; padding: 0 16px">
+    <section class="hc-section">
+      <h2 class="hc-section-title">공부 잔디</h2>
+      <div class="hc-heat" role="img" aria-label="최근 20주 공부 기록 잔디">
+        <span class="h0"></span><span class="h0"></span><span class="h1"></span><span class="h1"></span><span class="h1"></span><span class="h1"></span><span class="h1"></span><span class="h0"></span><span class="h0"></span><span class="h0"></span><span class="h0"></span><span class="h0"></span><span class="h0"></span><span class="h0"></span><span class="h0"></span><span class="h0"></span><span class="h1"></span><span class="h1"></span><span class="h2"></span><span class="h2"></span><span class="h2"></span><span class="h1"></span><span class="h0"></span><span class="h0"></span><span class="h0"></span><span class="h0"></span><span class="h0"></span><span class="h0"></span><span class="h0"></span><span class="h0"></span><span class="h1"></span><span class="h1"></span><span class="h2"></span><span class="h2"></span><span class="h2"></span><span class="h2"></span><span class="h1"></span><span class="h1"></span><span class="h0"></span><span class="h0"></span><span class="h0"></span><span class="h0"></span><span class="h0"></span><span class="h0"></span><span class="h1"></span><span class="h1"></span><span class="h2"></span><span class="h2"></span><span class="h3"></span><span class="h3"></span><span class="h2"></span><span class="h2"></span><span class="h1"></span><span class="h0"></span><span class="h0"></span><span class="h0"></span><span class="h0"></span><span class="h0"></span><span class="h0"></span><span class="h1"></span><span class="h2"></span><span class="h2"></span><span class="h3"></span><span class="h3"></span><span class="h3"></span><span class="h3"></span><span class="h2"></span><span class="h1"></span><span class="h1"></span><span class="h0"></span><span class="h0"></span><span class="h0"></span><span class="h0"></span><span class="h1"></span><span class="h2"></span><span class="h2"></span><span class="h3"></span><span class="h3"></span><span class="h4"></span><span class="h3"></span><span class="h3"></span><span class="h2"></span><span class="h2"></span><span class="h1"></span><span class="h1"></span><span class="h1"></span><span class="h1"></span><span class="h1"></span><span class="h2"></span><span class="h2"></span><span class="h3"></span><span class="h4"></span><span class="h4"></span><span class="h4"></span><span class="h4"></span><span class="h3"></span><span class="h3"></span><span class="h2"></span><span class="h2"></span><span class="h1"></span><span class="h1"></span><span class="h1"></span><span class="h2"></span><span class="h2"></span><span class="h3"></span><span class="h3"></span><span class="h4"></span><span class="h4"></span><span class="h4"></span><span class="h4"></span><span class="h4"></span><span class="h3"></span><span class="h2"></span><span class="h2"></span><span class="h2"></span><span class="h1"></span><span class="h2"></span><span class="h2"></span><span class="h3"></span><span class="h3"></span><span class="h4"></span><span class="h4"></span><span class="h4"></span><span class="h4"></span><span class="h4"></span><span class="h4"></span><span class="h3"></span><span class="h3"></span><span class="h2"></span><span class="h2"></span><span class="h2"></span><span class="h2"></span><span class="h3"></span><span class="h3"></span>
+      </div>
+      <div class="hc-legend" aria-hidden="true">적음 <span class="h0"></span><span class="h1"></span><span class="h2"></span><span class="h3"></span><span class="h4"></span> 많음</div>
+    </section>
+
+    <section class="hc-section">
+      <p style="margin: 0; display: flex; align-items: baseline; gap: 4px"><span class="hc-num" style="font-size: 34px; line-height: 1; font-weight: 700">12</span><span style="font-weight: 700">일 연속 공부 버닝중! 🔥</span></p>
+    </section>
+
+    <section class="hc-section">
+      <a href="#" style="display: flex; min-height: 44px; margin-bottom: 4px; align-items: center; justify-content: space-between; text-decoration: none">
+        <h2 class="hc-section-title" style="margin: 0">이번주 목표량</h2>
+        <span class="hc-chevron is-right" aria-hidden="true"></span>
+      </a>
+      <ul style="margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; row-gap: 4px">
+        <li style="display: flex; justify-content: space-between"><span class="hc-muted">국어</span><span class="hc-num">40쪽</span></li>
+        <li style="display: flex; justify-content: space-between"><span class="hc-muted">영어</span><span class="hc-num">30쪽</span></li>
+        <li style="display: flex; justify-content: space-between"><span class="hc-muted">공중보건</span><span class="hc-num">35쪽</span></li>
+        <li style="display: flex; justify-content: space-between"><span class="hc-muted">보건행정</span><span class="hc-num">25쪽</span></li>
+      </ul>
+      <p class="hc-small hc-muted" style="margin: 8px 0 0">이번 주 계획 16개 중 1개 완료</p>
+    </section>
+
+    <section class="hc-section">
+      <h2 class="hc-section-title">과목별 진도율</h2>
+      <ul class="hc-divided" style="margin: 0; padding: 0; list-style: none">
+        <li><button type="button" class="hc-progress-row" aria-expanded="false"><span style="font-weight: 600">국어</span><span class="hc-track"><span style="width: 62%"></span></span><span class="hc-small hc-num" style="text-align: right">62%</span><span class="hc-chevron" aria-hidden="true"></span></button></li>
+        <li><button type="button" class="hc-progress-row" aria-expanded="true"><span style="font-weight: 600">영어</span><span class="hc-track"><span style="width: 38%"></span></span><span class="hc-small hc-num" style="text-align: right">38%</span><span class="hc-chevron is-open" aria-hidden="true"></span></button>
+          <ul class="hc-sublist">
+            <li><span>하프모의고사 5</span><span class="hc-small hc-muted hc-num">120/300쪽</span></li>
+            <li><span>독해 기본서</span><span class="hc-small hc-muted hc-num">80/200쪽</span></li>
+          </ul>
+        </li>
+        <li><button type="button" class="hc-progress-row" aria-expanded="false"><span style="font-weight: 600">공중보건</span><span class="hc-track"><span style="width: 45%"></span></span><span class="hc-small hc-num" style="text-align: right">45%</span><span class="hc-chevron" aria-hidden="true"></span></button></li>
+        <li><button type="button" class="hc-progress-row" aria-expanded="false"><span style="font-weight: 600">보건행정</span><span class="hc-track"><span style="width: 55%"></span></span><span class="hc-small hc-num" style="text-align: right">55%</span><span class="hc-chevron" aria-hidden="true"></span></button></li>
+      </ul>
+    </section>
+  </div>
+</div>
+</figure>
+<figure class="mk-fig"><figcaption>공부 설정 변경 (시험일 달력)</figcaption>
+<div class="screen theme-light">
+  <header class="hc-header">
+    <button type="button" class="hc-icon-button" aria-label="메뉴 열기"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg></button>
+    <h1 class="hc-header-title">공부 설정 변경</h1>
+    <a class="hc-dday" href="#" style="color: var(--accent)">D-110</a>
+  </header>
+
+  <div style="flex: 1; min-height: 0; overflow: hidden; padding: 0 16px">
+    <section class="hc-section">
+      <form style="display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 12px; row-gap: 8px">
+        <label class="hc-small" style="font-weight: 600" for="exam-date">시험일</label>
+        <div style="position: relative">
+          <button type="button" id="exam-date" class="hc-date-trigger" aria-haspopup="dialog" aria-expanded="true">2027년 2월 27일 (토)<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" style="color: var(--text-muted); flex-shrink: 0"><rect x="3.5" y="5" width="17" height="15" rx="2.5"></rect><path d="M3.5 10h17M8 3v4M16 3v4" stroke-linecap="round"></path></svg></button>
+          <div class="hc-popover" role="dialog" aria-label="시험일 고르기" style="position: absolute; top: 100%; left: 0; z-index: 20; margin-top: 8px">
+            <div class="hc-cal-head">
+              <p>2027년 2월</p>
+              <div style="display: flex">
+                <button type="button" class="hc-cal-nav" aria-label="이전 달"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+                <button type="button" class="hc-cal-nav" aria-label="다음 달"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+              </div>
+            </div>
+            <div class="hc-cal" style="width: 270px">
+              <abbr title="일요일">일</abbr><abbr title="월요일">월</abbr><abbr title="화요일">화</abbr><abbr title="수요일">수</abbr><abbr title="목요일">목</abbr><abbr title="금요일">금</abbr><abbr title="토요일">토</abbr>
+              <button type="button" class="hc-day is-neighbor">31</button><button type="button" class="hc-day">1</button><button type="button" class="hc-day">2</button><button type="button" class="hc-day">3</button><button type="button" class="hc-day">4</button><button type="button" class="hc-day">5</button><button type="button" class="hc-day">6</button><button type="button" class="hc-day">7</button><button type="button" class="hc-day">8</button><button type="button" class="hc-day">9</button><button type="button" class="hc-day">10</button><button type="button" class="hc-day">11</button><button type="button" class="hc-day">12</button><button type="button" class="hc-day">13</button><button type="button" class="hc-day">14</button><button type="button" class="hc-day">15</button><button type="button" class="hc-day">16</button><button type="button" class="hc-day">17</button><button type="button" class="hc-day">18</button><button type="button" class="hc-day">19</button><button type="button" class="hc-day">20</button><button type="button" class="hc-day">21</button><button type="button" class="hc-day">22</button><button type="button" class="hc-day">23</button><button type="button" class="hc-day">24</button><button type="button" class="hc-day">25</button><button type="button" class="hc-day">26</button><button type="button" class="hc-day is-selected">27</button><button type="button" class="hc-day">28</button><button type="button" class="hc-day is-neighbor">1</button><button type="button" class="hc-day is-neighbor">2</button><button type="button" class="hc-day is-neighbor">3</button><button type="button" class="hc-day is-neighbor">4</button><button type="button" class="hc-day is-neighbor">5</button><button type="button" class="hc-day is-neighbor">6</button><button type="button" class="hc-day is-neighbor">7</button><button type="button" class="hc-day is-neighbor">8</button><button type="button" class="hc-day is-neighbor">9</button><button type="button" class="hc-day is-neighbor">10</button><button type="button" class="hc-day is-neighbor">11</button><button type="button" class="hc-day is-neighbor">12</button><button type="button" class="hc-day is-neighbor">13</button>
+            </div>
+            <div style="display: flex; justify-content: flex-end; margin-top: 8px"><button type="button" class="hc-small hc-muted" style="min-height: 44px; padding: 0 8px">날짜 지우기</button></div>
+          </div>
+        </div>
+        <button type="submit" class="hc-button">저장</button>
+      </form>
+    </section>
+
+    <section class="hc-section">
+      <h2 class="hc-section-title">D-Day까지 남은 공부 분량</h2>
+      <div style="display: flex; flex-direction: column; gap: 12px">
+        <div>
+          <h3 class="hc-small hc-muted" style="margin: 0; font-weight: 700">국어</h3>
+          <ul class="hc-divided" style="margin: 0; padding: 0; list-style: none">
+            <li style="display: flex; align-items: center; gap: 8px"><span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">해커스 국어 기본서</span><span class="hc-small hc-muted hc-num">100/500쪽</span><button type="button" class="hc-icon-button hc-muted" aria-label="해커스 국어 기본서 삭제">✕</button></li>
+            <li style="display: flex; align-items: center; gap: 8px"><span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">봉투모의고사</span><span class="hc-small hc-muted hc-num">40/120쪽</span><button type="button" class="hc-icon-button hc-muted" aria-label="봉투모의고사 삭제">✕</button></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="hc-small hc-muted" style="margin: 0; font-weight: 700">영어</h3>
+          <ul class="hc-divided" style="margin: 0; padding: 0; list-style: none">
+            <li style="display: flex; align-items: center; gap: 8px"><span style="flex: 1; min-width: 0">하프모의고사 5</span><span class="hc-small hc-muted hc-num">120/300쪽</span><button type="button" class="hc-icon-button hc-muted" aria-label="하프모의고사 5 삭제">✕</button></li>
+            <li style="display: flex; align-items: center; gap: 8px"><span style="flex: 1; min-width: 0">독해 기본서</span><span class="hc-small hc-muted hc-num">80/200쪽</span><button type="button" class="hc-icon-button hc-muted" aria-label="독해 기본서 삭제">✕</button></li>
+          </ul>
+        </div>
+      </div>
+      <button type="button" class="hc-button is-ghost is-block" style="margin-top: 12px">교재 추가</button>
+    </section>
+  </div>
+</div>
+</figure>
+<figure class="mk-fig"><figcaption>로그인 (캐릭터 없음)</figcaption>
+<div class="screen theme-light" style="justify-content: space-between; box-sizing: border-box; padding: 48px 24px">
+  <header style="padding-top: 64px">
+    <h1 style="margin: 0; font-size: 26px; font-weight: 700">보건직 합격 코치</h1>
+    <p class="hc-muted" style="margin: 12px 0 0">오늘 공부할 분량을 정해 드리고, 공부 기록과 고민을 같이 봐요.</p>
+  </header>
+  <div>
+    <a class="hc-kakao" href="#" style="text-decoration: none; box-sizing: border-box"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#000" d="M9 1.5C4.58 1.5 1 4.31 1 7.78c0 2.24 1.5 4.21 3.75 5.32l-.95 3.48a.3.3 0 0 0 .46.33l4.1-2.72c.21.02.42.03.64.03 4.42 0 8-2.81 8-6.44S13.42 1.5 9 1.5Z"></path></svg>카카오 로그인</a>
+    <p class="hc-small hc-muted" style="margin: 16px 0 0; text-align: center">카카오 계정으로 로그인하면 공부 기록이 계정에 저장돼요.</p>
+  </div>
+</div>
+</figure>
+</div>
+</section>
+
+<section class="mk-group" data-group="mascot">
+<h2>합격이가 들어가는 화면: 로그인 · 앱 시작 · 404</h2>
+<div class="mk-row">
+
+
+  <div class="screen theme-light" style="justify-content: space-between; box-sizing: border-box; padding: 48px 24px">
+    <header style="padding-top: 40px; display: flex; flex-direction: column; gap: 20px">
+      <img src="../../../Frontend/src/assets/mascot/hapgyeok-cheer.svg" width="140" height="140" alt="코치 합격이">
+      <div>
+        <h1 style="margin: 0; font-size: 26px; font-weight: 700">보건직 합격 코치</h1>
+        <p class="hc-muted" style="margin: 12px 0 0">코치 합격이가 오늘 공부할 분량을 정해 드리고, 공부 기록과 고민을 같이 봐요.</p>
+      </div>
+    </header>
+    <div>
+      <a class="hc-kakao" href="#" style="text-decoration: none; box-sizing: border-box"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#000" d="M9 1.5C4.58 1.5 1 4.31 1 7.78c0 2.24 1.5 4.21 3.75 5.32l-.95 3.48a.3.3 0 0 0 .46.33l4.1-2.72c.21.02.42.03.64.03 4.42 0 8-2.81 8-6.44S13.42 1.5 9 1.5Z"></path></svg>카카오 로그인</a>
+      <p class="hc-small hc-muted" style="margin: 16px 0 0; text-align: center">카카오 계정으로 로그인하면 공부 기록이 계정에 저장돼요.</p>
+    </div>
+  </div>
+
+  <div class="screen theme-light" style="align-items: center; justify-content: center; gap: 16px">
+    <img src="../../../Frontend/src/assets/mascot/hapgyeok-think.svg" width="160" height="160" alt="코치 합격이">
+    <p style="margin: 8px 0 0; font-size: 17px; font-weight: 700">보건직 합격 코치</p>
+    <p class="hc-small hc-muted" style="margin: 0">오늘의 분량을 챙기고 있어요…</p>
+  </div>
+
+  <div class="screen theme-light">
+    <header class="hc-header">
+      <button type="button" class="hc-icon-button" aria-label="메뉴 열기"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg></button>
+      <h1 class="hc-header-title">페이지 없음</h1>
+      <a class="hc-dday" href="#" style="color: var(--accent)">D-110</a>
+    </header>
+    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 0 32px; text-align: center">
+      <img src="../../../Frontend/src/assets/mascot/hapgyeok-oops.svg" width="150" height="150" alt="코치 합격이">
+      <h2 style="margin: 8px 0 0; font-size: 20px; font-weight: 700">길을 잃었어요</h2>
+      <p class="hc-small hc-muted" style="margin: 0">주소가 바뀌었거나 없는 화면이에요. 오늘 채팅방으로 돌아가서 이어서 공부해요.</p>
+      <a class="hc-button" href="#" style="display: inline-flex; align-items: center; margin-top: 12px; text-decoration: none">오늘 채팅으로 가기</a>
+    </div>
+  </div>
+
+
+</div>
+</section>
+
+</main>
+<script>
+  // ?group=main|study|mascot 이면 그 묶음만 보인다(캡처용)
+  var g = new URLSearchParams(location.search).get('group');
+  if (g) { document.body.classList.add('only'); var el = document.querySelector('[data-group="' + g + '"]'); if (el) el.classList.add('is-shown'); }
+</script>
+</body>
+</html>

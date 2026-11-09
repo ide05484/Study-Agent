@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>보건직 합격 코치 컴포넌트 카탈로그</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<style>
+  body { margin: 0; }
+  .cat { max-width: 1040px; margin: 0 auto; padding: 40px 24px 80px; display: grid; gap: 0; }
+  .cat-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px; }
+  .cat-top h1 { margin: 0; font-size: 26px; }
+  .cat-cover { overflow: hidden; border-bottom: 1px solid var(--border); padding-bottom: 32px; margin-bottom: 8px; }
+  .cat-card { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 24px; padding: 28px 0; border-bottom: 1px solid var(--border); }
+  .cat-card header h2 { margin: 0; font-size: 17px; }
+  .cat-card header p { margin: 6px 0 0; font-size: 14px; color: var(--text-muted); }
+  .cat-card header .cat-group { margin: 0 0 4px; font-size: 12px; color: var(--accent); font-weight: 600; }
+  .cat-preview { min-width: 0; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--bg); }
+  @media (max-width: 720px) { .cat-card { grid-template-columns: minmax(0, 1fr); } }
+</style>
+</head>
+<body>
+<main class="cat">
+  <div class="cat-top">
+    <h1>컴포넌트 카탈로그</h1>
+    <button type="button" class="hc-button is-ghost" id="theme-toggle">다크 모드</button>
+  </div>
+  <div class="cat-cover"><div style="transform-origin: 0 0; zoom: 1"><style>
+  .cover { position: relative; width: 960px; height: 288px; background: var(--bg); overflow: hidden; font-family: var(--font-sans); }
+  .cover svg { position: absolute; left: 480px; top: 0; }
+  .accent { fill: var(--accent); }
+  .marker { fill: var(--marker); }
+  .ink { fill: var(--text); }
+  .h0 { fill: var(--heat-0); }
+  .h2 { fill: var(--heat-2); }
+  .h4 { fill: var(--heat-4); }
+  .slab { rx: var(--radius-2xl); }
+  .tile { rx: var(--radius-xs); }
+  .cover-text { position: absolute; left: 40px; bottom: 28px; max-width: 440px; }
+  .cover-name { margin: 0; font-size: 96px; line-height: .95; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+  .cover-tag { margin: 12px 0 0; font-size: 14px; color: var(--text-muted); }
+</style>
+<div class="cover">
+  <svg width="480" height="288" viewBox="0 0 480 288" aria-hidden="true">
+    <!--
+      blocks: accent slab 128×200 (space-4 × 8 wide), marker band 336×48 bleeding right, ink disc 64 (space-4 × 4)
+      arrangement: one tall slab bleeding off the top with satellites; the band runs off the right edge like a highlighter stroke
+      pattern: 잔디 tile grid (geometric, modular: the dashboard's own heat cells), heat-0 ground with heat-2 and heat-4 cells rising to the right
+      steps and radii: pitch space-6 (24px), tile 20px, radius-xs on tiles, radius-2xl on the slab, disc = half its side
+    -->
+    <rect class="accent slab" x="0" y="-24" width="128" height="200" />
+    <rect class="marker" x="144" y="32" width="336" height="48" />
+    <circle class="ink" cx="176" cy="136" r="32" />
+    <g id="grass"></g>
+  </svg>
+  <div class="cover-text">
+    <p class="cover-name">보건직<br>합격 코치</p>
+    <p class="cover-tag">오늘 할 분량에 형광펜을 긋는 수험 플래너</p>
+  </div>
+</div>
+<script>
+  // 14열 × 4행 잔디: 왼쪽은 듬성듬성(heat-0), 오른쪽으로 갈수록 heat-2, heat-4가 늘어난다
+  var g = document.getElementById('grass'), ns = 'http://www.w3.org/2000/svg';
+  for (var c = 0; c < 14; c++) {
+    for (var r = 0; r < 4; r++) {
+      var n = Math.sin((c * 4 + r) * 7.31) * 0.5 + 0.5, p = c / 13;
+      var cls = n < p * 0.55 ? 'h4' : n < p * 0.95 ? 'h2' : 'h0';
+      var t = document.createElementNS(ns, 'rect');
+      t.setAttribute('class', cls + ' tile');
+      t.setAttribute('x', 144 + c * 24); t.setAttribute('y', 192 + r * 24);
+      t.setAttribute('width', 20); t.setAttribute('height', 20);
+      g.appendChild(t);
+    }
+  }
+</script>
+</div></div>
+
+<section class="cat-card" id="Button">
+  <header><p class="cat-group">기본</p><h2>Button</h2><p>주요 동작은 `accent` 바탕 버튼, 보조 동작은 테두리만 있는 버튼으로 쓴다.</p></header>
+  <div class="cat-preview">
+<div class="hc-root">
+  <div class="hc-label">주요 · 보조 · 비활성</div>
+  <div class="hc-row">
+    <button type="button" class="hc-button">저장</button>
+    <button type="button" class="hc-button is-ghost">취소</button>
+    <button type="button" class="hc-button" disabled>추가</button>
+  </div>
+  <button type="button" class="hc-button is-ghost is-block">교재 추가</button>
+</div>
+
+  </div>
+</section>
+
+<section class="cat-card" id="TextField">
+  <header><p class="cat-group">기본</p><h2>TextField</h2><p>한 줄 입력, 선택, 여러 줄 입력이 같은 모양을 쓴다.</p></header>
+  <div class="cat-preview">
+<div class="hc-root">
+  <select class="hc-field" aria-label="과목"><option>국어</option><option>영어</option><option>공중보건</option><option>보건행정</option></select>
+  <input class="hc-field" placeholder="교재명 (예: 봉투모의고사)" aria-label="교재명">
+  <input class="hc-field" value="320" inputmode="numeric" aria-label="총 페이지">
+  <textarea class="hc-field" rows="2" placeholder="더 신경 쓰고 싶은 부분을 적어 두면 코치가 참고해요." disabled aria-label="내 메모"></textarea>
+</div>
+
+  </div>
+</section>
+
+<section class="cat-card" id="Marker">
+  <header><p class="cat-group">기본</p><h2>Marker</h2><p>꼭 봐야 할 숫자에 긋는 형광펜 자국이다.</p></header>
+  <div class="cat-preview">
+<div class="hc-root">
+  <p style="margin:0">오늘은 <span class="hc-marker">보건행정 30–70쪽</span>만 끝내 봐요.</p>
+  <p class="hc-small hc-muted" style="margin:0">남은 분량 <span class="hc-marker hc-num" style="color:var(--text)">120/300쪽</span></p>
+</div>
+
+  </div>
+</section>
+
+<section class="cat-card" id="Notice">
+  <header><p class="cat-group">기본</p><h2>Notice</h2><p>동작 결과, 오류, 로딩을 알리는 한 줄 문구.</p></header>
+  <div class="cat-preview">
+<div class="hc-root">
+  <p class="hc-small hc-muted" style="margin:0">시험일까지 매일 분량을 나눠 드렸어요.</p>
+  <p class="hc-small" style="margin:0;color:var(--danger)" role="alert">목록을 불러오지 못했어요. 잠시 후 다시 열어주세요.</p>
+  <p class="hc-muted" style="margin:0;text-align:center">불러오는 중…</p>
+</div>
+
+  </div>
+</section>
+
+<section class="cat-card" id="Section">
+  <header><p class="cat-group">레이아웃</p><h2>Section</h2><p>화면 안의 영역을 카드 대신 괘선으로 나눈다.</p></header>
+  <div class="cat-preview">
+<div style="padding:0 16px">
+  <section class="hc-section"><h2 class="hc-section-title">이번주 목표량</h2><p class="hc-small hc-muted" style="margin:0">이번 주 계획 12개 중 5개 완료</p></section>
+  <section class="hc-section"><h2 class="hc-section-title">과목별 진도율</h2><p class="hc-small hc-muted" style="margin:0">영역 사이는 괘선 하나로 나눠요.</p></section>
+</div>
+
+  </div>
+</section>
+
+<section class="cat-card" id="AppHeader">
+  <header><p class="cat-group">레이아웃</p><h2>AppHeader</h2><p>모든 화면 맨 위의 세 칸 헤더: 햄버거 / 제목 / D-day.</p></header>
+  <div class="cat-preview">
+<div class="hc-root" style="padding:0;gap:0">
+  <header class="hc-header"><button type="button" class="hc-icon-button" aria-label="메뉴 열기"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button><h1 class="hc-header-title">11월 9일 (월)</h1><a class="hc-dday" href="#">D-110</a></header>
+  <header class="hc-header"><button type="button" class="hc-icon-button" aria-label="메뉴 열기"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button><h1 class="hc-header-title">공부 설정 변경</h1><a class="hc-dday" href="#" aria-label="시험일 설정">D-?</a></header>
+</div>
+
+  </div>
+</section>
+
+<section class="cat-card" id="Sidebar">
+  <header><p class="cat-group">레이아웃</p><h2>Sidebar</h2><p>햄버거를 누르면 왼쪽에서 밀려 나오는 메뉴.</p></header>
+  <div class="cat-preview">
+<div style="position:relative;height:400px;overflow:hidden;background:var(--bg)">
+  <div style="position:absolute;inset:0;background:var(--scrim)"></div>
+  <aside class="hc-sidebar" style="position:absolute;inset:0 auto 0 0">
+    <nav><a class="hc-nav-item is-active" href="#">현재 공부상태</a><a class="hc-nav-item" href="#">공부 설정 변경</a></nav>
+    <section class="hc-nav-group">
+      <h2 class="hc-nav-heading">채팅방 목록</h2>
+      <a class="hc-nav-item" href="#">11월 9일 (월) <span class="hc-badge">오늘</span></a>
+      <a class="hc-nav-item" href="#">11월 8일 (일)</a>
+      <a class="hc-nav-item" href="#">11월 6일 (금)</a>
+    </section>
+    <div class="hc-nav-group"><button type="button" class="hc-nav-item hc-muted" style="width:100%">로그아웃</button></div>
+  </aside>
+</div>
+
+  </div>
+</section>
+
+<section class="cat-card" id="TodayPlan">
+  <header><p class="cat-group">채팅</p><h2>TodayPlan</h2><p>오늘 채팅방 맨 위에 고정되는 오늘의 분량. 채팅을 가리지 않도록 한 줄(44px)로 접혀 있다.</p></header>
+  <div class="cat-preview">
+<div class="hc-root" style="padding:0;gap:16px">
+  <section class="hc-plan"><button type="button" class="hc-plan-bar" aria-expanded="false"><span class="hc-plan-title">오늘의 분량</span><span class="hc-plan-next"><span class="hc-marker">국어 12–14쪽</span><span class="hc-muted"> 외 2개</span></span><span class="hc-label hc-num">1/4</span><span class="hc-chevron"></span></button></section>
+  <section class="hc-plan"><button type="button" class="hc-plan-bar" aria-expanded="true"><span class="hc-plan-title">오늘의 분량</span><span class="hc-plan-next"><span class="hc-marker">국어 12–14쪽</span><span class="hc-muted"> 외 2개</span></span><span class="hc-label hc-num">1/4</span><span class="hc-chevron is-open"></span></button>
+    <ul class="hc-plan-list">
+      <li><span class="hc-muted">영어</span><span class="hc-done">해커스 보카</span><span class="hc-done hc-num">31–35쪽</span></li>
+      <li><span class="hc-muted">국어</span><span>해커스 국어 기본서</span><span class="hc-marker hc-num">12–14쪽</span></li>
+      <li><span class="hc-muted">공중보건</span><span>공중보건 기본서 1</span><span class="hc-marker hc-num">40–47쪽</span></li>
+      <li><span class="hc-muted">보건행정</span><span>보건행정 기출</span><span class="hc-marker hc-num">88쪽</span></li>
+    </ul></section>
+  <p class="hc-plan-bar hc-muted" style="margin:0;justify-content:space-between;border-bottom:1px solid var(--border)">오늘 배정된 분량이 없어요. <a href="#" style="color:var(--accent);font-weight:600;text-decoration:none">교재 추가하기</a></p>
+</div>
+
+  </div>
+</section>
+
+<section class="cat-card" id="ChatBubble">
+  <header><p class="cat-group">채팅</p><h2>ChatBubble</h2><p>코치와 내 메시지를 좌우로 나눠 보인다.</p></header>
+  <div class="cat-preview">
+<div class="hc-root"><div class="hc-thread">
+  <div class="hc-bubble is-coach">오늘 하루도 화이팅! 합격까지 달려봐요</div>
+  <div class="hc-bubble is-me">보건행정 기본서 30~70p, 기출 20문제 중 5개 틀림</div>
+  <div class="hc-bubble is-coach">기록했어요. 보건행정 기본서가 70/320쪽, 22%까지 왔어요. 틀린 5문제는 오늘 안에 해설만 한 번 더 볼까요?</div>
+</div></div>
+
+  </div>
+</section>
+
+<section class="cat-card" id="ChatComposer">
+  <header><p class="cat-group">채팅</p><h2>ChatComposer</h2><p>채팅 화면 맨 아래에 고정되는 입력 줄.</p></header>
+  <div class="cat-preview">
+<div class="hc-root" style="padding:0;gap:16px">
+  <form class="hc-composer" onsubmit="return false"><input class="hc-composer-input" placeholder="예) 보건행정 30~70p, 기출 20문제 중 5개 틀림" aria-label="메시지 입력"><button type="submit" class="hc-send" aria-label="보내기" disabled><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h14M12 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></form>
+  <p class="hc-readonly">지난 대화는 볼 수만 있어요.</p>
+</div>
+
+  </div>
+</section>
+
+<section class="cat-card" id="StudyHeatmap">
+  <header><p class="cat-group">대시보드</p><h2>StudyHeatmap</h2><p>GitHub 잔디처럼 하루를 한 칸으로 보인다.</p></header>
+  <div class="cat-preview">
+<div class="hc-root">
+  <div class="hc-heat" id="heat" role="img" aria-label="최근 공부 기록 잔디"></div>
+  <div class="hc-legend" aria-hidden="true">적음 <span class="h0"></span><span class="h1"></span><span class="h2"></span><span class="h3"></span><span class="h4"></span> 많음</div>
+</div>
+<script>
+  // 20주 × 7일 예시. 오래된 주는 듬성듬성, 최근 주로 올수록 진하게
+  var box = document.getElementById('heat');
+  for (var i = 0; i < 138; i++) {
+    var trend = (i / 7) / 19 * 4, noise = Math.sin(i * 12.9898) * 1.6;
+    var l = Math.max(0, Math.min(4, Math.round(trend + noise - 0.4)));
+    var s = document.createElement('span'); s.className = 'h' + l; box.appendChild(s);
+  }
+</script>
+
+  </div>
+</section>
+
+<section class="cat-card" id="StreakCounter">
+  <header><p class="cat-group">대시보드</p><h2>StreakCounter</h2><p>기록이 며칠째 이어지는지 숫자 하나로 크게 보인다.</p></header>
+  <div class="cat-preview">
+<div class="hc-root">
+  <p style="margin:0;display:flex;align-items:baseline;gap:4px"><span class="hc-num" style="font-size:34px;line-height:1;font-weight:700">12</span><span style="font-weight:700">일 연속 공부 버닝중! 🔥</span></p>
+  <p style="margin:0;font-weight:700">오늘 기록을 남기면 연속 공부가 시작돼요.</p>
+</div>
+
+  </div>
+</section>
+
+<section class="cat-card" id="SubjectProgress">
+  <header><p class="cat-group">대시보드</p><h2>SubjectProgress</h2><p>과목마다 가로 진도율 막대 하나. 누르면 그 과목의 남은 교재가 펼쳐진다.</p></header>
+  <div class="cat-preview">
+<div class="hc-root"><ul class="hc-divided" style="margin:0;padding:0;list-style:none">
+  <li><button type="button" class="hc-progress-row" aria-expanded="false"><span style="font-weight:600">국어</span><span class="hc-track"><span style="width:62%"></span></span><span class="hc-small hc-num" style="text-align:right">62%</span><span class="hc-chevron"></span></button></li>
+  <li><button type="button" class="hc-progress-row" aria-expanded="true"><span style="font-weight:600">영어</span><span class="hc-track"><span style="width:38%"></span></span><span class="hc-small hc-num" style="text-align:right">38%</span><span class="hc-chevron is-open"></span></button>
+    <ul class="hc-sublist"><li><span>하프모의고사 5</span><span class="hc-small hc-muted hc-num">120/300쪽</span></li><li><span>독해 기본서</span><span class="hc-small hc-muted hc-num">80/200쪽</span></li></ul></li>
+  <li><button type="button" class="hc-progress-row" aria-expanded="false"><span style="font-weight:600">공중보건</span><span class="hc-track"><span style="width:45%"></span></span><span class="hc-small hc-num" style="text-align:right">45%</span><span class="hc-chevron"></span></button></li>
+</ul></div>
+
+  </div>
+</section>
+
+<section class="cat-card" id="DatePicker">
+  <header><p class="cat-group">공부 설정</p><h2>DatePicker</h2><p>구글 캘린더의 작은 달력처럼 날짜 칸을 원으로 그리는 날짜 선택.</p></header>
+  <div class="cat-preview">
+<div class="hc-root" style="gap:8px">
+  <button type="button" class="hc-date-trigger" aria-haspopup="dialog" aria-expanded="true">2026년 11월 27일 (금)<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" style="color:var(--text-muted)"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke-linecap="round"/></svg></button>
+  <div class="hc-popover" role="dialog" aria-label="시험일 고르기">
+    <div class="hc-cal-head"><p>2026년 11월</p><div style="display:flex"><button type="button" class="hc-cal-nav" aria-label="이전 달" disabled style="opacity:.3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" class="hc-cal-nav" aria-label="다음 달"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></div>
+    <div class="hc-cal" id="cal"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:8px"><button type="button" class="hc-small hc-muted" style="min-height:44px;padding:0 8px">날짜 지우기</button></div>
+  </div>
+</div>
+<script>
+  // 2026년 11월: 1일이 일요일. 6주 고정, 오늘 9일, 고른 날 27일, 내일(10일)부터 고를 수 있음
+  var cal = document.getElementById('cal');
+  '일월화수목금토'.split('').forEach(function (d) { var a = document.createElement('abbr'); a.title = d + '요일'; a.textContent = d; cal.appendChild(a); });
+  for (var i = 0; i < 42; i++) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'hc-day';
+    var day = i + 1, neighbor = false;
+    if (day > 30) { day -= 30; neighbor = true; }
+    b.textContent = day;
+    if (neighbor) b.className += ' is-neighbor';
+    else if (day === 27) b.className += ' is-selected';
+    else if (day === 9) b.className += ' is-today';
+    if (!neighbor && day < 10) b.disabled = true;
+    cal.appendChild(b);
+  }
+</script>
+
+  </div>
+</section>
+
+<section class="cat-card" id="Disclosure">
+  <header><p class="cat-group">공부 설정</p><h2>Disclosure</h2><p>과목별 공부법처럼 제목 행을 눌러 내용을 펼치는 목록.</p></header>
+  <div class="cat-preview">
+<div class="hc-root" style="gap:0">
+  <details class="hc-disclosure" open style="border-bottom:1px solid var(--border)"><summary>국어<span class="hc-chevron"></span></summary>
+    <div class="hc-disclosure-body"><p class="hc-small hc-muted" style="margin:0">기본 공부법은 준비 중이에요.</p><label class="hc-small" style="font-weight:600" for="memo">내 메모</label><textarea id="memo" class="hc-field" rows="2" placeholder="더 신경 쓰고 싶은 부분을 적어 두면 코치가 참고해요." disabled></textarea></div></details>
+  <details class="hc-disclosure"><summary>영어<span class="hc-chevron"></span></summary></details>
+</div>
+
+  </div>
+</section>
+
+<section class="cat-card" id="KakaoLoginButton">
+  <header><p class="cat-group">로그인</p><h2>KakaoLoginButton</h2><p>로그인 화면의 유일한 버튼.</p></header>
+  <div class="cat-preview">
+<div class="hc-root">
+  <button type="button" class="hc-kakao"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="currentColor" d="M9 1.5C4.58 1.5 1 4.31 1 7.78c0 2.24 1.5 4.21 3.75 5.32l-.95 3.48a.3.3 0 0 0 .46.33l4.1-2.72c.21.02.42.03.64.03 4.42 0 8-2.81 8-6.44S13.42 1.5 9 1.5Z"/></svg>카카오 로그인</button>
+  <p role="alert" style="margin:0;text-align:center;color:var(--danger)">로그인하지 못했어요. 다시 시도해 주세요.</p>
+  <p class="hc-small hc-muted" style="margin:0;text-align:center">카카오 계정으로 로그인하면 공부 기록이 계정에 저장돼요.</p>
+</div>
+
+  </div>
+</section>
+
+<section class="cat-card" id="Mascot">
+  <header><p class="cat-group">캐릭터</p><h2>Mascot</h2><p>코치 캐릭터 합격이를 로그인, 앱 시작(로딩), 404처럼 내용이 적은 화면에 한 마리 넣는다.</p></header>
+  <div class="cat-preview">
+<div class="hc-root" style="grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: 560px; text-align: center">
+  <figure style="margin: 0"><img src="../../../Frontend/src/assets/mascot/hapgyeok-base.svg" width="96" height="96" alt="코치 합격이 (기본)"><figcaption class="hc-label">기본</figcaption></figure>
+  <figure style="margin: 0"><img src="../../../Frontend/src/assets/mascot/hapgyeok-cheer.svg" width="96" height="96" alt="코치 합격이 (응원)"><figcaption class="hc-label">응원 · 로그인</figcaption></figure>
+  <figure style="margin: 0"><img src="../../../Frontend/src/assets/mascot/hapgyeok-think.svg" width="96" height="96" alt="코치 합격이 (생각 중)"><figcaption class="hc-label">생각 중 · 시작</figcaption></figure>
+  <figure style="margin: 0"><img src="../../../Frontend/src/assets/mascot/hapgyeok-oops.svg" width="96" height="96" alt="코치 합격이 (당황)"><figcaption class="hc-label">당황 · 404</figcaption></figure>
+</div>
+
+  </div>
+</section>
+
+</main>
+<script>
+  // ?theme=dark 또는 버튼으로 다크 모드를 켠다
+  var root = document.documentElement;
+  function setTheme(dark) { root.classList.toggle('theme-dark', dark); root.classList.toggle('theme-light', !dark); document.getElementById('theme-toggle').textContent = dark ? '라이트 모드' : '다크 모드'; }
+  setTheme(new URLSearchParams(location.search).get('theme') === 'dark');
+  document.getElementById('theme-toggle').addEventListener('click', function () { setTheme(!root.classList.contains('theme-dark')); });
+</script>
+</body>
+</html>

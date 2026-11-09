@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { SubjectProgress } from '../../hooks/useDashboard.ts'
 import type { Subject } from '../../interfaces/subject.ts'
 import { SUBJECT_LABELS } from '../../libs/subjects.ts'
-import { chevronClass } from '../ui/classes.ts'
+import Chevron from '../ui/Chevron.tsx'
 
 interface SubjectProgressListProps {
   items: SubjectProgress[]
@@ -38,7 +38,7 @@ export default function SubjectProgressList({ items }: SubjectProgressListProps)
                 <span className="block h-full rounded bg-accent" style={{ width: `${item.percent}%` }} />
               </span>
               <span className="text-right text-sm tabular-nums">{item.percent}%</span>
-              <span className={`${chevronClass} ${open ? '-rotate-135' : ''}`} aria-hidden="true" />
+              <Chevron direction={open ? 'up' : 'down'} />
             </button>
             {open && (
               <ul id={`progress-${item.subject}`} className="mb-3 ml-1 border-l-2 border-line pl-3">

@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import { useTodayTasks } from '../../hooks/useTodayTasks.ts'
 import type { DailyTaskWithBook } from '../../interfaces/study.ts'
 import { SUBJECT_LABELS } from '../../libs/subjects.ts'
-import { chevronClass } from '../ui/classes.ts'
+import Chevron from '../ui/Chevron.tsx'
 
 function pagesLabel(task: DailyTaskWithBook): string {
   return task.start_page === task.end_page ? `${task.start_page}쪽` : `${task.start_page}–${task.end_page}쪽`
@@ -62,7 +62,7 @@ export default function TodayPlan({ date }: TodayPlanProps) {
         <span className="shrink-0 text-xs text-muted tabular-nums">
           {done}/{tasks.length}
         </span>
-        <span className={`${chevronClass} ${open ? '-rotate-135' : ''}`} aria-hidden="true" />
+        <Chevron direction={open ? 'up' : 'down'} />
       </button>
       {open && (
         <ul id="today-plan" className="max-h-[40dvh] overflow-y-auto px-4 pb-3">
