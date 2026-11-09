@@ -252,7 +252,21 @@
 - 파비콘(`Frontend/public/favicon.svg`)만 16px 같은 작은 크기에서도 보이도록 선 4, 입 3, 눈 r5로 굵게 그린 별도 파일이다. 위의 1.8px 규칙은 화면용 SVG 네 장에만 해당한다.
 - 그림 아래에는 그 화면의 제목과 할 일을 둔다. 404 예: "길을 잃었어요" → "주소가 바뀌었거나 없는 화면이에요." → 주요 버튼 "오늘 채팅으로 가기".
 
-## 컴포넌트 메모
+## 컴포넌트
+
+공용 컴포넌트는 `Frontend/src/components/ui/`에 있고 모두 default export다. 개발 모드의 `/ui`에서 라이트·다크로 나란히 볼 수 있다.
+
+- **Button**: 저장·보내기 같은 동작. `type`(`button`|`submit`, 필수), `variant`(`primary` 주황 채움 | `ghost` 테두리), `block`(가로 가득), 나머지 button 속성. 비활성은 투명도 50%.
+- **ButtonLink**: 화면 이동용 버튼 모양 링크(404의 "오늘 채팅으로 가기" 등). `to`, `variant`, `block`.
+- **TextField · Select · TextArea**: 설정·폼의 입력 칸. 각 HTML 요소의 속성을 그대로 받고 `className`은 받지 않는다.
+- **Section**: 대시보드·공부 설정의 영역. `title`(없으면 제목 줄도 없음), children.
+- **Disclosure**: 펼침 영역(교재 목록 등). `summary`, children. 열리면 꺾쇠가 위로 돈다.
+- **Notice**: 안내·오류 문구. `tone`(`info`|`error`). 오류는 `role="alert"`.
+- **Chevron**: 꺾쇠 화살표. `direction`(`down`|`up`|`right`).
+- **Mascot**: 합격이. 로그인·앱 시작·404에만. `mood`(`base`|`cheer`|`think`|`oops`), `size`(px).
+- **DatePicker**: 날짜 선택(아래 규칙 참고).
+- 화면 단위 `components/layout/SplashScreen`(앱 시작 화면, props 없음)과 `pages/NotFoundPage`도 `/ui`에서 본다.
+- 예외로 컴포넌트를 쓰지 않는 곳: 채팅 입력 줄·보내기, 로그인의 카카오 버튼, DatePicker 트리거.
 
 - **말풍선**: 코치는 왼쪽·`--surface`, 사용자는 오른쪽·`--accent-soft`. 모서리 16px, 꼬리 쪽 모서리만 4px.
 - **입력창**: 둥근 입력 필드 + 보내기 버튼(`--accent`). 전송 중이거나 비어 있으면 버튼 비활성. 지난 채팅방에서는 입력창 대신 읽기 전용 안내.
@@ -272,6 +286,7 @@
   - `index.css`에는 색상 토큰, `@theme`, 기본 스타일(`@layer base`)만 둔다.
   - `index.css`의 `@utility marker`(형광펜)는 예외로 둔 유일한 커스텀 유틸리티다.
   - 여러 화면에서 반복되는 모양은 `components/ui/`의 컴포넌트로 둔다: `Button`, `ButtonLink`, `TextField`, `Select`, `TextArea`, `Section`, `Disclosure`, `Chevron`, `Notice`(날짜 선택은 `DatePicker`).
+  - `/ui`(개발 모드에서만 열리는 컴포넌트 카탈로그). 색상 토큰과 위 컴포넌트를 라이트·다크로 나란히 보여 준다. 새 공용 컴포넌트를 만들면 여기에도 넣는다. 운영 빌드에는 들어가지 않는다.
   - 클래스 이름은 문자열을 이어 붙여 만들지 않는다(`bg-heat-${n}` ✕). Tailwind가 소스에서 찾을 수 있도록 전체 이름을 적은 매핑을 쓴다.
 - **react-calendar** (날짜 선택). 라이브러리 CSS(`react-calendar/dist/Calendar.css`)는 불러오지 않는다.
   - 칸 배치는 라이브러리의 인라인 스타일이 잡는다. 모양은 Tailwind로만 입힌다.
