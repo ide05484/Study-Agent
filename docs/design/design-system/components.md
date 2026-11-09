@@ -6,8 +6,8 @@
 
 주요 동작은 `accent` 바탕 버튼, 보조 동작은 테두리만 있는 버튼으로 쓴다.
 
-- **주요**(`Button`): `accent` 바탕, `on-accent` 글자, 600 굵기. 한 영역에 하나만 둔다(저장, 추가).
-- **보조**(`ghostButtonClass`): `bg` 바탕, `border` 테두리, `text` 글자. 취소, 펼치기 전의 "교재 추가".
+- **주요**(`Button`의 `variant="primary"`): `accent` 바탕, `on-accent` 글자, 600 굵기. 한 영역에 하나만 둔다(저장, 추가).
+- **보조**(`Button`의 `variant="ghost"`): `bg` 바탕, `border` 테두리, `text` 글자. 취소, 펼치기 전의 "교재 추가".
 - 높이 `touch-target`(44px) 이상, 모서리 `radius-xl`, 좌우 `space-4`.
 - 비활성은 `opacity: .5`. 저장할 변경이 없거나 진행 중일 때 막는다.
 - 호출하는 쪽이 정하는 것: 글자, `type`(`submit`/`button`), 비활성 조건, 넓이(목록 아래 버튼은 꽉 채움).

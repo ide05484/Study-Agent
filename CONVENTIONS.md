@@ -67,6 +67,8 @@ Prettier로 맞춘다(`Frontend/.prettierrc.json`). 커밋 전에 `npm run forma
 | `interfaces/` | 도메인 이름 camelCase (`mockExam.ts`) | `export interface`, `export type` |
 | `libs/` | 역할 이름 소문자 (`date.ts`, `errors.ts`) | named export |
 
+- 컴포넌트들이 함께 쓰는 상수·도우미는 같은 폴더에 camelCase `.ts`로 두고 named export한다(예: `components/ui/buttonVariants.ts`).
+
 - `components/` 아래는 화면 영역별 폴더(`chat/`, `dashboard/`, `settings/`, `layout/`)로 나눈다. 여러 화면에서 쓰면 `ui/`에 둔다.
 - 파일 하나에 컴포넌트 하나를 default export한다. 그 컴포넌트만 쓰는 작은 도우미 함수는 같은 파일에 둔다.
 - 함수는 `function` 선언으로 쓴다. 화살표 함수는 콜백과 인라인 핸들러에만 쓴다.
