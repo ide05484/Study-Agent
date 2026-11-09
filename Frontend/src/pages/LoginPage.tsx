@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Navigate } from 'react-router'
+import SplashScreen from '../components/layout/SplashScreen.tsx'
 import Mascot from '../components/ui/Mascot.tsx'
 import { useKakaoLogin } from '../hooks/useAuth.ts'
 import { useSession } from '../hooks/useSession.ts'
@@ -16,6 +17,8 @@ export default function LoginPage() {
   const { redirecting, error, login } = useKakaoLogin()
   const [urlError, setUrlError] = useState(hasAuthError)
 
+  // 코드 교환 중에는 RequireAuth와 같은 스플래시를 보여 줘 로그인 직후 화면이 바뀌지 않게 한다
+  if (loading) return <SplashScreen />
   if (session) return <Navigate to="/" replace />
 
   const handleLogin = () => {

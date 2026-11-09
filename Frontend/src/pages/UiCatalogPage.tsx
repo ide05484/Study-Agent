@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import SplashScreen from '../components/layout/SplashScreen.tsx'
 import Button from '../components/ui/Button.tsx'
 import ButtonLink from '../components/ui/ButtonLink.tsx'
 import Chevron from '../components/ui/Chevron.tsx'
@@ -10,7 +11,6 @@ import Section from '../components/ui/Section.tsx'
 import Select from '../components/ui/Select.tsx'
 import TextArea from '../components/ui/TextArea.tsx'
 import TextField from '../components/ui/TextField.tsx'
-import SplashScreen from '../components/layout/SplashScreen.tsx'
 import NotFoundPage from './NotFoundPage.tsx'
 
 interface ColorToken {
@@ -42,7 +42,7 @@ const COLOR_TOKENS: ColorToken[] = [
 const MASCOT_MOODS: MascotMood[] = ['base', 'cheer', 'think', 'oops']
 
 interface CatalogColumnProps {
-  themeClass: string
+  themeClass: 'theme-light' | 'theme-dark'
   idPrefix: string
 }
 

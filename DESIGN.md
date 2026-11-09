@@ -266,7 +266,7 @@
 - **Mascot**: 합격이. 로그인·앱 시작·404에만. `mood`(`base`|`cheer`|`think`|`oops`), `size`(px).
 - **DatePicker**: 날짜 선택(아래 규칙 참고).
 - 화면 단위 `components/layout/SplashScreen`(앱 시작 화면, props 없음)과 `pages/NotFoundPage`도 `/ui`에서 본다.
-- 예외로 컴포넌트를 쓰지 않는 곳: 채팅 입력 줄·보내기, 로그인의 카카오 버튼, DatePicker 트리거.
+- 예외로 컴포넌트를 쓰지 않는 곳: 채팅 입력 줄·보내기, 로그인의 카카오 버튼, DatePicker 트리거, `SettingsPage`의 교재 삭제 버튼, `AppHeader`의 메뉴(햄버거) 버튼. 아이콘 버튼 두 곳은 `IconButton` 컴포넌트 후보로 다음 단계에서 다룬다.
 
 - **말풍선**: 코치는 왼쪽·`--surface`, 사용자는 오른쪽·`--accent-soft`. 모서리 16px, 꼬리 쪽 모서리만 4px.
 - **입력창**: 둥근 입력 필드 + 보내기 버튼(`--accent`). 전송 중이거나 비어 있으면 버튼 비활성. 지난 채팅방에서는 입력창 대신 읽기 전용 안내.
