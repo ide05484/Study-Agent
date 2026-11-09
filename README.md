@@ -213,7 +213,7 @@ erDiagram
 |---|---|
 | [SERVICE_FLOW.md](SERVICE_FLOW.md) | 서비스 흐름, 채팅 의도별 처리, 계획 분배 규칙 |
 | [DESIGN.md](DESIGN.md) | 화면 구성, 색상 토큰, 타이포그래피, 컴포넌트 규칙 |
-| 디자인 시스템 · 화면 시안 | Claude 디자인으로 만든 토큰·컴포넌트·캐릭터와 화면 시안 (링크) |
+| [docs/design](docs/design/README.md) | 디자인 시스템(토큰·컴포넌트·캐릭터)과 화면 시안 캡처 |
 | [docs/coach](docs/coach/coach-tone.md) · [docs/study-methods](docs/study-methods/README.md) | 코치 말투, 과목별 공부법 (프롬프트 원본) |
 | [LOCAL_DEV.md](LOCAL_DEV.md) · [DEPLOY.md](DEPLOY.md) | 로컬 실행, 배포 |
 | [History](History/README.md) | 작업 기록: 단계별로 고려한 상황, 해결 방법, 결정 과정 |
