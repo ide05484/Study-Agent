@@ -39,7 +39,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   return (
     <>
       <div
-        className={`absolute inset-0 bg-stone-900/40 transition-opacity duration-200 ${
+        className={`absolute inset-0 bg-scrim transition-opacity duration-200 ${
           open ? 'opacity-100' : 'pointer-events-none opacity-0'
         }`}
         onClick={onClose}

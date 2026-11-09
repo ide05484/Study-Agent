@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from 'react'
 import { addDays, todayKey } from '../../libs/date.ts'
 import { toErrorMessage } from '../../libs/errors.ts'
-import { buttonClass } from '../ui/classes.ts'
+import Button from '../ui/Button.tsx'
 import DatePicker from '../ui/DatePicker.tsx'
+import Notice from '../ui/Notice.tsx'
 
 interface ExamDateFormProps {
   examDate: string | null
@@ -43,12 +44,24 @@ export default function ExamDateForm({ examDate, disabled, onSave }: ExamDateFor
         disabled={disabled}
         onChange={setDraft}
       />
-      <button type="submit" className={buttonClass} disabled={disabled || saving || draft === (examDate ?? '')}>
+      <Button type="submit" disabled={disabled || saving || draft === (examDate ?? '')}>
         저장
-      </button>
-      {disabled && <p className="col-span-full text-sm text-muted">로그인 후 설정할 수 있어요.</p>}
-      {notice && <p className="col-span-full text-sm text-muted">{notice}</p>}
-      {error && <p className="col-span-full text-sm text-danger">{error}</p>}
+      </Button>
+      {disabled && (
+        <div className="col-span-full">
+          <Notice>로그인 후 설정할 수 있어요.</Notice>
+        </div>
+      )}
+      {notice && (
+        <div className="col-span-full">
+          <Notice>{notice}</Notice>
+        </div>
+      )}
+      {error && (
+        <div className="col-span-full">
+          <Notice tone="error">{error}</Notice>
+        </div>
+      )}
     </form>
   )
 }

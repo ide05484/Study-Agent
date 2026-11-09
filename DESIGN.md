@@ -207,6 +207,7 @@
 | `--danger` | `danger` | `#c2362b` | `#f07a6e` | 오류 문구 |
 | `--kakao` | `kakao` | `#fee500` | `#fee500` | 카카오 로그인 버튼 전용 |
 | `--on-kakao` | `on-kakao` | `rgb(0 0 0 / 0.85)` | `rgb(0 0 0 / 0.85)` | `kakao` 위 글자 (카카오 로그인 버튼 전용) |
+| `--scrim` | `scrim` | `rgb(28 25 23 / 0.4)` | `rgb(28 25 23 / 0.4)` | 사이드바 바깥 딤 |
 
 공부 잔디 단계 (0 = 기록 없음, 4 = 계획 달성):
 
@@ -266,7 +267,7 @@
 - **Tailwind CSS v4** (`@tailwindcss/vite` 플러그인). 스타일은 컴포넌트의 유틸리티 클래스로 작성하고, 별도 CSS 클래스는 만들지 않는다.
   - `index.css`에는 색상 토큰, `@theme`, 기본 스타일(`@layer base`)만 둔다.
   - `index.css`의 `@utility marker`(형광펜)는 예외로 둔 유일한 커스텀 유틸리티다.
-  - 여러 화면에서 반복되는 클래스 묶음(영역 괘선, 버튼, 입력 필드, 화살표)은 `components/ui/classes.ts`에 모아 둔다.
+  - 여러 화면에서 반복되는 모양은 `components/ui/`의 컴포넌트로 둔다: `Button`, `ButtonLink`, `TextField`, `Select`, `TextArea`, `Section`, `Disclosure`, `Chevron`, `Notice`(날짜 선택은 `DatePicker`).
   - 클래스 이름은 문자열을 이어 붙여 만들지 않는다(`bg-heat-${n}` ✕). Tailwind가 소스에서 찾을 수 있도록 전체 이름을 적은 매핑을 쓴다.
 - **react-calendar** (날짜 선택). 라이브러리 CSS(`react-calendar/dist/Calendar.css`)는 불러오지 않는다.
   - 칸 배치는 라이브러리의 인라인 스타일이 잡는다. 모양은 Tailwind로만 입힌다.

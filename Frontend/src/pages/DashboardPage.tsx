@@ -1,7 +1,9 @@
 import { Link } from 'react-router'
 import StudyHeatmap from '../components/dashboard/StudyHeatmap.tsx'
 import SubjectProgressList from '../components/dashboard/SubjectProgressList.tsx'
-import { chevronClass, sectionClass, sectionTitleClass } from '../components/ui/classes.ts'
+import Chevron from '../components/ui/Chevron.tsx'
+import Notice from '../components/ui/Notice.tsx'
+import Section from '../components/ui/Section.tsx'
 import { useDashboard } from '../hooks/useDashboard.ts'
 import { SUBJECT_LABELS } from '../libs/subjects.ts'
 
@@ -15,12 +17,11 @@ export default function DashboardPage() {
 
   return (
     <div className="px-4">
-      <section className={sectionClass}>
-        <h2 className={sectionTitleClass}>공부 잔디</h2>
+      <Section title="공부 잔디">
         <StudyHeatmap days={data.heat} />
-      </section>
+      </Section>
 
-      <section className={sectionClass}>
+      <Section>
         {data.streak > 0 ? (
           <p className="flex items-baseline gap-1">
             <span className="text-[34px] leading-none font-bold tabular-nums">{data.streak}</span>
@@ -29,12 +30,12 @@ export default function DashboardPage() {
         ) : (
           <p className="font-bold">오늘 기록을 남기면 연속 공부가 시작돼요.</p>
         )}
-      </section>
+      </Section>
 
-      <section className={sectionClass}>
+      <Section>
         <Link to="/settings" className="mb-3 flex min-h-11 items-center justify-between">
           <h2 className="text-[15px] font-bold">이번주 목표량</h2>
-          <span className={`${chevronClass} -rotate-45`} aria-hidden="true" />
+          <Chevron direction="right" />
         </Link>
         {data.weekly.length > 0 ? (
           <>
@@ -51,14 +52,13 @@ export default function DashboardPage() {
             </p>
           </>
         ) : (
-          <p className="text-sm text-muted">이번 주 계획이 없어요. 공부 설정에서 시험일과 교재를 등록하세요.</p>
+          <Notice>이번 주 계획이 없어요. 공부 설정에서 시험일과 교재를 등록하세요.</Notice>
         )}
-      </section>
+      </Section>
 
-      <section className={sectionClass}>
-        <h2 className={sectionTitleClass}>과목별 진도율</h2>
+      <Section title="과목별 진도율">
         <SubjectProgressList items={data.subjects} />
-      </section>
+      </Section>
     </div>
   )
 }

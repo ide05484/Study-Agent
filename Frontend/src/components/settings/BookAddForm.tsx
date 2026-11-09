@@ -2,7 +2,9 @@ import { useState, type FormEvent } from 'react'
 import type { NewBook } from '../../interfaces/study.ts'
 import type { Subject } from '../../interfaces/subject.ts'
 import { SUBJECT_LABELS, SUBJECTS } from '../../libs/subjects.ts'
-import { buttonClass, fieldClass, ghostButtonClass } from '../ui/classes.ts'
+import Button from '../ui/Button.tsx'
+import Select from '../ui/Select.tsx'
+import TextField from '../ui/TextField.tsx'
 
 interface BookAddFormProps {
   onAdd: (input: NewBook) => Promise<boolean>
@@ -29,27 +31,20 @@ export default function BookAddForm({ onAdd, onCancel }: BookAddFormProps) {
 
   return (
     <form className="mt-3 grid gap-2" onSubmit={handleSubmit}>
-      <select
-        className={fieldClass}
-        value={subject}
-        onChange={(e) => setSubject(e.target.value as Subject)}
-        aria-label="과목"
-      >
+      <Select value={subject} onChange={(e) => setSubject(e.target.value as Subject)} aria-label="과목">
         {SUBJECTS.map((s) => (
           <option key={s} value={s}>
             {SUBJECT_LABELS[s]}
           </option>
         ))}
-      </select>
-      <input
-        className={fieldClass}
+      </Select>
+      <TextField
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="교재명 (예: 봉투모의고사)"
         aria-label="교재명"
       />
-      <input
-        className={fieldClass}
+      <TextField
         type="number"
         inputMode="numeric"
         min={1}
@@ -59,12 +54,12 @@ export default function BookAddForm({ onAdd, onCancel }: BookAddFormProps) {
         aria-label="총 페이지"
       />
       <div className="flex justify-end gap-2">
-        <button type="button" className={ghostButtonClass} onClick={onCancel}>
+        <Button type="button" variant="ghost" onClick={onCancel}>
           취소
-        </button>
-        <button type="submit" className={buttonClass} disabled={!valid || saving}>
+        </Button>
+        <Button type="submit" disabled={!valid || saving}>
           추가
-        </button>
+        </Button>
       </div>
     </form>
   )

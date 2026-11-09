@@ -1,13 +1,11 @@
 import { useState } from 'react'
 import BookAddForm from '../components/settings/BookAddForm.tsx'
 import ExamDateForm from '../components/settings/ExamDateForm.tsx'
-import {
-  chevronClass,
-  fieldClass,
-  ghostButtonClass,
-  sectionClass,
-  sectionTitleClass,
-} from '../components/ui/classes.ts'
+import Button from '../components/ui/Button.tsx'
+import Disclosure from '../components/ui/Disclosure.tsx'
+import Notice from '../components/ui/Notice.tsx'
+import Section from '../components/ui/Section.tsx'
+import TextArea from '../components/ui/TextArea.tsx'
 import { useBooks } from '../hooks/useBooks.ts'
 import { useProfileContext } from '../hooks/useProfile.ts'
 import { SUBJECT_LABELS, SUBJECTS } from '../libs/subjects.ts'
@@ -21,7 +19,7 @@ export default function SettingsPage() {
 
   return (
     <div className="px-4">
-      <section className={sectionClass}>
+      <Section>
         {/* 프로필을 불러온 뒤 저장된 시험일로 폼을 다시 채운다 */}
         <ExamDateForm
           key={profile?.id ?? ''}
@@ -29,15 +27,12 @@ export default function SettingsPage() {
           disabled={!profile}
           onSave={saveExamDate}
         />
-      </section>
+      </Section>
 
-      <section className={sectionClass}>
-        <h2 className={sectionTitleClass}>D-Day까지 남은 공부 분량</h2>
-        {loading && <p className="text-sm text-muted">불러오는 중…</p>}
+      <Section title="D-Day까지 남은 공부 분량">
+        {loading && <Notice>불러오는 중…</Notice>}
         {!loading && books.length === 0 && (
-          <p className="text-sm text-muted">
-            등록된 교재가 없어요. 교재를 추가하면 시험일까지 매일 분량을 나눠 드려요.
-          </p>
+          <Notice>등록된 교재가 없어요. 교재를 추가하면 시험일까지 매일 분량을 나눠 드려요.</Notice>
         )}
         <div className="flex flex-col gap-3">
           {SUBJECTS.map((subject) => {
@@ -70,44 +65,48 @@ export default function SettingsPage() {
             )
           })}
         </div>
-        {notice && <p className="mt-2 text-sm text-muted">{notice}</p>}
-        {error && <p className="mt-2 text-sm text-danger">{error}</p>}
+        {notice && (
+          <div className="mt-2">
+            <Notice>{notice}</Notice>
+          </div>
+        )}
+        {error && (
+          <div className="mt-2">
+            <Notice tone="error">{error}</Notice>
+          </div>
+        )}
         {adding ? (
           <BookAddForm onAdd={add} onCancel={() => setAdding(false)} />
         ) : (
-          <button type="button" className={`${ghostButtonClass} mt-3 w-full`} onClick={() => setAdding(true)}>
-            교재 추가
-          </button>
+          <div className="mt-3">
+            <Button type="button" variant="ghost" block onClick={() => setAdding(true)}>
+              교재 추가
+            </Button>
+          </div>
         )}
-      </section>
+      </Section>
 
       {/* 과목별 공부법은 준비 중. TODO: 기본 공부법 내용, 메모 저장(테이블 미정) */}
-      <section className={sectionClass}>
-        <h2 className={sectionTitleClass}>과목별 공부법</h2>
+      <Section title="과목별 공부법">
         <div className="divide-y divide-line">
           {SUBJECTS.map((subject) => (
-            <details key={subject} className="group">
-              <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between font-semibold [&::-webkit-details-marker]:hidden">
-                {SUBJECT_LABELS[subject]}
-                <span className={`${chevronClass} group-open:-rotate-135`} aria-hidden="true" />
-              </summary>
+            <Disclosure key={subject} summary={SUBJECT_LABELS[subject]}>
               <div className="grid gap-2 pb-3">
-                <p className="text-sm text-muted">기본 공부법은 준비 중이에요.</p>
+                <Notice>기본 공부법은 준비 중이에요.</Notice>
                 <label className="text-sm font-semibold" htmlFor={`memo-${subject}`}>
                   내 메모
                 </label>
-                <textarea
+                <TextArea
                   id={`memo-${subject}`}
-                  className={fieldClass}
                   rows={3}
                   placeholder="더 신경 쓰고 싶은 부분을 적어 두면 코치가 참고해요."
                   disabled
                 />
               </div>
-            </details>
+            </Disclosure>
           ))}
         </div>
-      </section>
+      </Section>
     </div>
   )
 }
