@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import Button from '../components/ui/Button.tsx'
 import ButtonLink from '../components/ui/ButtonLink.tsx'
 import Chevron from '../components/ui/Chevron.tsx'
+import DatePicker from '../components/ui/DatePicker.tsx'
 import Disclosure from '../components/ui/Disclosure.tsx'
 import Mascot, { type MascotMood } from '../components/ui/Mascot.tsx'
 import Notice from '../components/ui/Notice.tsx'
@@ -45,6 +47,8 @@ interface CatalogColumnProps {
 }
 
 function CatalogColumn({ themeClass, idPrefix }: CatalogColumnProps) {
+  const [date, setDate] = useState('')
+
   return (
     <div className={`${themeClass} min-w-0 flex-1 bg-bg px-4 py-6 text-fg`}>
       <div className="mx-auto max-w-[480px]">
@@ -119,10 +123,18 @@ function CatalogColumn({ themeClass, idPrefix }: CatalogColumnProps) {
         </Section>
 
         <Section title="Section">
-          <p>제목이 있는 영역</p>
+          <div className="rounded-xl border border-line px-4">
+            <Section title="예시 제목">
+              <p>제목이 있는 영역</p>
+            </Section>
+            <Section>
+              <p>제목이 없는 영역</p>
+            </Section>
+          </div>
         </Section>
-        <Section>
-          <p>제목이 없는 영역</p>
+
+        <Section title="DatePicker">
+          <DatePicker id={`${idPrefix}-date`} label="예시 날짜" value={date} onChange={setDate} />
         </Section>
 
         <Section title="Disclosure">
@@ -157,6 +169,7 @@ function CatalogColumn({ themeClass, idPrefix }: CatalogColumnProps) {
           </ul>
         </Section>
 
+        {/* SplashScreen 루트가 h-dvh라 창이 높으면 틀 안에서 내용이 아래로 밀린다 */}
         <Section title="SplashScreen">
           <div className="h-[600px] overflow-hidden rounded-xl border border-line">
             <SplashScreen />
