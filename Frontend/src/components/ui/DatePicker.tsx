@@ -14,7 +14,7 @@ interface DatePickerProps {
 // react-calendar의 CSS는 쓰지 않는다. 칸 배치는 라이브러리의 인라인 스타일이 잡고, 모양은 Tailwind로만 입힌다.
 // 요일 줄은 react-calendar가 <abbr title>로, 날짜 칸은 title 없는 <abbr>로 그려서 title로 구분한다.
 const calendarClass =
-  'w-[min(18rem,calc(100vw-6rem))] [&_abbr[title]]:block [&_abbr[title]]:py-1 [&_abbr[title]]:text-center [&_abbr[title]]:text-xs [&_abbr[title]]:text-muted [&_abbr[title]]:no-underline'
+  'w-[min(18rem,calc(100vw-7.5rem))] [&_abbr[title]]:block [&_abbr[title]]:py-1 [&_abbr[title]]:text-center [&_abbr[title]]:text-xs [&_abbr[title]]:text-muted [&_abbr[title]]:no-underline'
 
 const tileBaseClass =
   'aspect-square rounded-full text-sm tabular-nums transition-colors disabled:cursor-default disabled:opacity-30'
