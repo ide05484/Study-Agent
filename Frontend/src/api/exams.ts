@@ -22,6 +22,7 @@ export async function fetchMockExams(): Promise<MockExam[]> {
 
 // 시험을 만든 뒤 점수를 넣는다. 점수 insert가 실패하면 만든 시험을 지우고 원래 오류를 던진다
 export async function addMockExam(input: NewMockExam): Promise<MockExam> {
+  if (input.scores.length === 0) throw new Error('점수를 하나 이상 넣어 주세요.')
   const user_id = await requireUserId()
   const { data: created, error } = await supabase
     .from('mock_exams')

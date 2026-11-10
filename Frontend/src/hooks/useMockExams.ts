@@ -38,12 +38,20 @@ export function useMockExams(): MockExamsState {
   // 추가한 뒤 서버 정렬 그대로 다시 불러와 순서를 맞춘다
   const add = useCallback(async (input: NewMockExam) => {
     setError(null)
+    let created: MockExam
     try {
-      await addMockExam(input)
-      setExams(await fetchMockExams())
+      created = await addMockExam(input)
     } catch (e) {
       setError(toErrorMessage(e))
       return false
+    }
+    // 저장은 끝났으므로 재조회가 실패해도 성공으로 본다(다시 누르면 중복 저장된다)
+    try {
+      setExams(await fetchMockExams())
+    } catch {
+      setExams((prev) =>
+        [created, ...prev].sort((a, b) => (a.taken_on < b.taken_on ? 1 : a.taken_on > b.taken_on ? -1 : 0)),
+      )
     }
     return true
   }, [])

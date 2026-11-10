@@ -29,7 +29,7 @@ export default function ExamScoreForm({ onAdd, onCancel }: ExamScoreFormProps) {
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (!valid) return
+    if (!valid || saving) return
     const scores: MockExamScore[] = filled.map((subject) => ({ subject, score: Number(texts[subject]) }))
     setSaving(true)
     const added = await onAdd({ kind, name: name.trim(), taken_on: takenOn, scores })
