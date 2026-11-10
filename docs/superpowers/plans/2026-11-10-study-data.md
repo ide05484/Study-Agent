@@ -25,11 +25,14 @@
 | 범위 | 채팅으로 교재 추가·점수 입력, 지난 날짜 기록은 1단계 Task 3~7 뒤로 미룬다 | 진행자 제안 |
 | 기본서 구분 | 교재 종류 값 없이 교재별 목표 회독 수만 둔다. 기본서 3회독, 나머지 1회독 | 사용자 |
 | 진도 입력 | "몇 회독째 + 그 회독에서 몇 쪽(Day)까지" | 진행자 제안 |
-| 영어 단어 1·2권 | 한 행(합계 Day 수), 단위 Day, 하루 고정 1 Day | 사용자(하루 Day 1개) |
+| 영어 단어 1·2권 | 한 행(합계 Day 수), 단위 Day, 하루 고정 1 Day. Mock으로 60 Day·4회독 | 사용자(하루 Day 1개, Day 수는 임의로 정하라고 함) |
 | 점수 입력 경로 | 공부 설정 화면 폼 | 진행자 제안 |
-| 한국사 | 저장하지 않는다(2026년부터 시험 과목에서 빠짐). 과목 enum은 4개 그대로 | 진행자 제안 |
+| 한국사 | 저장하지 않는다(2026년부터 시험 과목에서 빠짐). 과목 enum은 4개 그대로 | 진행자 제안, 사용자 위임 |
 | 처음 데이터 | Mock 데이터 스크립트로 넣는다. 실제 사용자 데이터는 나중에 카카오 로그인 계정에서 화면으로 넣는다 | 사용자 |
-| 실제 점수 보관 | Mock 원본 JSON은 git에 올리지 않는다(저장소가 공개). 가짜 값의 예시 파일만 커밋한다 | 진행자 제안 |
+| 실제 점수 보관 | Mock 원본 JSON은 git에 올리지 않는다(저장소가 공개). 가짜 값의 예시 파일만 커밋한다 | 진행자 제안, 사용자 위임 |
+| 시험일 | Mock `2027-06-19` | 진행자 제안, 사용자 위임 |
+| Mock을 넣을 계정 | 개발 프로젝트에 로그인된 사용자 카카오 계정 하나 | 사용자 |
+| 테스트 도구 | Backend에 Deno test를 넣는다. 스테이징된 `@supabase/server` 변경은 Task 2 커밋에 같이 넣는다 | 사용자 |
 
 ## Global Constraints
 
@@ -42,7 +45,7 @@
 - 클라우드를 바꾸는 단계(☁️)는 사용자 승인 뒤 실행한다. Supabase CLI 명령은 PowerShell에서 `--project-ref ishtebcswgyagbbaakpx`(개발 프로젝트)로 실행한다. MCP는 사용자가 `/mcp`에서 인증한 경우에만 쓴다.
 - Mock SQL은 **개발 프로젝트에서만** 실행한다. 그 사용자의 교재·계획·시험 기록을 지우고 다시 넣는다.
 - 실제 점수와 개인 정보는 커밋·History에 적지 않는다.
-- 각 Task 끝에서 `feature/study_Mockdata`에 커밋한다. push는 하지 않는다. 스테이징된 사용자 변경(`Backend/package.json`의 `@supabase/server`, `package-lock.json`)은 Task 2 전에 처리 방법을 사용자에게 묻는다.
+- 각 Task 끝에서 `feature/study_Mockdata`에 커밋한다. push는 하지 않는다. 스테이징된 사용자 변경(`Backend/package.json`의 `@supabase/server`, `package-lock.json`)은 Task 2 커밋에 같이 넣는다(사용자 승인). Task 1 커밋에는 넣지 않도록 경로를 지정해 커밋한다.
 - Task가 끝날 때마다 History 규칙대로 기록한다(메인 세션).
 
 ## Review Focus
@@ -99,7 +102,7 @@ Run (`Backend/`): `npx supabase migration new study_rounds_and_exam_kind`
 - [ ] **Step 2: ☁️ 개발 프로젝트에 반영**
 
 MCP가 인증되어 있으면 `apply_migration` 후 `execute_sql`로 이력 버전을 파일 타임스탬프로 맞춘다(1단계 Task 1과 같은 방식). 아니면 사용자가 `npx supabase link --project-ref ishtebcswgyagbbaakpx`를 한 뒤 `npm run db:push`.
-Expected: 기존 교재 8권(검증용 계정)이 `unit = page`, `target_rounds = 1`, `current_round = 1`로 채워진다. 보안 어드바이저 경고 0건(MCP일 때).
+Expected: 기존 교재 행이 모두 `unit = page`, `target_rounds = 1`, `current_round = 1`로 채워진다. 보안 어드바이저 경고 0건(MCP일 때).
 
 - [ ] **Step 3: DB 타입 생성**
 
@@ -140,7 +143,7 @@ git commit -m "feat: 교재 회독·단위와 시험 구분 컬럼 추가"
 - `daily_amount = k`: `a = d·k`, `b = min(R, (d+1)·k)`. `a ≥ R`이면 그날부터 없음(시험 전날까지 못 끝내면 거기서 잘린다)
 - 위치 `p`의 교재 기준 번호 `u = completedUnits + p` → `round = ⌊u / total⌋ + 1`, `page = u mod total + 1`. 범위가 회독 경계를 넘으면 회독마다 한 줄로 나눈다. `a = b`인 날은 건너뛴다.
 
-- [ ] **Step 1: 테스트 도구 준비** (사용자가 스테이징된 `package.json` 처리 방법을 정한 뒤)
+- [ ] **Step 1: 테스트 도구 준비**
 
 Run (`Backend/`): `npm i -D deno`. scripts에 `"test": "deno test --no-lock supabase/functions"`.
 1단계 Task 3 Step 1과 같은 일이다. 1단계 계획의 그 Step에 "2단계 Task 2에서 함"이라고 적는다.
@@ -264,7 +267,7 @@ Expected 출력 (값은 계산 결과):
 - [ ] **Step 3: SQL 만들기와 ☁️ 실행 (개발 프로젝트)**
 
 Run: `npm run mock:sql -- <USER_ID> > <스크래치패드>/study-mock.sql` (저장소 밖)
-대상 계정: 사용자 카카오 계정(개발 프로젝트, 화면 확인용)과 검증용 계정. `USER_ID`는 대시보드 Authentication → Users에서 사용자가 알려 주거나 MCP로 조회한다. 실행은 MCP `execute_sql` 또는 사용자가 SQL Editor에 붙여 넣는다.
+대상 계정: 개발 프로젝트에 로그인된 사용자 카카오 계정 하나. `USER_ID`는 MCP로 조회하거나(`auth.users`에서 provider가 kakao인 행) 대시보드 Authentication → Users에서 사용자가 알려 준다. 실행은 MCP `execute_sql` 또는 사용자가 SQL Editor에 붙여 넣는다.
 Expected: 교재 9행, `mock_exams` 3행, `mock_exam_scores` 12행, `profiles.exam_date = 2027-06-19`.
 
 - [ ] **Step 4: 계획 다시 나누기와 대조**
