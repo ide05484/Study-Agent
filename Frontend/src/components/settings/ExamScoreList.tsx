@@ -48,6 +48,10 @@ const RING_SIZE = 88
 const RING_STROKE = 8
 const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2
 const RING_LENGTH = 2 * Math.PI * RING_RADIUS
+const RING_TEXT_CLASS = {
+  short: 'text-2xl font-bold tabular-nums',
+  long: 'text-lg font-bold tabular-nums',
+} as const
 
 // 만점 대비 총점을 원 둘레로 칠하고 가운데에 총점을 크게 쓴다
 function ScoreRing({ total, max }: ScoreRingProps) {
@@ -74,7 +78,8 @@ function ScoreRing({ total, max }: ScoreRingProps) {
           />
         )}
       </svg>
-      <span className="text-2xl font-bold tabular-nums">{total}</span>
+      {/* 399.99처럼 길면 게이지 안쪽(약 72px)을 넘지 않게 글자를 줄인다 */}
+      <span className={RING_TEXT_CLASS[String(total).length > 4 ? 'long' : 'short']}>{total}</span>
     </div>
   )
 }

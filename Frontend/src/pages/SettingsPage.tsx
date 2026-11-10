@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import BookAddForm from '../components/settings/BookAddForm.tsx'
 import BookProgressForm from '../components/settings/BookProgressForm.tsx'
 import ExamDateForm from '../components/settings/ExamDateForm.tsx'
@@ -29,13 +29,22 @@ export default function SettingsPage() {
   const [selecting, setSelecting] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [removing, setRemoving] = useState(false)
+  const cancelSelectRef = useRef<HTMLButtonElement>(null)
+  // 목록에서 사라진 교재는 선택에서 빼고 센다
+  const selectedBookIds = books.filter((book) => selectedIds.has(book.id)).map((book) => book.id)
 
-  function removeOne(id: string, title: string) {
-    if (!window.confirm(`'${title}'을(를) 삭제할까요?`)) return
-    void remove([id]).then((ok) => {
-      // 삭제한 교재의 수정 폼이 열려 있었다면 닫는다
-      if (ok) setEditingId((current) => (current === id ? null : current))
-    })
+  // 선택 모드로 들어가면 제목 ⋮가 사라지므로 포커스를 취소 버튼으로 옮긴다
+  useEffect(() => {
+    if (selecting) cancelSelectRef.current?.focus()
+  }, [selecting])
+
+  async function removeOne(id: string, title: string) {
+    if (removing || !window.confirm(`'${title}'을(를) 삭제할까요?`)) return
+    setRemoving(true)
+    const ok = await remove([id])
+    setRemoving(false)
+    // 삭제한 교재의 수정 폼이 열려 있었다면 닫는다
+    if (ok) setEditingId((current) => (current === id ? null : current))
   }
 
   function startSelecting() {
@@ -60,10 +69,10 @@ export default function SettingsPage() {
   }
 
   async function removeSelected() {
-    if (selectedIds.size === 0 || removing) return
-    if (!window.confirm(`교재 ${selectedIds.size}권을 삭제할까요?`)) return
+    if (selectedBookIds.length === 0 || removing) return
+    if (!window.confirm(`교재 ${selectedBookIds.length}권을 삭제할까요?`)) return
     setRemoving(true)
-    const ok = await remove([...selectedIds])
+    const ok = await remove(selectedBookIds)
     setRemoving(false)
     if (ok) stopSelecting()
   }
@@ -108,6 +117,7 @@ export default function SettingsPage() {
                           <input
                             type="checkbox"
                             className="size-5 shrink-0 accent-accent"
+                            disabled={removing}
                             checked={selectedIds.has(book.id)}
                             onChange={() => toggleSelected(book.id)}
                           />
@@ -122,7 +132,7 @@ export default function SettingsPage() {
                             label={`${book.title} 메뉴`}
                             items={[
                               { label: '수정', onSelect: () => setEditingId(book.id) },
-                              { label: '삭제', tone: 'danger', onSelect: () => removeOne(book.id, book.title) },
+                              { label: '삭제', tone: 'danger', onSelect: () => void removeOne(book.id, book.title) },
                             ]}
                           />
                         </div>
@@ -153,11 +163,15 @@ export default function SettingsPage() {
         )}
         {selecting ? (
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <Button type="button" variant="ghost" disabled={removing} onClick={stopSelecting}>
+            <Button ref={cancelSelectRef} type="button" variant="ghost" disabled={removing} onClick={stopSelecting}>
               취소
             </Button>
-            <Button type="button" disabled={selectedIds.size === 0 || removing} onClick={() => void removeSelected()}>
-              {removing ? '삭제하는 중…' : `선택 삭제 (${selectedIds.size})`}
+            <Button
+              type="button"
+              disabled={selectedBookIds.length === 0 || removing}
+              onClick={() => void removeSelected()}
+            >
+              {removing ? '삭제하는 중…' : `선택 삭제 (${selectedBookIds.length})`}
             </Button>
           </div>
         ) : adding ? (

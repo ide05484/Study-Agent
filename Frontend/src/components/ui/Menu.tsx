@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useId, useRef, useState, type FocusEvent, type KeyboardEvent } from 'react'
 
 export interface MenuItem {
   label: string
@@ -57,13 +57,21 @@ export default function Menu({ label, items }: MenuProps) {
     buttons[next]?.focus()
   }
 
+  // 항목이 포커스를 다른 곳으로 옮기거나(선택 모드의 취소 버튼 등) ⋮가 사라질 수 있어,
+  // 고른 뒤에도 포커스가 메뉴 안에 남아 있을 때만 ⋮로 돌려준다
   function select(item: MenuItem) {
-    close()
+    setOpen(false)
     item.onSelect()
+    if (rootRef.current?.contains(document.activeElement)) triggerRef.current?.focus()
+  }
+
+  // Tab 등으로 포커스가 메뉴 밖으로 나가면 닫는다
+  function handleBlur(e: FocusEvent<HTMLDivElement>) {
+    if (open && !rootRef.current?.contains(e.relatedTarget as Node | null)) setOpen(false)
   }
 
   return (
-    <div ref={rootRef} className="relative" onKeyDown={handleKeyDown}>
+    <div ref={rootRef} className="relative" onKeyDown={handleKeyDown} onBlur={handleBlur}>
       <button
         ref={triggerRef}
         type="button"
