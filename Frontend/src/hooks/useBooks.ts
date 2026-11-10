@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { regeneratePlan } from '../api/plan.ts'
-import { addBook, deleteBook, fetchBooks } from '../api/study.ts'
-import type { Book, NewBook } from '../interfaces/study.ts'
+import { addBook, deleteBook, fetchBooks, updateBookProgress } from '../api/study.ts'
+import type { Book, BookProgress, NewBook } from '../interfaces/study.ts'
 import { toErrorMessage } from '../libs/errors.ts'
 import { describePlanResult } from '../libs/plan.ts'
 
@@ -12,6 +12,8 @@ export interface BooksState {
   notice: string | null
   // 성공하면 true. 실패 사유는 error로 노출한다
   add: (input: NewBook) => Promise<boolean>
+  // 저장한 뒤 계획을 다시 나눈다
+  updateProgress: (id: string, input: BookProgress) => Promise<boolean>
   remove: (id: string) => Promise<void>
 }
 
@@ -66,6 +68,23 @@ export function useBooks(): BooksState {
     [replan],
   )
 
+  const updateProgress = useCallback(
+    async (id: string, input: BookProgress) => {
+      setError(null)
+      setNotice(null)
+      try {
+        const updated = await updateBookProgress(id, input)
+        setBooks((prev) => prev.map((book) => (book.id === id ? updated : book)))
+      } catch (e) {
+        setError(toErrorMessage(e))
+        return false
+      }
+      await replan()
+      return true
+    },
+    [replan],
+  )
+
   const remove = useCallback(
     async (id: string) => {
       setError(null)
@@ -82,5 +101,5 @@ export function useBooks(): BooksState {
     [replan],
   )
 
-  return { books, loading, error, notice, add, remove }
+  return { books, loading, error, notice, add, updateProgress, remove }
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import BookAddForm from '../components/settings/BookAddForm.tsx'
+import BookProgressForm from '../components/settings/BookProgressForm.tsx'
 import ExamDateForm from '../components/settings/ExamDateForm.tsx'
 import Button from '../components/ui/Button.tsx'
 import Disclosure from '../components/ui/Disclosure.tsx'
@@ -8,14 +9,16 @@ import Section from '../components/ui/Section.tsx'
 import TextArea from '../components/ui/TextArea.tsx'
 import { useBooks } from '../hooks/useBooks.ts'
 import { useProfileContext } from '../hooks/useProfile.ts'
+import { progressLabel } from '../libs/books.ts'
 import { SUBJECT_LABELS, SUBJECTS } from '../libs/subjects.ts'
 
 // 공부 설정 변경: 시험일, D-Day까지 남은 공부 분량(추가/삭제), 과목별 공부법 (영역은 괘선으로 구분)
 // TODO: 알림 시간·채널 설정 위치 결정
 export default function SettingsPage() {
   const { profile, saveExamDate } = useProfileContext()
-  const { books, loading, error, notice, add, remove } = useBooks()
+  const { books, loading, error, notice, add, updateProgress, remove } = useBooks()
   const [adding, setAdding] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   return (
     <div className="px-4">
@@ -43,21 +46,36 @@ export default function SettingsPage() {
                 <h3 className="text-sm font-bold text-muted">{SUBJECT_LABELS[subject]}</h3>
                 <ul className="divide-y divide-line">
                   {own.map((book) => (
-                    <li key={book.id} className="flex items-center gap-2">
-                      <span className="min-w-0 flex-1 truncate">{book.title}</span>
-                      <span className="text-sm text-muted tabular-nums">
-                        {book.current_page}/{book.total_pages}쪽
-                      </span>
-                      <button
-                        type="button"
-                        className="grid size-11 place-items-center rounded-xl text-muted"
-                        aria-label={`${book.title} 삭제`}
-                        onClick={() => {
-                          if (window.confirm(`'${book.title}'을(를) 삭제할까요?`)) void remove(book.id)
-                        }}
-                      >
-                        ✕
-                      </button>
+                    <li key={book.id}>
+                      <div className="flex items-center gap-2">
+                        <span className="min-w-0 flex-1 truncate">{book.title}</span>
+                        <span className="text-sm text-muted tabular-nums">{progressLabel(book)}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          aria-label={`${book.title} 진도 수정`}
+                          onClick={() => setEditingId(editingId === book.id ? null : book.id)}
+                        >
+                          수정
+                        </Button>
+                        <button
+                          type="button"
+                          className="grid size-11 place-items-center rounded-xl text-muted"
+                          aria-label={`${book.title} 삭제`}
+                          onClick={() => {
+                            if (window.confirm(`'${book.title}'을(를) 삭제할까요?`)) void remove(book.id)
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      {editingId === book.id && (
+                        <BookProgressForm
+                          book={book}
+                          onSave={(input) => updateProgress(book.id, input)}
+                          onCancel={() => setEditingId(null)}
+                        />
+                      )}
                     </li>
                   ))}
                 </ul>

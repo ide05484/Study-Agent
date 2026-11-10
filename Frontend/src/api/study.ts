@@ -1,4 +1,4 @@
-import type { Book, DailyTaskWithBook, NewBook } from '../interfaces/study.ts'
+import type { Book, BookProgress, DailyTaskWithBook, NewBook } from '../interfaces/study.ts'
 import { requireUserId, supabase } from '../libs/supabase.ts'
 
 const BOOK_COLUMNS = 'id, subject, title, total_pages, current_page, unit, target_rounds, current_round, daily_amount'
@@ -16,6 +16,12 @@ export async function addBook(input: NewBook): Promise<Book> {
     .insert({ ...input, user_id })
     .select(BOOK_COLUMNS)
     .single()
+  if (error) throw error
+  return data as Book
+}
+
+export async function updateBookProgress(id: string, input: BookProgress): Promise<Book> {
+  const { data, error } = await supabase.from('books').update(input).eq('id', id).select(BOOK_COLUMNS).single()
   if (error) throw error
   return data as Book
 }
