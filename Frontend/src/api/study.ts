@@ -1,11 +1,10 @@
 import type { Book, DailyTaskWithBook, NewBook } from '../interfaces/study.ts'
 import { requireUserId, supabase } from '../libs/supabase.ts'
 
+const BOOK_COLUMNS = 'id, subject, title, total_pages, current_page, unit, target_rounds, current_round, daily_amount'
+
 export async function fetchBooks(): Promise<Book[]> {
-  const { data, error } = await supabase
-    .from('books')
-    .select('id, subject, title, total_pages, current_page')
-    .order('created_at', { ascending: true })
+  const { data, error } = await supabase.from('books').select(BOOK_COLUMNS).order('created_at', { ascending: true })
   if (error) throw error
   return data as Book[]
 }
@@ -15,7 +14,7 @@ export async function addBook(input: NewBook): Promise<Book> {
   const { data, error } = await supabase
     .from('books')
     .insert({ ...input, user_id })
-    .select('id, subject, title, total_pages, current_page')
+    .select(BOOK_COLUMNS)
     .single()
   if (error) throw error
   return data as Book
@@ -30,7 +29,9 @@ export async function deleteBook(id: string): Promise<void> {
 export async function fetchDailyTasks(from: string, to: string): Promise<DailyTaskWithBook[]> {
   const { data, error } = await supabase
     .from('daily_tasks')
-    .select('id, book_id, task_date, start_page, end_page, status, book:books(subject, title)')
+    .select(
+      'id, book_id, task_date, start_page, end_page, round, status, book:books(subject, title, unit, target_rounds)',
+    )
     .gte('task_date', from)
     .lte('task_date', to)
   if (error) throw error
