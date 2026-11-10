@@ -20,6 +20,12 @@ export default function SettingsPage() {
   const [adding, setAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
 
+  // 삭제한 교재의 수정 폼이 열려 있었다면 닫는다
+  async function handleRemove(id: string) {
+    await remove(id)
+    setEditingId((current) => (current === id ? null : current))
+  }
+
   return (
     <div className="px-4">
       <Section>
@@ -63,7 +69,7 @@ export default function SettingsPage() {
                           className="grid size-11 place-items-center rounded-xl text-muted"
                           aria-label={`${book.title} 삭제`}
                           onClick={() => {
-                            if (window.confirm(`'${book.title}'을(를) 삭제할까요?`)) void remove(book.id)
+                            if (window.confirm(`'${book.title}'을(를) 삭제할까요?`)) void handleRemove(book.id)
                           }}
                         >
                           ✕
