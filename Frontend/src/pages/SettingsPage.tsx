@@ -2,22 +2,27 @@ import { useState } from 'react'
 import BookAddForm from '../components/settings/BookAddForm.tsx'
 import BookProgressForm from '../components/settings/BookProgressForm.tsx'
 import ExamDateForm from '../components/settings/ExamDateForm.tsx'
+import ExamScoreForm from '../components/settings/ExamScoreForm.tsx'
+import ExamScoreList from '../components/settings/ExamScoreList.tsx'
 import Button from '../components/ui/Button.tsx'
 import Disclosure from '../components/ui/Disclosure.tsx'
 import Notice from '../components/ui/Notice.tsx'
 import Section from '../components/ui/Section.tsx'
 import TextArea from '../components/ui/TextArea.tsx'
 import { useBooks } from '../hooks/useBooks.ts'
+import { useMockExams } from '../hooks/useMockExams.ts'
 import { useProfileContext } from '../hooks/useProfile.ts'
 import { progressLabel } from '../libs/books.ts'
 import { SUBJECT_LABELS, SUBJECTS } from '../libs/subjects.ts'
 
-// 공부 설정 변경: 시험일, D-Day까지 남은 공부 분량(추가/삭제), 과목별 공부법 (영역은 괘선으로 구분)
+// 공부 설정 변경: 시험일, D-Day까지 남은 공부 분량(추가/삭제), 시험 점수, 과목별 공부법 (영역은 괘선으로 구분)
 // TODO: 알림 시간·채널 설정 위치 결정
 export default function SettingsPage() {
   const { profile, saveExamDate } = useProfileContext()
   const { books, loading, error, notice, add, updateProgress, remove } = useBooks()
+  const { exams, loading: examsLoading, error: examsError, add: addExam, remove: removeExam } = useMockExams()
   const [adding, setAdding] = useState(false)
+  const [addingExam, setAddingExam] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
 
   // 삭제한 교재의 수정 폼이 열려 있었다면 닫는다
@@ -105,6 +110,28 @@ export default function SettingsPage() {
           <div className="mt-3">
             <Button type="button" variant="ghost" block onClick={() => setAdding(true)}>
               교재 추가
+            </Button>
+          </div>
+        )}
+      </Section>
+
+      <Section title="시험 점수">
+        {examsLoading && <Notice>불러오는 중…</Notice>}
+        {!examsLoading && exams.length === 0 && (
+          <Notice>등록된 점수가 없어요. 모의고사나 시험을 보면 점수를 넣어 주세요.</Notice>
+        )}
+        <ExamScoreList exams={exams} onRemove={(id) => void removeExam(id)} />
+        {examsError && (
+          <div className="mt-2">
+            <Notice tone="error">{examsError}</Notice>
+          </div>
+        )}
+        {addingExam ? (
+          <ExamScoreForm onAdd={addExam} onCancel={() => setAddingExam(false)} />
+        ) : (
+          <div className="mt-3">
+            <Button type="button" variant="ghost" block onClick={() => setAddingExam(true)}>
+              점수 추가
             </Button>
           </div>
         )}
