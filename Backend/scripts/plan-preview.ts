@@ -8,10 +8,25 @@ import { loadMock, resolveMockPath } from "./mock/load.ts";
 
 const PREVIEW_WEEKS = 4;
 
+const USAGE = "사용: npm run plan:preview -- [JSON 경로] [--today YYYY-MM-DD]";
+
 const args = process.argv.slice(2);
+let today = toDateKey(new Date(), "Asia/Seoul");
 const todayIndex = args.indexOf("--today");
-const today = todayIndex >= 0 ? args[todayIndex + 1] : toDateKey(new Date(), "Asia/Seoul");
-const jsonPath = args.find((arg, i) => !arg.startsWith("--") && i !== todayIndex + 1);
+if (todayIndex >= 0) {
+  const [, value] = args.splice(todayIndex, 2);
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    console.error(USAGE);
+    process.exit(1);
+  }
+  today = value;
+}
+const unknownOption = args.find((arg) => arg.startsWith("--"));
+if (unknownOption || args.length > 1) {
+  console.error(USAGE);
+  process.exit(1);
+}
+const jsonPath = args[0];
 
 const mock = loadMock(resolveMockPath(jsonPath));
 const days = diffDays(today, mock.exam_date);

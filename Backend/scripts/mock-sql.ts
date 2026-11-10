@@ -57,6 +57,11 @@ if (scoreRows.length > 0) {
 statements.push(
   `update public.profiles set exam_date = ${text(mock.exam_date)}, updated_at = now() where id = ${uid};`,
   "commit;",
+  // 넣은 결과 확인: 프로필 행이 없으면 update가 0건으로 조용히 끝나므로 exam_date도 본다
+  `select (select count(*) from public.books where user_id = ${uid}) as books, ` +
+    `(select count(*) from public.mock_exams where user_id = ${uid}) as exams, ` +
+    `(select count(*) from public.mock_exam_scores where user_id = ${uid}) as scores, ` +
+    `(select exam_date from public.profiles where id = ${uid}) as exam_date;`,
 );
 
 console.log(statements.join("\n"));
