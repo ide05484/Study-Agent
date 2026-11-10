@@ -1,25 +1,15 @@
-// [plan-generator] 교재 추가·삭제, 시험일 변경 후 프론트엔드가 호출한다.
-// 오늘부터의 미진행(pending) daily_tasks를 지우고, 교재별 남은 페이지를 시험 전날까지 날짜별로 고르게 다시 나눈다.
+// [plan-generator] 교재 추가·삭제, 진도·시험일 변경 후 프론트엔드가 호출한다.
+// 오늘부터의 미진행(pending) daily_tasks를 지우고, 교재별 남은 분량(목표 회독까지)을 시험 전날까지 날짜별로 다시 나눈다.
+// 나누는 규칙은 _shared/plan.ts의 planBook을 따른다.
 // 이미 진행한 계획(done/partial)과 지난 날짜의 계획은 그대로 둔다.
 // 응답 형식은 Frontend/src/interfaces/plan.ts의 `PlanResponse`를 따른다.
 
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { withSupabase } from "@supabase/server";
 import { addDays, diffDays, toDateKey } from "../_shared/date.ts";
+import { type PlanBook, planBook } from "../_shared/plan.ts";
 
 const INSERT_CHUNK_SIZE = 500;
-
-interface BookRow {
-  id: string;
-  total_pages: number;
-  current_page: number;
-}
-
-interface PageRange {
-  day: number; // 오늘부터 며칠째 (0 = 오늘)
-  start: number;
-  end: number;
-}
 
 export default {
   // 사용자 JWT 필수. ctx.supabase는 RLS가 적용되어 본인 데이터만 다룬다
@@ -53,16 +43,19 @@ export default {
 
     const { data: books, error: booksError } = await supabase
       .from("books")
-      .select("id, total_pages, current_page");
+      .select(
+        "id, total_pages, current_page, current_round, target_rounds, daily_amount",
+      );
     if (booksError) return errorResponse(booksError.message);
 
-    const rows = (books as BookRow[]).flatMap((book) =>
-      splitPages(book, days).map((range) => ({
+    const rows = (books as PlanBook[]).flatMap((book) =>
+      planBook(book, days).map((task) => ({
         user_id: userId,
-        book_id: book.id,
-        task_date: addDays(today, range.day),
-        start_page: range.start,
-        end_page: range.end,
+        book_id: task.book_id,
+        task_date: addDays(today, task.day),
+        round: task.round,
+        start_page: task.start_page,
+        end_page: task.end_page,
       }))
     );
 
@@ -76,19 +69,6 @@ export default {
     return Response.json({ generated: rows.length, days });
   }),
 };
-
-// 남은 페이지(current_page + 1 ~ total_pages)를 days일에 고르게 나눈다. 분량이 0인 날은 건너뛴다
-function splitPages(book: BookRow, days: number): PageRange[] {
-  const first = book.current_page + 1;
-  const remaining = book.total_pages - book.current_page;
-  const ranges: PageRange[] = [];
-  for (let day = 0; day < days; day++) {
-    const start = first + Math.floor((day * remaining) / days);
-    const end = first + Math.floor(((day + 1) * remaining) / days) - 1;
-    if (end >= start) ranges.push({ day, start, end });
-  }
-  return ranges;
-}
 
 function errorResponse(message: string): Response {
   return Response.json({ error: message }, { status: 500 });

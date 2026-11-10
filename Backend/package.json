@@ -13,14 +13,19 @@
     "db:reset": "supabase db reset",
     "functions:serve": "supabase functions serve",
     "gen:types:local": "supabase gen types typescript --local > ../Frontend/src/interfaces/database.ts",
-    "llm-test": "tsx scripts/llm-test.ts"
+    "llm-test": "tsx scripts/llm-test.ts",
+    "test": "deno test --no-lock supabase/functions",
+    "mock:sql": "tsx scripts/mock-sql.ts",
+    "plan:preview": "tsx scripts/plan-preview.ts"
   },
   "dependencies": {
+    "@supabase/server": "^1.9.2",
     "openai": "^7.4.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",
+    "deno": "^2.9.6",
     "supabase": "^2.121.0",
     "tsx": "^4.23.12",
     "typescript": "^7.0.2"
