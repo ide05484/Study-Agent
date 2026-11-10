@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { regeneratePlan } from '../api/plan.ts'
-import { addBook, deleteBook, fetchBooks, updateBookProgress } from '../api/study.ts'
+import { addBook, deleteBooks, fetchBooks, updateBookProgress } from '../api/study.ts'
 import type { Book, BookProgress, NewBook } from '../interfaces/study.ts'
 import { toErrorMessage } from '../libs/errors.ts'
 import { describePlanResult } from '../libs/plan.ts'
@@ -14,7 +14,8 @@ export interface BooksState {
   add: (input: NewBook) => Promise<boolean>
   // 저장한 뒤 계획을 다시 나눈다
   updateProgress: (id: string, input: BookProgress) => Promise<boolean>
-  remove: (id: string) => Promise<void>
+  // 한 권 또는 선택한 여러 권을 지우고 계획은 한 번만 다시 나눈다. 성공하면 true
+  remove: (ids: string[]) => Promise<boolean>
 }
 
 // 공부 설정 화면의 남은 공부 분량(교재) 관리. 추가·삭제할 때마다 계획을 다시 나눈다
@@ -86,17 +87,20 @@ export function useBooks(): BooksState {
   )
 
   const remove = useCallback(
-    async (id: string) => {
+    async (ids: string[]) => {
+      if (ids.length === 0) return true
       setError(null)
       setNotice(null)
       try {
-        await deleteBook(id)
-        setBooks((prev) => prev.filter((book) => book.id !== id))
+        await deleteBooks(ids)
+        const removed = new Set(ids)
+        setBooks((prev) => prev.filter((book) => !removed.has(book.id)))
       } catch (e) {
         setError(toErrorMessage(e))
-        return
+        return false
       }
       await replan()
+      return true
     },
     [replan],
   )

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { addMockExam, deleteMockExam, fetchMockExams } from '../api/exams.ts'
+import { addMockExam, fetchMockExams } from '../api/exams.ts'
 import type { MockExam, NewMockExam } from '../interfaces/mockExam.ts'
 import { toErrorMessage } from '../libs/errors.ts'
 
@@ -9,10 +9,9 @@ export interface MockExamsState {
   error: string | null
   // 성공하면 true. 실패 사유는 error로 노출한다
   add: (input: NewMockExam) => Promise<boolean>
-  remove: (id: string) => Promise<void>
 }
 
-// 공부 설정 화면의 시험 점수 관리. 점수를 바꿔도 계획은 다시 나누지 않는다
+// 공부 설정 화면의 시험 점수 관리(조회·추가, 삭제는 없음). 점수를 바꿔도 계획은 다시 나누지 않는다
 export function useMockExams(): MockExamsState {
   const [exams, setExams] = useState<MockExam[]>([])
   const [loading, setLoading] = useState(true)
@@ -56,15 +55,5 @@ export function useMockExams(): MockExamsState {
     return true
   }, [])
 
-  const remove = useCallback(async (id: string) => {
-    setError(null)
-    try {
-      await deleteMockExam(id)
-      setExams((prev) => prev.filter((exam) => exam.id !== id))
-    } catch (e) {
-      setError(toErrorMessage(e))
-    }
-  }, [])
-
-  return { exams, loading, error, add, remove }
+  return { exams, loading, error, add }
 }

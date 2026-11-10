@@ -1,39 +1,80 @@
 import type { MockExam } from '../../interfaces/mockExam.ts'
 import { formatFullDate } from '../../libs/date.ts'
-import { EXAM_KIND_LABELS, scoresLabel } from '../../libs/exams.ts'
+import { EXAM_KIND_LABELS, examTotal, subjectScores } from '../../libs/exams.ts'
 
 interface ExamScoreListProps {
   exams: MockExam[]
-  onRemove: (id: string) => void
 }
 
-// 시험 점수 목록. 첫 줄은 구분·이름과 응시일, 둘째 줄은 과목별 점수
-export default function ExamScoreList({ exams, onRemove }: ExamScoreListProps) {
+// 시험 점수 블록 목록(두 열). 시험마다 이름·구분·응시일, 총점 원형 게이지, 과목별 점수 표를 둔다
+export default function ExamScoreList({ exams }: ExamScoreListProps) {
   return (
-    <ul className="divide-y divide-line">
-      {exams.map((exam) => (
-        <li key={exam.id} className="flex items-center gap-2 py-2">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="min-w-0 truncate">
-                {EXAM_KIND_LABELS[exam.kind]} · {exam.name}
-              </span>
-              <span className="shrink-0 text-sm text-muted tabular-nums">{formatFullDate(exam.taken_on)}</span>
-            </div>
-            <p className="text-sm tabular-nums">{scoresLabel(exam.scores)}</p>
-          </div>
-          <button
-            type="button"
-            className="grid size-11 shrink-0 place-items-center rounded-xl text-muted"
-            aria-label={`${exam.name} 삭제`}
-            onClick={() => {
-              if (window.confirm(`'${exam.name}' 점수를 삭제할까요?`)) onRemove(exam.id)
-            }}
+    <ul className="grid grid-cols-2 gap-3">
+      {exams.map((exam) => {
+        const { total, max } = examTotal(exam.scores)
+        return (
+          <li
+            key={exam.id}
+            className="flex min-w-0 flex-col items-center rounded-2xl border border-line p-3 text-center"
           >
-            ✕
-          </button>
-        </li>
-      ))}
+            <p className="w-full truncate font-bold">{exam.name}</p>
+            <p className="text-xs text-muted">{EXAM_KIND_LABELS[exam.kind]}</p>
+            <p className="text-xs text-muted tabular-nums">{formatFullDate(exam.taken_on)}</p>
+            <ScoreRing total={total} max={max} />
+            <p className="text-sm text-muted tabular-nums">
+              {total} / {max}
+            </p>
+            <dl className="mt-2 grid w-full grid-cols-2 gap-x-3 gap-y-1 border-t border-line pt-2 text-sm">
+              {subjectScores(exam.scores).map(({ subject, label, score }) => (
+                <div key={subject} className="flex justify-between gap-1">
+                  <dt className="text-muted">{label}</dt>
+                  <dd className="font-semibold tabular-nums">{score ?? '–'}</dd>
+                </div>
+              ))}
+            </dl>
+          </li>
+        )
+      })}
     </ul>
+  )
+}
+
+interface ScoreRingProps {
+  total: number
+  max: number
+}
+
+const RING_SIZE = 88
+const RING_STROKE = 8
+const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2
+const RING_LENGTH = 2 * Math.PI * RING_RADIUS
+
+// 만점 대비 총점을 원 둘레로 칠하고 가운데에 총점을 크게 쓴다
+function ScoreRing({ total, max }: ScoreRingProps) {
+  const ratio = max > 0 ? Math.min(total / max, 1) : 0
+  return (
+    <div className="relative my-2 grid size-22 place-items-center">
+      <svg
+        className="absolute inset-0 -rotate-90"
+        viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
+        fill="none"
+        strokeWidth={RING_STROKE}
+        aria-hidden="true"
+      >
+        <circle className="stroke-line" cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RING_RADIUS} />
+        {/* 0점이면 둥근 끝이 점으로 남지 않도록 그리지 않는다 */}
+        {ratio > 0 && (
+          <circle
+            className="stroke-accent"
+            cx={RING_SIZE / 2}
+            cy={RING_SIZE / 2}
+            r={RING_RADIUS}
+            strokeLinecap="round"
+            strokeDasharray={`${RING_LENGTH * ratio} ${RING_LENGTH}`}
+          />
+        )}
+      </svg>
+      <span className="text-2xl font-bold tabular-nums">{total}</span>
+    </div>
   )
 }

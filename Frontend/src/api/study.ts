@@ -26,8 +26,9 @@ export async function updateBookProgress(id: string, input: BookProgress): Promi
   return data as Book
 }
 
-export async function deleteBook(id: string): Promise<void> {
-  const { error } = await supabase.from('books').delete().eq('id', id)
+// 여러 권을 한 번에 지운다. 그 교재의 계획(daily_tasks)은 on delete cascade로 같이 지워진다
+export async function deleteBooks(ids: string[]): Promise<void> {
+  const { error } = await supabase.from('books').delete().in('id', ids)
   if (error) throw error
 }
 

@@ -41,9 +41,3 @@ export async function addMockExam(input: NewMockExam): Promise<MockExam> {
   }
   return { ...(created as Omit<MockExam, 'scores'>), scores: input.scores }
 }
-
-// 점수는 on delete cascade로 같이 지워진다
-export async function deleteMockExam(id: string): Promise<void> {
-  const { error } = await supabase.from('mock_exams').delete().eq('id', id)
-  if (error) throw error
-}
