@@ -231,7 +231,7 @@ git commit -m "feat: 카카오 로그인과 인증 가드"
 - `book_id`가 `books`에 없거나 다른 과목의 교재면 `null`. `null`이고 그 과목 교재가 정확히 1권이면 그 교재 id.
 - `intent`가 `"study_log"`인데 남은 entry가 없으면 `"question"`으로 바꾼다(코치가 되묻게).
 
-- [ ] **Step 1: 테스트 도구 준비**
+- [x] **Step 1: 테스트 도구 준비** — 2단계 Task 2에서 함(2026-11-10)
 
 Run (`Backend/`): `npm i -D deno`
 `package.json` scripts에 `"test": "deno test --no-lock supabase/functions"` 추가.
@@ -289,7 +289,7 @@ Expected: FAIL — `analysis.ts` 모듈을 찾을 수 없음.
 
 Run: `npm test` → `ok | 6 passed | 0 failed`. `deno.lock`이 생기지 않았는지 `git status`로 확인.
 
-- [ ] **Step 6: CLAUDE.md 명령어 갱신**
+- [x] **Step 6: CLAUDE.md 명령어 갱신** — 2단계 Task 2에서 함(2026-11-10)
 
 Backend 명령 목록에 `npm test  # Edge Function 순수 로직 테스트 (deno test)`를 넣고, "테스트 프레임워크는 아직 없다"를 "Frontend 테스트 도구는 아직 없다. OpenAI·Supabase를 import하는 파일은 테스트에서 불러오지 않도록 순수 로직을 따로 둔다."로 바꾼다.
 

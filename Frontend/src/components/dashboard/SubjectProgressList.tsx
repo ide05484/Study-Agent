@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { SubjectProgress } from '../../hooks/useDashboard.ts'
 import type { Subject } from '../../interfaces/subject.ts'
+import { progressLabel } from '../../libs/books.ts'
 import { SUBJECT_LABELS } from '../../libs/subjects.ts'
 import Chevron from '../ui/Chevron.tsx'
 
@@ -45,9 +46,7 @@ export default function SubjectProgressList({ items }: SubjectProgressListProps)
                 {item.remaining.map((book) => (
                   <li key={book.id} className="flex justify-between gap-2 py-1">
                     <span>{book.title}</span>
-                    <span className="text-sm text-muted tabular-nums">
-                      {book.current_page}/{book.total_pages}쪽
-                    </span>
+                    <span className="text-sm text-muted tabular-nums">{progressLabel(book)}</span>
                   </li>
                 ))}
                 {item.remaining.length === 0 && (

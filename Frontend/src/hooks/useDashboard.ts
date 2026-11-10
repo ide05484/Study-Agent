@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { fetchBooks, fetchDailyTasks, fetchStudyDates } from '../api/study.ts'
 import type { Subject } from '../interfaces/subject.ts'
 import type { Book, DailyTaskWithBook } from '../interfaces/study.ts'
+import { completedUnits, isBookFinished } from '../libs/books.ts'
 import { addDays, startOfWeek, todayKey } from '../libs/date.ts'
 import { toErrorMessage } from '../libs/errors.ts'
 import { SUBJECTS } from '../libs/subjects.ts'
@@ -108,19 +109,23 @@ function countStreak(studied: Set<string>, today: string): number {
 function buildWeekly(tasks: DailyTaskWithBook[]): WeeklyGoal[] {
   return SUBJECTS.map((subject) => ({
     subject,
-    pages: tasks.filter((t) => t.book.subject === subject).reduce((sum, t) => sum + t.end_page - t.start_page + 1, 0),
+    // 이번주 목표량은 '쪽' 단위만 센다. Day 교재의 Day 수를 쪽수에 더하지 않는다
+    pages: tasks
+      .filter((t) => t.book.subject === subject && t.book.unit === 'page')
+      .reduce((sum, t) => sum + t.end_page - t.start_page + 1, 0),
   })).filter((goal) => goal.pages > 0)
 }
 
+// 진도율은 목표 회독 기준이다. 쪽과 Day를 같은 단위로 더한다(영어 단어 60 Day는 영향이 작다)
 function buildSubjects(books: Book[]): SubjectProgress[] {
   return SUBJECTS.map((subject) => {
     const own = books.filter((b) => b.subject === subject)
-    const total = own.reduce((sum, b) => sum + b.total_pages, 0)
-    const done = own.reduce((sum, b) => sum + Math.min(b.current_page, b.total_pages), 0)
+    const total = own.reduce((sum, b) => sum + b.target_rounds * b.total_pages, 0)
+    const done = own.reduce((sum, b) => sum + completedUnits(b), 0)
     return {
       subject,
       percent: total === 0 ? 0 : Math.round((done / total) * 100),
-      remaining: own.filter((b) => b.current_page < b.total_pages),
+      remaining: own.filter((b) => !isBookFinished(b)),
       hasBooks: own.length > 0,
     }
   })

@@ -43,28 +43,40 @@ export type Database = {
         Row: {
           created_at: string
           current_page: number
+          current_round: number
+          daily_amount: number | null
           id: string
           subject: Database["public"]["Enums"]["subject"]
+          target_rounds: number
           title: string
           total_pages: number
+          unit: Database["public"]["Enums"]["book_unit"]
           user_id: string
         }
         Insert: {
           created_at?: string
           current_page?: number
+          current_round?: number
+          daily_amount?: number | null
           id?: string
           subject: Database["public"]["Enums"]["subject"]
+          target_rounds?: number
           title: string
           total_pages: number
+          unit?: Database["public"]["Enums"]["book_unit"]
           user_id: string
         }
         Update: {
           created_at?: string
           current_page?: number
+          current_round?: number
+          daily_amount?: number | null
           id?: string
           subject?: Database["public"]["Enums"]["subject"]
+          target_rounds?: number
           title?: string
           total_pages?: number
+          unit?: Database["public"]["Enums"]["book_unit"]
           user_id?: string
         }
         Relationships: []
@@ -102,6 +114,7 @@ export type Database = {
           created_at: string
           end_page: number
           id: string
+          round: number
           start_page: number
           status: Database["public"]["Enums"]["task_status"]
           task_date: string
@@ -112,6 +125,7 @@ export type Database = {
           created_at?: string
           end_page: number
           id?: string
+          round?: number
           start_page: number
           status?: Database["public"]["Enums"]["task_status"]
           task_date: string
@@ -122,6 +136,7 @@ export type Database = {
           created_at?: string
           end_page?: number
           id?: string
+          round?: number
           start_page?: number
           status?: Database["public"]["Enums"]["task_status"]
           task_date?: string
@@ -206,6 +221,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          kind: Database["public"]["Enums"]["exam_kind"]
           name: string
           taken_on: string
           user_id: string
@@ -213,6 +229,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          kind?: Database["public"]["Enums"]["exam_kind"]
           name: string
           taken_on: string
           user_id: string
@@ -220,6 +237,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          kind?: Database["public"]["Enums"]["exam_kind"]
           name?: string
           taken_on?: string
           user_id?: string
@@ -354,7 +372,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      book_unit: "page" | "day"
       chat_role: "user" | "assistant"
+      exam_kind: "mock" | "official"
       goal_kind: "final" | "short_term"
       notify_channel: "pwa" | "kakao"
       subject: "korean" | "english" | "public_health" | "health_admin"
@@ -489,7 +509,9 @@ export const Constants = {
   },
   public: {
     Enums: {
+      book_unit: ["page", "day"],
       chat_role: ["user", "assistant"],
+      exam_kind: ["mock", "official"],
       goal_kind: ["final", "short_term"],
       notify_channel: ["pwa", "kakao"],
       subject: ["korean", "english", "public_health", "health_admin"],

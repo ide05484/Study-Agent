@@ -2,11 +2,14 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { useTodayTasks } from '../../hooks/useTodayTasks.ts'
 import type { DailyTaskWithBook } from '../../interfaces/study.ts'
+import { rangeLabel } from '../../libs/books.ts'
 import { SUBJECT_LABELS } from '../../libs/subjects.ts'
 import Chevron from '../ui/Chevron.tsx'
 
+// 목표가 2회독 이상인 교재만 몇 회독째인지 붙인다
 function pagesLabel(task: DailyTaskWithBook): string {
-  return task.start_page === task.end_page ? `${task.start_page}쪽` : `${task.start_page}–${task.end_page}쪽`
+  const range = rangeLabel(task.book.unit, task.start_page, task.end_page)
+  return task.book.target_rounds >= 2 ? `${task.round}회독 ${range}` : range
 }
 
 interface TodayPlanProps {

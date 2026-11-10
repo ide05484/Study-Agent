@@ -1,7 +1,8 @@
-import type { ButtonHTMLAttributes } from 'react'
+import type { ComponentPropsWithRef } from 'react'
 import { BUTTON_VARIANT_CLASSES } from './buttonVariants.ts'
 
-interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type'> {
+// ref도 그대로 넘긴다(React 19는 ref를 일반 prop으로 전달한다)
+interface ButtonProps extends Omit<ComponentPropsWithRef<'button'>, 'type'> {
   type: 'button' | 'submit'
   variant?: 'primary' | 'ghost'
   block?: boolean

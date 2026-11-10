@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { regeneratePlan } from '../api/plan.ts'
-import { addBook, deleteBook, fetchBooks } from '../api/study.ts'
-import type { Book, NewBook } from '../interfaces/study.ts'
+import { addBook, deleteBooks, fetchBooks, updateBookProgress } from '../api/study.ts'
+import type { Book, BookProgress, NewBook } from '../interfaces/study.ts'
 import { toErrorMessage } from '../libs/errors.ts'
 import { describePlanResult } from '../libs/plan.ts'
 
@@ -12,7 +12,10 @@ export interface BooksState {
   notice: string | null
   // 성공하면 true. 실패 사유는 error로 노출한다
   add: (input: NewBook) => Promise<boolean>
-  remove: (id: string) => Promise<void>
+  // 저장한 뒤 계획을 다시 나눈다
+  updateProgress: (id: string, input: BookProgress) => Promise<boolean>
+  // 한 권 또는 선택한 여러 권을 지우고 계획은 한 번만 다시 나눈다. 성공하면 true
+  remove: (ids: string[]) => Promise<boolean>
 }
 
 // 공부 설정 화면의 남은 공부 분량(교재) 관리. 추가·삭제할 때마다 계획을 다시 나눈다
@@ -66,21 +69,41 @@ export function useBooks(): BooksState {
     [replan],
   )
 
-  const remove = useCallback(
-    async (id: string) => {
+  const updateProgress = useCallback(
+    async (id: string, input: BookProgress) => {
       setError(null)
       setNotice(null)
       try {
-        await deleteBook(id)
-        setBooks((prev) => prev.filter((book) => book.id !== id))
+        const updated = await updateBookProgress(id, input)
+        setBooks((prev) => prev.map((book) => (book.id === id ? updated : book)))
       } catch (e) {
         setError(toErrorMessage(e))
-        return
+        return false
       }
       await replan()
+      return true
     },
     [replan],
   )
 
-  return { books, loading, error, notice, add, remove }
+  const remove = useCallback(
+    async (ids: string[]) => {
+      if (ids.length === 0) return true
+      setError(null)
+      setNotice(null)
+      try {
+        await deleteBooks(ids)
+        const removed = new Set(ids)
+        setBooks((prev) => prev.filter((book) => !removed.has(book.id)))
+      } catch (e) {
+        setError(toErrorMessage(e))
+        return false
+      }
+      await replan()
+      return true
+    },
+    [replan],
+  )
+
+  return { books, loading, error, notice, add, updateProgress, remove }
 }

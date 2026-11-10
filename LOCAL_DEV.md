@@ -108,6 +108,21 @@ PWA(서비스워커, 설치, 푸시)는 `npm run dev`에서는 동작하지 않�
 - Supabase MCP의 `apply_migration`으로 적용했다면 이력 버전이 적용 시각으로 기록된다. `supabase_migrations.schema_migrations`의 `version`을 로컬 파일 이름의 타임스탬프로 바꿔 둬야 CLI `db push`가 같은 파일을 다시 적용하지 않는다.
 - 개발 DB를 처음부터 다시 만들려면 `npx supabase db reset --linked`를 쓴다. **개발 프로젝트의 데이터가 모두 지워진다.**
 - Edge Function 로그는 대시보드 → Edge Functions → 함수 선택 → Logs에서 본다.
+- Edge Function의 순수 로직(`_shared/plan.ts` 등)은 `npm test`(deno test)로 확인한다.
+
+### Mock 공부 데이터
+
+계획이 잘 나뉘는지 확인할 때 쓰는 교재·진도·시험 점수 묶음이다. `Backend/`에서 실행한다.
+
+```bash
+npm run plan:preview -- --today 2026-11-10       # DB 없이 계획 계산 결과 보기
+npm run mock:sql -- <USER_ID> > <저장소 밖 경로>/study-mock.sql   # 한 사용자에게 넣을 SQL
+```
+
+- 원본은 `scripts/mock/study-mock.json`이다. 실제 점수가 들어 있어 git에 올리지 않는다(저장소가 공개). 없으면 가짜 값의 `study-mock.example.json`을 쓴다. 다른 파일을 쓰려면 경로를 인자로 준다.
+- **개발 프로젝트에서만 실행한다.** SQL은 그 사용자의 교재·계획·시험 기록을 지우고 다시 넣고, 시험일을 바꾼다. 채팅과 학습 기록은 그대로 둔다.
+- SQL을 넣은 뒤에는 계획이 비어 있다. 공부 설정에서 시험일을 저장하면(또는 교재를 바꾸면) `plan-generator`가 다시 나눈다.
+- `<USER_ID>`는 대시보드 Authentication → Users에서 확인한다.
 
 ## 4. 자주 나는 문제
 
