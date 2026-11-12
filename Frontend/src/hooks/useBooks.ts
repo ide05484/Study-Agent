@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { regeneratePlan } from '../api/plan.ts'
-import { addBook, deleteBooks, fetchBooks, updateBookProgress } from '../api/study.ts'
-import type { Book, BookProgress, NewBook } from '../interfaces/study.ts'
+import { addBook, deleteBooks, fetchBooks, updateBook } from '../api/study.ts'
+import type { Book, BookPlanUpdate, NewBook } from '../interfaces/study.ts'
 import { toErrorMessage } from '../libs/errors.ts'
 import { describePlanResult } from '../libs/plan.ts'
 
@@ -12,7 +12,7 @@ export interface BooksState {
   notice: string | null
   // 아래 셋은 저장되면 바로 true를 돌려주고 계획은 뒤에서 다시 나눈다(진행·결과는 notice, 실패는 error)
   add: (input: NewBook) => Promise<boolean>
-  updateProgress: (id: string, input: BookProgress) => Promise<boolean>
+  update: (id: string, input: BookPlanUpdate) => Promise<boolean>
   // 한 권 또는 선택한 여러 권을 지우고 계획은 한 번만 다시 나눈다
   remove: (ids: string[]) => Promise<boolean>
 }
@@ -92,12 +92,12 @@ export function useBooks(): BooksState {
     [replan],
   )
 
-  const updateProgress = useCallback(
-    async (id: string, input: BookProgress) => {
+  const update = useCallback(
+    async (id: string, input: BookPlanUpdate) => {
       setError(null)
       setNotice(null)
       try {
-        const updated = await updateBookProgress(id, input)
+        const updated = await updateBook(id, input)
         setBooks((prev) => prev.map((book) => (book.id === id ? updated : book)))
       } catch (e) {
         setError(toErrorMessage(e))
@@ -128,5 +128,5 @@ export function useBooks(): BooksState {
     [replan],
   )
 
-  return { books, loading, error, notice, add, updateProgress, remove }
+  return { books, loading, error, notice, add, update, remove }
 }

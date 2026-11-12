@@ -23,7 +23,7 @@ import { SUBJECT_LABELS, SUBJECTS } from '../libs/subjects.ts'
 // TODO: 알림 시간·채널 설정 위치 결정
 export default function SettingsPage() {
   const { profile, saveExamDate } = useProfileContext()
-  const { books, loading, error, notice, add, updateProgress, remove } = useBooks()
+  const { books, loading, error, notice, add, update, remove } = useBooks()
   const { exams, loading: examsLoading, error: examsError, add: addExam } = useMockExams()
   const [adding, setAdding] = useState(false)
   const [addingExam, setAddingExam] = useState(false)
@@ -167,7 +167,7 @@ export default function SettingsPage() {
                       {!selecting && editingId === book.id && (
                         <BookProgressForm
                           book={book}
-                          onSave={(input) => updateProgress(book.id, input)}
+                          onSave={(input) => update(book.id, input)}
                           onCancel={() => setEditingId(null)}
                         />
                       )}

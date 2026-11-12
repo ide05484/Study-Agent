@@ -1,7 +1,14 @@
-import type { Book, BookProgress, DailyTaskWithBook, NewBook } from '../interfaces/study.ts'
+import type { Book, BookPlanUpdate, DailyTaskWithBook, NewBook } from '../interfaces/study.ts'
 import { requireUserId, supabase } from '../libs/supabase.ts'
 
-const BOOK_COLUMNS = 'id, subject, title, total_pages, current_page, unit, target_rounds, current_round, daily_amount'
+const BOOK_COLUMNS =
+  'id, subject, title, total_units, current_unit, unit, target_rounds, current_round, daily_amount, round_targets'
+
+// round_targets(date[])는 원소로 null(목표일 없음)을 담는데, 생성된 DB 타입은 string[]로만 본다.
+// 보내는 값은 그대로 두고 타입만 맞춘다
+function toBookRow<T extends { round_targets: (string | null)[] }>(input: T): T & { round_targets: string[] } {
+  return input as T & { round_targets: string[] }
+}
 
 export async function fetchBooks(): Promise<Book[]> {
   const { data, error } = await supabase.from('books').select(BOOK_COLUMNS).order('created_at', { ascending: true })
@@ -13,15 +20,20 @@ export async function addBook(input: NewBook): Promise<Book> {
   const user_id = await requireUserId()
   const { data, error } = await supabase
     .from('books')
-    .insert({ ...input, user_id })
+    .insert({ ...toBookRow(input), user_id })
     .select(BOOK_COLUMNS)
     .single()
   if (error) throw error
   return data as Book
 }
 
-export async function updateBookProgress(id: string, input: BookProgress): Promise<Book> {
-  const { data, error } = await supabase.from('books').update(input).eq('id', id).select(BOOK_COLUMNS).single()
+export async function updateBook(id: string, input: BookPlanUpdate): Promise<Book> {
+  const { data, error } = await supabase
+    .from('books')
+    .update(toBookRow(input))
+    .eq('id', id)
+    .select(BOOK_COLUMNS)
+    .single()
   if (error) throw error
   return data as Book
 }
@@ -37,7 +49,7 @@ export async function fetchDailyTasks(from: string, to: string): Promise<DailyTa
   const { data, error } = await supabase
     .from('daily_tasks')
     .select(
-      'id, book_id, task_date, start_page, end_page, round, status, book:books(subject, title, unit, target_rounds)',
+      'id, book_id, task_date, start_unit, end_unit, round, status, book:books(subject, title, unit, target_rounds)',
     )
     .gte('task_date', from)
     .lte('task_date', to)

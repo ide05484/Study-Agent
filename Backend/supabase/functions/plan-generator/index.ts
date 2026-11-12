@@ -43,7 +43,7 @@ export default {
     const { data: books, error: booksError } = await supabase
       .from("books")
       .select(
-        "id, total_pages, current_page, current_round, target_rounds, daily_amount",
+        "id, total_units, current_unit, current_round, target_rounds, daily_amount",
       );
     if (booksError) return errorResponse(booksError.message);
 
@@ -52,8 +52,8 @@ export default {
         book_id: task.book_id,
         task_date: addDays(today, task.day),
         round: task.round,
-        start_page: task.start_page,
-        end_page: task.end_page,
+        start_unit: task.start_unit,
+        end_unit: task.end_unit,
       }))
     );
 
@@ -69,8 +69,8 @@ interface TaskRow {
   book_id: string;
   task_date: string;
   round: number;
-  start_page: number;
-  end_page: number;
+  start_unit: number;
+  end_unit: number;
 }
 
 // 지우기와 넣기를 DB 함수 replace_daily_tasks 한 번(한 트랜잭션, 사용자별 잠금)으로 한다.

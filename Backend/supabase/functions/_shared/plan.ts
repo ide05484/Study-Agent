@@ -3,8 +3,8 @@
 
 export interface PlanBook {
   id: string;
-  total_pages: number;
-  current_page: number;
+  total_units: number;
+  current_unit: number;
   current_round: number;
   target_rounds: number;
   // null이면 남은 분량을 날짜 수로 고르게 나눈다
@@ -15,19 +15,19 @@ export interface PlannedTask {
   book_id: string;
   day: number; // 오늘부터 며칠째 (0 = 오늘)
   round: number;
-  start_page: number;
-  end_page: number;
+  start_unit: number;
+  end_unit: number;
 }
 
 // 목표 회독을 이어 붙였을 때 지금까지 끝낸 분량
 export function completedUnits(book: PlanBook): number {
-  return (book.current_round - 1) * book.total_pages + book.current_page;
+  return (book.current_round - 1) * book.total_units + book.current_unit;
 }
 
 // 남은 분량(목표 회독까지)을 days일에 나눈다. 하루 범위가 회독 경계를 넘으면 회독마다 한 줄로 나눈다.
 // 고정 분량이 days일 안에 끝나지 않으면 마지막 날에서 자른다. 분량이 0인 날은 건너뛴다.
 export function planBook(book: PlanBook, days: number): PlannedTask[] {
-  const total = book.total_pages;
+  const total = book.total_units;
   const done = completedUnits(book);
   const remaining = book.target_rounds * total - done;
   const tasks: PlannedTask[] = [];
@@ -56,8 +56,8 @@ export function planBook(book: PlanBook, days: number): PlannedTask[] {
         book_id: book.id,
         day,
         round,
-        start_page: unit - roundStart + 1,
-        end_page: segmentEnd - roundStart,
+        start_unit: unit - roundStart + 1,
+        end_unit: segmentEnd - roundStart,
       });
       unit = segmentEnd;
     }

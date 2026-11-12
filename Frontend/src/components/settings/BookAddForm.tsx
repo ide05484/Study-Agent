@@ -13,11 +13,11 @@ interface BookAddFormProps {
   onCancel: () => void
 }
 
-// 영역 제목 바로 아래에 열린다. 분량 단위는 쪽 또는 Day. 하루 고정 분량을 비우면 시험일까지 고르게 나눈다
+// 영역 제목 바로 아래에 열린다. 분량 단위는 Day·챕터·회차. 하루 최소 분량을 비우면 시험일까지 고르게 나눈다
 export default function BookAddForm({ id, onAdd, onCancel }: BookAddFormProps) {
   const [subject, setSubject] = useState<Subject>('korean')
   const [title, setTitle] = useState('')
-  const [unit, setUnit] = useState<BookUnit>('page')
+  const [unit, setUnit] = useState<BookUnit>('session')
   const [totalPages, setTotalPages] = useState('')
   const [targetRounds, setTargetRounds] = useState('1')
   const [dailyAmount, setDailyAmount] = useState('')
@@ -35,10 +35,11 @@ export default function BookAddForm({ id, onAdd, onCancel }: BookAddFormProps) {
     const added = await onAdd({
       subject,
       title: title.trim(),
-      total_pages: Number(totalPages),
+      total_units: Number(totalPages),
       unit,
       target_rounds: Number(targetRounds),
       daily_amount: dailyAmount.trim() === '' ? null : Number(dailyAmount),
+      round_targets: [],
     })
     setSaving(false)
     if (added) onCancel()
@@ -60,8 +61,9 @@ export default function BookAddForm({ id, onAdd, onCancel }: BookAddFormProps) {
         aria-label="교재명"
       />
       <Select value={unit} onChange={(e) => setUnit(e.target.value as BookUnit)} aria-label="단위">
-        <option value="page">{UNIT_LABELS.page}</option>
         <option value="day">{UNIT_LABELS.day}</option>
+        <option value="chapter">{UNIT_LABELS.chapter}</option>
+        <option value="session">{UNIT_LABELS.session}</option>
       </Select>
       <TextField
         type="number"
@@ -69,8 +71,8 @@ export default function BookAddForm({ id, onAdd, onCancel }: BookAddFormProps) {
         min={1}
         value={totalPages}
         onChange={(e) => setTotalPages(e.target.value)}
-        placeholder={unit === 'day' ? '총 Day 수' : '총 페이지'}
-        aria-label={unit === 'day' ? '총 Day 수' : '총 페이지'}
+        placeholder={`총 ${UNIT_LABELS[unit]} 수`}
+        aria-label={`총 ${UNIT_LABELS[unit]} 수`}
       />
       <TextField
         type="number"
@@ -88,8 +90,8 @@ export default function BookAddForm({ id, onAdd, onCancel }: BookAddFormProps) {
         min={1}
         value={dailyAmount}
         onChange={(e) => setDailyAmount(e.target.value)}
-        placeholder="하루 고정 분량 (비우면 시험일까지 고르게)"
-        aria-label="하루 고정 분량"
+        placeholder="하루 최소 분량 (비우면 시험일까지 고르게)"
+        aria-label="하루 최소 분량"
       />
       <div className="flex justify-end gap-2">
         <Button type="button" variant="ghost" onClick={onCancel}>

@@ -20,8 +20,8 @@ const text = (value: string) => `'${value.replaceAll("'", "''")}'`;
 const uid = text(userId);
 
 const bookRows = mock.books.map((b) =>
-  `  (${uid}, ${text(b.subject)}, ${text(b.title)}, ${text(b.unit)}, ${b.total_pages}, ` +
-  `${b.current_round}, ${b.current_page}, ${b.target_rounds}, ${b.daily_amount ?? "null"})`
+  `  (${uid}, ${text(b.subject)}, ${text(b.title)}, ${text(b.unit)}, ${b.total_units}, ` +
+  `${b.current_round}, ${b.current_unit}, ${b.target_rounds}, ${b.daily_amount ?? "null"})`
 );
 
 const exams = mock.exams.map((e) => ({ ...e, id: randomUUID() }));
@@ -39,7 +39,7 @@ const statements = [
   `delete from public.daily_tasks where user_id = ${uid};`,
   `delete from public.books where user_id = ${uid};`,
   `delete from public.mock_exams where user_id = ${uid};`,
-  "insert into public.books (user_id, subject, title, unit, total_pages, current_round, current_page, target_rounds, daily_amount) values",
+  "insert into public.books (user_id, subject, title, unit, total_units, current_round, current_unit, target_rounds, daily_amount) values",
   bookRows.join(",\n") + ";",
 ];
 if (examRows.length > 0) {

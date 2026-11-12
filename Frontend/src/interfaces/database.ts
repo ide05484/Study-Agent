@@ -42,40 +42,43 @@ export type Database = {
       books: {
         Row: {
           created_at: string
-          current_page: number
           current_round: number
+          current_unit: number
           daily_amount: number | null
           id: string
+          round_targets: string[]
           subject: Database["public"]["Enums"]["subject"]
           target_rounds: number
           title: string
-          total_pages: number
+          total_units: number
           unit: Database["public"]["Enums"]["book_unit"]
           user_id: string
         }
         Insert: {
           created_at?: string
-          current_page?: number
           current_round?: number
+          current_unit?: number
           daily_amount?: number | null
           id?: string
+          round_targets?: string[]
           subject: Database["public"]["Enums"]["subject"]
           target_rounds?: number
           title: string
-          total_pages: number
+          total_units: number
           unit?: Database["public"]["Enums"]["book_unit"]
           user_id: string
         }
         Update: {
           created_at?: string
-          current_page?: number
           current_round?: number
+          current_unit?: number
           daily_amount?: number | null
           id?: string
+          round_targets?: string[]
           subject?: Database["public"]["Enums"]["subject"]
           target_rounds?: number
           title?: string
-          total_pages?: number
+          total_units?: number
           unit?: Database["public"]["Enums"]["book_unit"]
           user_id?: string
         }
@@ -112,10 +115,10 @@ export type Database = {
         Row: {
           book_id: string
           created_at: string
-          end_page: number
+          end_unit: number
           id: string
           round: number
-          start_page: number
+          start_unit: number
           status: Database["public"]["Enums"]["task_status"]
           task_date: string
           user_id: string
@@ -123,10 +126,10 @@ export type Database = {
         Insert: {
           book_id: string
           created_at?: string
-          end_page: number
+          end_unit: number
           id?: string
           round?: number
-          start_page: number
+          start_unit: number
           status?: Database["public"]["Enums"]["task_status"]
           task_date: string
           user_id: string
@@ -134,10 +137,10 @@ export type Database = {
         Update: {
           book_id?: string
           created_at?: string
-          end_page?: number
+          end_unit?: number
           id?: string
           round?: number
-          start_page?: number
+          start_unit?: number
           status?: Database["public"]["Enums"]["task_status"]
           task_date?: string
           user_id?: string
@@ -311,12 +314,12 @@ export type Database = {
         Row: {
           book_id: string | null
           created_at: string
-          end_page: number | null
+          end_unit: number | null
           id: string
           questions_solved: number | null
           questions_wrong: number | null
           source_message_id: string | null
-          start_page: number | null
+          start_unit: number | null
           study_date: string
           subject: Database["public"]["Enums"]["subject"]
           user_id: string
@@ -324,12 +327,12 @@ export type Database = {
         Insert: {
           book_id?: string | null
           created_at?: string
-          end_page?: number | null
+          end_unit?: number | null
           id?: string
           questions_solved?: number | null
           questions_wrong?: number | null
           source_message_id?: string | null
-          start_page?: number | null
+          start_unit?: number | null
           study_date?: string
           subject: Database["public"]["Enums"]["subject"]
           user_id: string
@@ -337,12 +340,12 @@ export type Database = {
         Update: {
           book_id?: string | null
           created_at?: string
-          end_page?: number | null
+          end_unit?: number | null
           id?: string
           questions_solved?: number | null
           questions_wrong?: number | null
           source_message_id?: string | null
-          start_page?: number | null
+          start_unit?: number | null
           study_date?: string
           subject?: Database["public"]["Enums"]["subject"]
           user_id?: string
@@ -375,7 +378,7 @@ export type Database = {
       }
     }
     Enums: {
-      book_unit: "page" | "day"
+      book_unit: "day" | "chapter" | "session"
       chat_role: "user" | "assistant"
       exam_kind: "mock" | "official"
       goal_kind: "final" | "short_term"
@@ -512,7 +515,7 @@ export const Constants = {
   },
   public: {
     Enums: {
-      book_unit: ["page", "day"],
+      book_unit: ["day", "chapter", "session"],
       chat_role: ["user", "assistant"],
       exam_kind: ["mock", "official"],
       goal_kind: ["final", "short_term"],

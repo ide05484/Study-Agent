@@ -7,7 +7,7 @@ import type { StudyMock } from "./types.ts";
 
 const MOCK_DIR = dirname(fileURLToPath(import.meta.url));
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
-const BOOK_UNITS = ["page", "day"];
+const BOOK_UNITS = ["day", "chapter", "session"];
 const EXAM_KINDS = ["mock", "official"];
 
 // 경로를 주지 않으면 study-mock.json(실제 값, git 제외), 없으면 예시 파일
@@ -28,10 +28,10 @@ export function loadMock(path: string): StudyMock {
   for (const b of mock.books) {
     const ok = b.subject in SUBJECT_LABELS && BOOK_UNITS.includes(b.unit) &&
       typeof b.title === "string" && b.title.length > 0 &&
-      isIntIn(b.total_pages, 1, Infinity) &&
+      isIntIn(b.total_units, 1, Infinity) &&
       isIntIn(b.target_rounds, 1, 10) &&
       isIntIn(b.current_round, 1, b.target_rounds) &&
-      isIntIn(b.current_page, 0, b.total_pages) &&
+      isIntIn(b.current_unit, 0, b.total_units) &&
       (b.daily_amount === null || isIntIn(b.daily_amount, 1, Infinity));
     if (!ok) throw new Error(`교재 값 오류: ${b.title}`);
   }

@@ -32,7 +32,7 @@
 | 타입, 인터페이스 | PascalCase, 접두사 `I` 없음 | `Book`, `DailyTaskWithBook` |
 | 컴포넌트 props 타입 | `컴포넌트명Props` | `BookAddFormProps` |
 | 훅 상태 타입 | `이름State` | `ProfileState` |
-| DB 컬럼에서 온 필드 | snake_case 그대로 | `total_pages`, `exam_date` |
+| DB 컬럼에서 온 필드 | snake_case 그대로 | `total_units`, `exam_date` |
 | 불리언 상태 | 형용사·분사 그대로 | `open`, `loading`, `sending`, `saving`, `valid` |
 | 불리언을 돌려주는 함수 | `is`/`has` 접두사 | `isDateKey`, `hasAuthError` |
 | 이벤트 처리 함수 (컴포넌트 안) | `handle` + 동작 | `handleSubmit`, `handleLogin` |
@@ -179,7 +179,7 @@ Prettier로 맞춘다(`Frontend/.prettierrc.json`). 커밋 전에 `npm run forma
 - 테이블과 컬럼 이름은 snake_case 복수형 테이블(`books`, `daily_tasks`)로 쓴다.
 - 테이블마다 위에 `-- 한 줄 설명` 주석을 단다.
 - 사용자 데이터 테이블은 `user_id uuid not null references auth.users (id) on delete cascade`, RLS 켜기, `user_id = auth.uid()` 정책(`using` + `with check`)을 함께 만든다.
-- 값 제약은 `check`로 DB에 둔다(`total_pages > 0`).
+- 값 제약은 `check`로 DB에 둔다(`total_units > 0`).
 - 새 변경은 `npx supabase migration new <이름>`으로 파일을 만든다. 이름은 snake_case 영어다. 이미 배포된 마이그레이션은 고치지 않는다.
 - `security definer` 함수는 `set search_path = ''`로 고정하고, anon·authenticated의 실행 권한을 회수한다.
 

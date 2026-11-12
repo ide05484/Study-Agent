@@ -8,7 +8,7 @@ import Chevron from '../ui/Chevron.tsx'
 
 // 목표가 2회독 이상인 교재만 몇 회독째인지 붙인다
 function pagesLabel(task: DailyTaskWithBook): string {
-  const range = rangeLabel(task.book.unit, task.start_page, task.end_page)
+  const range = rangeLabel(task.book.unit, task.start_unit, task.end_unit)
   return task.book.target_rounds >= 2 ? `${task.round}회독 ${range}` : range
 }
 

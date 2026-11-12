@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { fetchBooks, fetchDailyTasks, fetchStudyDates } from '../api/study.ts'
 import type { Subject } from '../interfaces/subject.ts'
-import type { Book, DailyTaskWithBook } from '../interfaces/study.ts'
+import type { Book, BookUnit, DailyTaskWithBook } from '../interfaces/study.ts'
 import { completedUnits, isBookFinished } from '../libs/books.ts'
 import { addDays, startOfWeek, todayKey } from '../libs/date.ts'
 import { toErrorMessage } from '../libs/errors.ts'
@@ -17,9 +17,10 @@ export interface HeatDay {
   level: HeatLevel | null // null = 아직 오지 않은 날
 }
 
+// 과목별 이번주 분량. 단위가 섞이면 단위마다 합계(예: 10회 · Day 7)
 export interface WeeklyGoal {
   subject: Subject
-  pages: number
+  amounts: { unit: BookUnit; amount: number }[]
 }
 
 export interface SubjectProgress {
@@ -106,21 +107,25 @@ function countStreak(studied: Set<string>, today: string): number {
   return count
 }
 
+const WEEKLY_UNIT_ORDER: BookUnit[] = ['session', 'chapter', 'day']
+
+// 이번주 목표량은 서로 다른 단위를 더하지 않고 단위마다 센다
 function buildWeekly(tasks: DailyTaskWithBook[]): WeeklyGoal[] {
-  return SUBJECTS.map((subject) => ({
-    subject,
-    // 이번주 목표량은 '쪽' 단위만 센다. Day 교재의 Day 수를 쪽수에 더하지 않는다
-    pages: tasks
-      .filter((t) => t.book.subject === subject && t.book.unit === 'page')
-      .reduce((sum, t) => sum + t.end_page - t.start_page + 1, 0),
-  })).filter((goal) => goal.pages > 0)
+  return SUBJECTS.map((subject) => {
+    const own = tasks.filter((t) => t.book.subject === subject)
+    const amounts = WEEKLY_UNIT_ORDER.map((unit) => ({
+      unit,
+      amount: own.filter((t) => t.book.unit === unit).reduce((sum, t) => sum + t.end_unit - t.start_unit + 1, 0),
+    })).filter((entry) => entry.amount > 0)
+    return { subject, amounts }
+  }).filter((goal) => goal.amounts.length > 0)
 }
 
-// 진도율은 목표 회독 기준이다. 쪽과 Day를 같은 단위로 더한다(영어 단어 60 Day는 영향이 작다)
+// 진도율은 목표 회독 기준이다. 회차·챕터·Day를 같은 단위로 더한다(영어 단어 60 Day는 영향이 작다)
 function buildSubjects(books: Book[]): SubjectProgress[] {
   return SUBJECTS.map((subject) => {
     const own = books.filter((b) => b.subject === subject)
-    const total = own.reduce((sum, b) => sum + b.target_rounds * b.total_pages, 0)
+    const total = own.reduce((sum, b) => sum + b.target_rounds * b.total_units, 0)
     const done = own.reduce((sum, b) => sum + completedUnits(b), 0)
     return {
       subject,
