@@ -19,9 +19,14 @@ const mock = loadMock(resolveMockPath(jsonPath));
 const text = (value: string) => `'${value.replaceAll("'", "''")}'`;
 const uid = text(userId);
 
+// 회독별 목표일 배열. 날짜 형식은 load.ts가 검사했다
+const dates = (values: (string | null)[]) =>
+  `array[${values.map((v) => (v === null ? "null" : text(v))).join(", ")}]::date[]`;
+
 const bookRows = mock.books.map((b) =>
   `  (${uid}, ${text(b.subject)}, ${text(b.title)}, ${text(b.unit)}, ${b.total_units}, ` +
-  `${b.current_round}, ${b.current_unit}, ${b.target_rounds}, ${b.daily_amount ?? "null"})`
+  `${b.current_round}, ${b.current_unit}, ${b.target_rounds}, ${b.daily_amount ?? "null"}, ` +
+  `${dates(b.round_targets ?? [])})`
 );
 
 const exams = mock.exams.map((e) => ({ ...e, id: randomUUID() }));
@@ -39,7 +44,7 @@ const statements = [
   `delete from public.daily_tasks where user_id = ${uid};`,
   `delete from public.books where user_id = ${uid};`,
   `delete from public.mock_exams where user_id = ${uid};`,
-  "insert into public.books (user_id, subject, title, unit, total_units, current_round, current_unit, target_rounds, daily_amount) values",
+  "insert into public.books (user_id, subject, title, unit, total_units, current_round, current_unit, target_rounds, daily_amount, round_targets) values",
   bookRows.join(",\n") + ";",
 ];
 if (examRows.length > 0) {

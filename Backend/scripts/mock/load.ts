@@ -22,6 +22,18 @@ function isIntIn(value: unknown, min: number, max: number): boolean {
   return typeof value === "number" && Number.isInteger(value) && value >= min && value <= max;
 }
 
+// 회독별 목표일: 목표 회독 수 이하, 날짜 형식, 시험일 전, 회독 순서대로 줄지 않음(null은 건너뜀)
+function isRoundTargetsValid(targets: unknown, targetRounds: number, examDate: string): boolean {
+  if (!Array.isArray(targets) || targets.length > targetRounds) return false;
+  let previous = "";
+  for (const date of targets) {
+    if (date === null) continue;
+    if (typeof date !== "string" || !DATE_KEY.test(date) || date >= examDate || date < previous) return false;
+    previous = date;
+  }
+  return true;
+}
+
 export function loadMock(path: string): StudyMock {
   const mock = JSON.parse(readFileSync(path, "utf8")) as StudyMock;
   if (!DATE_KEY.test(mock.exam_date)) throw new Error(`exam_date 형식 오류: ${mock.exam_date}`);
@@ -32,7 +44,8 @@ export function loadMock(path: string): StudyMock {
       isIntIn(b.target_rounds, 1, 10) &&
       isIntIn(b.current_round, 1, b.target_rounds) &&
       isIntIn(b.current_unit, 0, b.total_units) &&
-      (b.daily_amount === null || isIntIn(b.daily_amount, 1, Infinity));
+      (b.daily_amount === null || isIntIn(b.daily_amount, 1, Infinity)) &&
+      isRoundTargetsValid(b.round_targets ?? [], b.target_rounds, mock.exam_date);
     if (!ok) throw new Error(`교재 값 오류: ${b.title}`);
   }
   for (const e of mock.exams) {
