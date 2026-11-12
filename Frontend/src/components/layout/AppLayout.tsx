@@ -5,6 +5,7 @@ import { formatDateTitle, isDateKey, todayKey } from '../../libs/date.ts'
 import { MENU } from '../../libs/menu.ts'
 import DialogProvider from '../ui/DialogProvider.tsx'
 import AppHeader from './AppHeader.tsx'
+import OverdueTargetsModal from './OverdueTargetsModal.tsx'
 import Sidebar from './Sidebar.tsx'
 
 // 모든 화면 공통: 헤더(햄버거 / 제목 / D-day) + 본문, 햄버거로 여는 왼쪽 사이드바
@@ -25,6 +26,7 @@ export default function AppLayout() {
       <main className="min-h-0 flex-1 overflow-y-auto">
         <DialogProvider>
           <Outlet context={profileState} />
+          <OverdueTargetsModal examDate={profileState.profile?.exam_date ?? null} />
         </DialogProvider>
       </main>
       <Sidebar open={sidebarOpen} onClose={closeSidebar} />
