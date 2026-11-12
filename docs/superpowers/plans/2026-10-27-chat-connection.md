@@ -541,7 +541,7 @@ curl -s -X POST "https://ishtebcswgyagbbaakpx.supabase.co/functions/v1/chat" \
 ```
 Expected: `messages[1].content`가 `USAGE_GUIDE`와 같고 `"logged":false`.
 같은 방식으로 `{"content":""}` → 400 `invalid_content`.
-검증용 계정은 화면에 로그인할 수 없으므로 데이터는 Table Editor로 넣는다: `profiles.exam_date`를 2027-02-27로 두고(교재는 Task 1 Step 4.5에서 넣은 해커스 교재 8권), 같은 토큰으로 `plan-generator`를 호출해 오늘 분량을 만든다. 그다음 `{"content":"보건행정 기본서 30~70p, 기출 20문제 중 5개 틀림"}` → `"logged":true`, 대시보드 Table Editor에서 `study_logs` 1행(`study_date` = 오늘 한국 날짜), "해커스공무원 최성희 보건행정 기본서"의 `current_page = 70`. 보건행정 교재가 2권이므로 교재명 없이 "보건행정 30~70p"만 보내면 `book_id`가 비고 진도는 그대로여야 한다(Review Focus 3)는 것도 함께 확인한다.
+검증용 계정은 화면에 로그인할 수 없으므로 데이터는 Table Editor로 넣는다: `profiles.exam_date`를 2027-02-27로 두고(교재는 Task 1 Step 4.5에서 넣은 해커스 교재 8권), 같은 토큰으로 `plan-generator`를 호출해 오늘 분량을 만든다. 그다음 `{"content":"보건행정 기본서 30~70p, 기출 20문제 중 5개 틀림"}` → `"logged":true`, 대시보드 Table Editor에서 `study_logs` 1행(`study_date` = 오늘 한국 날짜), "보건행정 기본서"(2026-11-12 Mock 제목을 짧게 바꿈)의 `current_page = 70`. 보건행정 교재가 2권이므로 교재명 없이 "보건행정 30~70p"만 보내면 `book_id`가 비고 진도는 그대로여야 한다(Review Focus 3)는 것도 함께 확인한다.
 
 - [ ] **Step 4: 문서 갱신**
 
