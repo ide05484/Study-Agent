@@ -28,10 +28,11 @@ export default function BookProgressForm({ book, onSave, onCancel }: BookProgres
   const today = todayKey()
   const examDate = profile?.exam_date ?? null
   const roundsCount = isIntegerInRange(targetRounds, 1, 10) ? Number(targetRounds) : 0
-  // 끝낸 회독의 목표일은 늘 과거라 검사하지 않는다. 현재 회독부터 보고, 그 회독을 끝냈으면 다음 회독부터 본다
+  // 끝낸 회독의 목표일은 늘 과거라 검사하지 않는다. 현재 회독부터 보고, 그 회독을 끝냈으면 다음 회독부터 본다.
+  // 마지막 회독까지 끝냈으면 목표 회독 + 1이 되어 검사할 회독이 없다(모든 목표일 줄이 잠긴다)
   const roundFinished = isIntegerInRange(currentPage, 0) && Number(currentPage) === book.total_units
   const fromRound = isIntegerInRange(currentRound, 1)
-    ? Math.min(Number(currentRound) + (roundFinished ? 1 : 0), Math.max(roundsCount, 1))
+    ? Math.min(Number(currentRound) + (roundFinished ? 1 : 0), Math.max(roundsCount, 1) + 1)
     : 1
   const targetsValid = isRoundTargetsValid(roundTargets.slice(0, roundsCount), fromRound, today, examDate)
   const valid =
