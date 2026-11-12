@@ -7,7 +7,7 @@ import { SUBJECT_LABELS } from '../../libs/subjects.ts'
 import Chevron from '../ui/Chevron.tsx'
 
 // 목표가 2회독 이상인 교재만 몇 회독째인지 붙인다
-function pagesLabel(task: DailyTaskWithBook): string {
+function unitsLabel(task: DailyTaskWithBook): string {
   const range = rangeLabel(task.book.unit, task.start_unit, task.end_unit)
   return task.book.target_rounds >= 2 ? `${task.round}회독 ${range}` : range
 }
@@ -54,7 +54,7 @@ export default function TodayPlan({ date }: TodayPlanProps) {
           {next ? (
             <>
               <span className="marker">
-                {SUBJECT_LABELS[next.book.subject]} {pagesLabel(next)}
+                {SUBJECT_LABELS[next.book.subject]} {unitsLabel(next)}
               </span>
               {tasks.length - done > 1 && <span className="text-muted"> 외 {tasks.length - done - 1}개</span>}
             </>
@@ -76,7 +76,7 @@ export default function TodayPlan({ date }: TodayPlanProps) {
                 <span className="text-muted">{SUBJECT_LABELS[task.book.subject]}</span>
                 <span className={`truncate ${finished ? 'text-muted line-through' : ''}`}>{task.book.title}</span>
                 <span className={`tabular-nums ${finished ? 'text-muted line-through' : 'marker'}`}>
-                  {pagesLabel(task)}
+                  {unitsLabel(task)}
                 </span>
               </li>
             )

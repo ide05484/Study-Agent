@@ -15,14 +15,14 @@
 
 ## TextField
 
-한 줄 입력, 선택, 여러 줄 입력이 같은 모양을 쓴다.
+한 줄 입력과 여러 줄 입력이 같은 모양을 쓴다.
 
 - `bg` 바탕, `border` 테두리, 모서리 `radius-xl`, 높이 44px 이상, 안쪽 8×12px.
 - 자리 표시 글자는 `text-muted`이고 예시를 괄호로 단다: "교재명 (예: 봉투모의고사)".
 - 비활성은 `opacity: .6`(로그인 전, 준비 중인 메모).
 - 라벨이 화면에 없으면 `aria-label`을 단다.
 - 호출하는 쪽이 정하는 것: 라벨, 값, 자리 표시 글자, 입력 형식(`inputmode="numeric"`).
-- 코드: `TextField`, `Select`, `TextArea`.
+- 코드: `TextField`, `TextArea`. 과목·단위처럼 짧은 선택지는 `<select>` 대신 `ChipGroup`(PC에서 기본 목록이 앱 칸 밖으로 삐져나가므로).
 
 ## Marker
 

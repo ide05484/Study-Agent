@@ -200,3 +200,44 @@ Deno.test("상한이 없으면 마지막 주도 고르게 끝낸다", () => {
     100,
   );
 });
+
+Deno.test("현재 회독이 2 이상이면 그 회독의 목표일을 본다", () => {
+  assertEquals(
+    planBook(
+      book({ total_units: 10, current_round: 2, target_rounds: 3 }),
+      opts(6, [-5, 2, null]),
+    ).filter((x) => x.round === 2),
+    [t(0, 2, 1, 3), t(1, 2, 4, 6), t(2, 2, 7, 10)],
+  );
+});
+
+Deno.test("마지막 주 상한 때문에 목표일을 못 맞추면 그 뒤로 이어 간다", () => {
+  const tasks = planBook(
+    book({ total_units: 10, target_rounds: 2 }),
+    opts(7, [2, null], 3),
+  );
+  const amounts = tasks.reduce<number[]>((acc, x) => {
+    acc[x.day] = (acc[x.day] ?? 0) + x.end_unit - x.start_unit + 1;
+    return acc;
+  }, []);
+  assertEquals(amounts.every((a) => a <= 3), true);
+  assertEquals(tasks.find((x) => x.round === 1 && x.end_unit === 10)?.day, 3);
+});
+
+Deno.test("최소 분량과 마지막 주 상한이 같이 걸리면 상한이 이긴다", () => {
+  const amounts = planBook(
+    book({ total_units: 100, daily_amount: 5 }),
+    opts(7, [], 2),
+  ).map((x) => x.end_unit - x.start_unit + 1);
+  assertEquals(amounts, [2, 2, 2, 2, 2, 2, 2]);
+});
+
+Deno.test("목표일이 오늘이면 그 회독의 남은 분량을 오늘에 넣는다", () => {
+  assertEquals(
+    planBook(
+      book({ total_units: 10, current_unit: 4, target_rounds: 2 }),
+      opts(4, [0, null]),
+    )[0],
+    t(0, 1, 5, 10),
+  );
+});

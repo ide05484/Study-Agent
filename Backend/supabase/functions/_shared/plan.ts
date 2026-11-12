@@ -98,6 +98,8 @@ export function planBook(book: PlanBook, options: PlanOptions): PlannedTask[] {
       index++;
       segment = null;
     }
+    // 구간은 들어선 날의 위치에서 시작한다. 구간 안에서는 다시 앵커하지 않아서,
+    // 최소 분량으로 앞서가면 다음 날 필요 분량이 줄고 상한으로 밀리면 늘어 따라잡는다
     if (!segment) {
       const deadline = deadlines[index];
       segment = {

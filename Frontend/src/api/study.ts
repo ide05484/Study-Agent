@@ -38,6 +38,15 @@ export async function updateBook(id: string, input: BookPlanUpdate): Promise<Boo
   return data as Book
 }
 
+// 회독별 목표일만 바꾼다(목표일 지남 모달). 진도 칸은 건드리지 않는다
+export async function updateRoundTargets(id: string, roundTargets: (string | null)[]): Promise<void> {
+  const { error } = await supabase
+    .from('books')
+    .update(toBookRow({ round_targets: roundTargets }))
+    .eq('id', id)
+  if (error) throw error
+}
+
 // 여러 권을 한 번에 지운다. 그 교재의 계획(daily_tasks)은 on delete cascade로 같이 지워진다
 export async function deleteBooks(ids: string[]): Promise<void> {
   const { error } = await supabase.from('books').delete().in('id', ids)

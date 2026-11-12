@@ -89,7 +89,10 @@ mock.books.forEach((book, i) => {
   for (let round = book.current_round; round <= book.target_rounds; round++) {
     const target = book.round_targets?.[round - 1] ?? "–";
     const end = roundEnds.get(round);
-    rounds.push(`${round}회독 ${target} → ${end === undefined ? "못 끝냄" : addDays(today, end)}`);
+    // 지금 회독을 이미 끝낸 교재(어디까지 = 총량)는 그 회독 계획이 없으므로 "이미 끝냄"
+    const alreadyDone = round === book.current_round && book.current_unit >= book.total_units;
+    const endLabel = alreadyDone ? "이미 끝냄" : end === undefined ? "못 끝냄" : addDays(today, end);
+    rounds.push(`${round}회독 ${target} → ${endLabel}`);
   }
 
   console.log(

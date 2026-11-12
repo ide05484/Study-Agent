@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { regeneratePlan } from '../api/plan.ts'
-import { fetchBooks, updateBook } from '../api/study.ts'
+import { fetchBooks, updateRoundTargets } from '../api/study.ts'
 import type { Book } from '../interfaces/study.ts'
 import { isTargetOverdue, roundTargetBounds } from '../libs/books.ts'
 import { addDays, todayKey } from '../libs/date.ts'
@@ -73,13 +73,8 @@ export function useOverdueTargets(examDate: string | null): OverdueTargetsState 
           const round_targets = [...book.round_targets]
           while (round_targets.length < round) round_targets.push(null)
           round_targets[round - 1] = dates[book.id]
-          return updateBook(book.id, {
-            current_round: book.current_round,
-            current_unit: book.current_unit,
-            target_rounds: book.target_rounds,
-            daily_amount: book.daily_amount,
-            round_targets,
-          })
+          // 진도·목표 회독은 앱을 연 시점 값이라 되쓰지 않고 목표일 칸만 바꾼다
+          return updateRoundTargets(book.id, round_targets)
         }),
       )
       const failed = items.filter((_, i) => results[i].status === 'rejected')
