@@ -4,6 +4,8 @@ import BookProgressForm from '../components/settings/BookProgressForm.tsx'
 import ExamDateForm from '../components/settings/ExamDateForm.tsx'
 import ExamScoreForm from '../components/settings/ExamScoreForm.tsx'
 import ExamScoreList from '../components/settings/ExamScoreList.tsx'
+import ScoreTabs, { type ScoreView } from '../components/settings/ScoreTabs.tsx'
+import ScoreTrendChart from '../components/settings/ScoreTrendChart.tsx'
 import Button from '../components/ui/Button.tsx'
 import Disclosure from '../components/ui/Disclosure.tsx'
 import IconButton from '../components/ui/IconButton.tsx'
@@ -17,7 +19,7 @@ import { useProfileContext } from '../hooks/useProfile.ts'
 import { progressLabel } from '../libs/books.ts'
 import { SUBJECT_LABELS, SUBJECTS } from '../libs/subjects.ts'
 
-// 공부 설정 변경: 시험일, D-Day까지 남은 공부 분량(추가/수정/삭제), 시험 점수, 과목별 공부법 (영역은 괘선으로 구분)
+// 공부 설정 변경: 시험일, D-Day까지 남은 공부 분량(추가/수정/삭제), 시험 점수(시험별 블록·과목별 꺾은선 탭), 과목별 공부법 (영역은 괘선으로 구분)
 // TODO: 알림 시간·채널 설정 위치 결정
 export default function SettingsPage() {
   const { profile, saveExamDate } = useProfileContext()
@@ -25,6 +27,7 @@ export default function SettingsPage() {
   const { exams, loading: examsLoading, error: examsError, add: addExam } = useMockExams()
   const [adding, setAdding] = useState(false)
   const [addingExam, setAddingExam] = useState(false)
+  const [scoreView, setScoreView] = useState<ScoreView>('exams')
   const [editingId, setEditingId] = useState<string | null>(null)
   // 선택 삭제 모드: 제목 줄 ⋮ → 삭제를 누르면 교재 행마다 체크박스가 생긴다
   const [selecting, setSelecting] = useState(false)
@@ -210,7 +213,18 @@ export default function SettingsPage() {
         {!examsLoading && exams.length === 0 && (
           <Notice>등록된 점수가 없어요. 모의고사나 시험을 보면 점수를 넣어 주세요.</Notice>
         )}
-        <ExamScoreList exams={exams} />
+        {exams.length > 0 && (
+          <>
+            <ScoreTabs value={scoreView} onChange={setScoreView} idPrefix="score" />
+            <div role="tabpanel" id="score-panel" aria-labelledby={`score-tab-${scoreView}`} className="mt-3">
+              {scoreView === 'exams' ? (
+                <ExamScoreList exams={exams} />
+              ) : (
+                <ScoreTrendChart exams={exams} subject={scoreView} />
+              )}
+            </div>
+          </>
+        )}
         {examsError && (
           <div className="mt-2">
             <Notice tone="error">{examsError}</Notice>
