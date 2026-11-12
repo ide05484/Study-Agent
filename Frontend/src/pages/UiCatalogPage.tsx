@@ -7,6 +7,7 @@ import ChipGroup from '../components/ui/ChipGroup.tsx'
 import DatePicker from '../components/ui/DatePicker.tsx'
 import DialogProvider from '../components/ui/DialogProvider.tsx'
 import Disclosure from '../components/ui/Disclosure.tsx'
+import FormField from '../components/ui/FormField.tsx'
 import IconButton from '../components/ui/IconButton.tsx'
 import Mascot, { type MascotMood } from '../components/ui/Mascot.tsx'
 import Menu from '../components/ui/Menu.tsx'
@@ -15,7 +16,7 @@ import Notice from '../components/ui/Notice.tsx'
 import Section from '../components/ui/Section.tsx'
 import TextArea from '../components/ui/TextArea.tsx'
 import TextField from '../components/ui/TextField.tsx'
-import { useAlert, useConfirm } from '../hooks/useDialog.ts'
+import { useAlert, useConfirm, useProgress } from '../hooks/useDialog.ts'
 import NotFoundPage from './NotFoundPage.tsx'
 
 interface ColorToken {
@@ -56,6 +57,7 @@ const UNIT_OPTIONS = [
 function DialogExamples() {
   const confirm = useConfirm()
   const alert = useAlert()
+  const progress = useProgress()
   const [result, setResult] = useState('')
 
   async function handleConfirm() {
@@ -73,6 +75,17 @@ function DialogExamples() {
     setResult('알림을 닫았어요')
   }
 
+  // 2초 동안 진행 창을 띄운 뒤 결과 창으로 바꾼다
+  async function handleProgress() {
+    const message = await progress(
+      { title: '계획을 나누는 중이에요', message: '잠시만 기다려 주세요.' },
+      () =>
+        new Promise<string>((resolve) => setTimeout(() => resolve('시험 전날까지 219일 계획을 다시 나눴어요.'), 2000)),
+    )
+    await alert({ title: '계획을 세웠어요', message })
+    setResult('진행 → 결과 창을 닫았어요')
+  }
+
   return (
     <>
       <div className="flex flex-wrap gap-3">
@@ -82,11 +95,45 @@ function DialogExamples() {
         <Button type="button" variant="ghost" onClick={() => void handleAlert()}>
           알림 창
         </Button>
+        <Button type="button" variant="ghost" onClick={() => void handleProgress()}>
+          진행 → 결과 창
+        </Button>
       </div>
       <p className="mt-2 text-sm text-muted" aria-live="polite">
         {result}
       </p>
     </>
+  )
+}
+
+interface FormFieldExampleProps {
+  idPrefix: string
+}
+
+// 비워 두고 확인을 누르면 라벨 옆 오류 문구와 흔들림을 본다
+function FormFieldExample({ idPrefix }: FormFieldExampleProps) {
+  const [value, setValue] = useState('')
+  const [shake, setShake] = useState(0)
+  const error = value.trim() === '' ? '필수 항목이에요.' : null
+  const shown = shake > 0 ? error : null
+
+  return (
+    <div className="grid gap-3">
+      <FormField label="교재명" htmlFor={`${idPrefix}-form-field`} required error={shown} shake={shake}>
+        <TextField
+          id={`${idPrefix}-form-field`}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="예: 봉투모의고사"
+          invalid={!!shown}
+        />
+      </FormField>
+      <div>
+        <Button type="button" variant="ghost" onClick={() => setShake((n) => n + 1)}>
+          확인
+        </Button>
+      </div>
+    </div>
   )
 }
 
@@ -153,7 +200,13 @@ function CatalogColumn({ themeClass, idPrefix }: CatalogColumnProps) {
             <div className="flex flex-col gap-3">
               <TextField aria-label="일반" placeholder="일반" />
               <TextField aria-label="비활성" placeholder="비활성" disabled />
+              <TextField aria-label="단위" placeholder="예: 60" suffix="회차" />
+              <TextField aria-label="오류" placeholder="오류" invalid />
             </div>
+          </Section>
+
+          <Section title="FormField">
+            <FormFieldExample idPrefix={idPrefix} />
           </Section>
 
           <Section title="TextArea">

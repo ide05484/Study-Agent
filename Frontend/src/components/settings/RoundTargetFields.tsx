@@ -11,7 +11,8 @@ interface RoundTargetFieldsProps {
   onChange: (value: (string | null)[]) => void
 }
 
-// 회독마다 목표일 한 줄. 비워도 된다. 날짜는 오늘 ~ 시험 전날, 앞 회독 목표일보다 늦게만 고른다
+// 회독마다 목표일 한 줄. 비워도 된다. 날짜는 오늘 ~ 시험 전날, 앞 회독 목표일보다 늦게만 고른다.
+// 묶음 라벨("회독별 목표일")은 부르는 쪽의 FormField가 단다
 export default function RoundTargetFields({
   idPrefix,
   rounds,
@@ -29,8 +30,7 @@ export default function RoundTargetFields({
   }
 
   return (
-    <div className="grid gap-2">
-      <p className="text-sm text-muted">목표일</p>
+    <div className="grid gap-3">
       {targets.map((target, index) => {
         const round = index + 1
         const { min, max } = roundTargetBounds(targets, index, fromRound, today, examDate)
