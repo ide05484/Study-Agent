@@ -1,15 +1,9 @@
 import { useState, type FormEvent } from 'react'
 import { useProfileContext } from '../../hooks/useProfile.ts'
 import type { Book, BookPlanUpdate } from '../../interfaces/study.ts'
-import {
-  integerFieldError,
-  isIntegerInRange,
-  isRoundTargetsValid,
-  TARGETS_INVALID_MESSAGE,
-  UNIT_LABELS,
-  withUnit,
-} from '../../libs/books.ts'
+import { isRoundTargetsValid, TARGETS_INVALID_MESSAGE, UNIT_LABELS, withUnit } from '../../libs/books.ts'
 import { todayKey } from '../../libs/date.ts'
+import { integerFieldError, isIntegerInRange } from '../../libs/forms.ts'
 import Button from '../ui/Button.tsx'
 import FormField from '../ui/FormField.tsx'
 import TextField from '../ui/TextField.tsx'
@@ -43,7 +37,8 @@ export default function BookProgressForm({ book, onSave, onCancel }: BookProgres
     : 1
 
   const errors = {
-    round: integerFieldError(currentRound, 1, Math.max(roundsCount, 1), true),
+    // 목표 회독이 틀렸으면 상한을 모르므로 1 이상인지만 보고, 상한 검사는 목표 회독을 고친 뒤에 한다
+    round: integerFieldError(currentRound, 1, roundsCount || Infinity, true),
     unit: integerFieldError(currentUnit, 0, book.total_units, true),
     rounds: integerFieldError(targetRounds, 1, 10, true),
     targets: isRoundTargetsValid(roundTargets.slice(0, roundsCount), fromRound, today, examDate)
@@ -132,6 +127,7 @@ export default function BookProgressForm({ book, onSave, onCancel }: BookProgres
             fromRound={fromRound}
             today={today}
             examDate={examDate}
+            invalid={!!shown?.targets}
             onChange={setRoundTargets}
           />
         </FormField>

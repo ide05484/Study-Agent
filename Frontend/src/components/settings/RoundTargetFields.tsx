@@ -8,6 +8,7 @@ interface RoundTargetFieldsProps {
   fromRound: number // 이 회독부터 고칠 수 있다. 앞 회독 줄은 날짜만 보여 준다
   today: string
   examDate: string | null
+  invalid?: boolean // 목표일 오류일 때 고칠 수 있는 칸 테두리를 danger로
   onChange: (value: (string | null)[]) => void
 }
 
@@ -20,6 +21,7 @@ export default function RoundTargetFields({
   fromRound,
   today,
   examDate,
+  invalid = false,
   onChange,
 }: RoundTargetFieldsProps) {
   if (rounds < 1) return null
@@ -46,6 +48,7 @@ export default function RoundTargetFields({
               minDate={min}
               maxDate={max}
               disabled={round < fromRound}
+              invalid={invalid && round >= fromRound}
               onChange={(key) => handleChange(index, key)}
             />
           </div>

@@ -3,16 +3,8 @@ import { addDays, formatMonthDay } from './date.ts'
 
 export const UNIT_LABELS: Record<BookUnit, string> = { day: 'Day', chapter: '챕터', session: '회차' }
 
-// 교재 폼의 오류 문구
-export const REQUIRED_MESSAGE = '필수 항목이에요.'
+// 교재 폼의 목표일 오류 문구
 export const TARGETS_INVALID_MESSAGE = '목표일은 오늘부터 시험 전날 사이에서 회독 순서대로 골라 주세요.'
-
-// 정수 칸의 오류 문구. 비었으면 required일 때만 필수 안내, 범위 밖이면 범위 안내, 맞으면 null
-export function integerFieldError(text: string, min: number, max: number, required: boolean): string | null {
-  if (text.trim() === '') return required ? REQUIRED_MESSAGE : null
-  if (isIntegerInRange(text, min, max)) return null
-  return max === Infinity ? `${min} 이상의 정수로 적어 주세요.` : `${min}~${max} 사이의 정수로 적어 주세요.`
-}
 
 // 지금까지 끝낸 분량. 앞선 회독은 통째로 센다
 export function completedUnits(book: Pick<Book, 'total_units' | 'current_round' | 'current_unit'>): number {
@@ -32,12 +24,6 @@ export function withUnit(unit: BookUnit, value: string | number): string {
 // Day 3–4, 3–4챕터, 12–14회
 export function rangeLabel(unit: BookUnit, start: number, end: number): string {
   return withUnit(unit, start === end ? `${start}` : `${start}–${end}`)
-}
-
-// 입력 칸 문자열이 min~max의 정수인지(빈 칸·소수는 false). max를 생략하면 상한이 없다
-export function isIntegerInRange(text: string, min: number, max = Infinity): boolean {
-  const value = Number(text)
-  return text.trim() !== '' && Number.isInteger(value) && value >= min && value <= max
 }
 
 // 12/30회, Day 12/60, 3/20챕터. 목표가 2회독 이상이면 앞에 2/3회독을 붙인다

@@ -2,14 +2,9 @@ import { useState, type FormEvent } from 'react'
 import { useProfileContext } from '../../hooks/useProfile.ts'
 import type { BookUnit, NewBook } from '../../interfaces/study.ts'
 import type { Subject } from '../../interfaces/subject.ts'
-import {
-  integerFieldError,
-  isRoundTargetsValid,
-  REQUIRED_MESSAGE,
-  TARGETS_INVALID_MESSAGE,
-  UNIT_LABELS,
-} from '../../libs/books.ts'
+import { isRoundTargetsValid, TARGETS_INVALID_MESSAGE, UNIT_LABELS } from '../../libs/books.ts'
 import { todayKey } from '../../libs/date.ts'
+import { integerFieldError, REQUIRED_MESSAGE } from '../../libs/forms.ts'
 import { SUBJECT_LABELS, SUBJECTS } from '../../libs/subjects.ts'
 import Button from '../ui/Button.tsx'
 import ChipGroup, { type ChipOption } from '../ui/ChipGroup.tsx'
@@ -140,6 +135,7 @@ export default function BookAddForm({ id, onAdd, onCancel }: BookAddFormProps) {
             fromRound={1}
             today={today}
             examDate={examDate}
+            invalid={!!shown?.targets}
             onChange={setRoundTargets}
           />
         </FormField>

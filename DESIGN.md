@@ -294,7 +294,7 @@
 - **Notice**: 안내·오류 문구. `tone`(`info`|`error`). 오류는 `role="alert"`.
 - **Chevron**: 꺾쇠 화살표. `direction`(`down`|`up`|`right`).
 - **Mascot**: 합격이. 로그인·앱 시작·404에만. `mood`(`base`|`cheer`|`think`|`oops`), `size`(px).
-- **DatePicker**: 날짜 선택(아래 규칙 참고). `minDate`·`maxDate`로 고를 수 있는 범위를 막는다.
+- **DatePicker**: 날짜 선택(아래 규칙 참고). `minDate`·`maxDate`로 고를 수 있는 범위를 막는다. `invalid`면 테두리가 `danger`(폼 오류, 회독별 목표일은 고칠 수 있는 칸만).
 - **ChipGroup**: `<select>` 대신 쓰는 한 줄 선택. `label`(그룹 접근성 이름), `options`(`value`, `label`), `value`, `onChange`, `disabled`. `role="radiogroup"`이고 칩은 `role="radio"`다. 칩 하나만 Tab 순서에 들어가고 ←·→·↑·↓로 옮기면 바로 선택된다. 칩은 `min-h-11 rounded-xl border px-3`, 고른 칩은 `border-accent bg-accent-soft font-bold`, 나머지는 `border-line text-muted`, 줄이 모자라면 아래로 넘긴다.
 - **Modal**: 네이티브 `<dialog>`(`showModal`)로 연 가운데 창. `open`, `title`, `onClose`(Esc), children, `actions`(아래 오른쪽 버튼 줄). 폭은 `100% - 32px`에 최대 448px, `rounded-2xl border-line bg-bg shadow-lg`, 바깥은 `bg-scrim`. 포커스가 창 밖으로 나가지 않고, 입력 중 실수를 막으려고 바깥을 눌러서는 닫지 않는다. 쓰는 곳: 확인·알림(`DialogProvider`), 지난 목표일을 묻는 `OverdueTargetsModal`(`AppLayout`이 앱을 열고 시험일을 알게 됐을 때 한 번만 조회해 띄운다. 교재마다 `DatePicker`, 버튼은 `나중에`(ghost)·`저장`(primary), Esc는 `나중에`와 같다).
 - **확인·알림 창**: `window.confirm`·`window.alert`를 쓰지 않는다. `useConfirm()`은 `{ title, message, confirmLabel?, tone? }`를 받아 확인이면 `true`, 취소·Esc면 `false`를 돌려주고, `tone: 'danger'`면 확인 버튼이 `Button`의 `danger`다. `useAlert()`는 `확인` 버튼 하나다. `useProgress()`는 `(옵션, task)`를 받아 task가 끝날 때까지 진행 창(작은 `accent` 원형 스피너 + 문구, 버튼 없음, Esc로 닫히지 않음)을 띄우고 task 결과를 돌려준다. 바로 이어 `useAlert()`를 부르면 창이 끊기지 않고 결과 창으로 바뀐다. `AppLayout`의 `DialogProvider`가 그리며, 한 번에 하나만 연다.

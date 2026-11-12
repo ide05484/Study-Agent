@@ -105,7 +105,8 @@ export default function DialogProvider({ children }: DialogProviderProps) {
               </Button>
             </>
           ) : pending?.kind === 'alert' ? (
-            <Button type="button" onClick={() => finish(true)}>
+            // 진행 창에서 바로 바뀌면 showModal이 다시 불리지 않아 포커스가 옮겨지지 않으므로 직접 준다
+            <Button type="button" autoFocus onClick={() => finish(true)}>
               확인
             </Button>
           ) : undefined

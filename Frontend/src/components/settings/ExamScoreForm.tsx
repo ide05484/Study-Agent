@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import type { ExamKind, MockExamScore, NewMockExam } from '../../interfaces/mockExam.ts'
 import type { Subject } from '../../interfaces/subject.ts'
-import { REQUIRED_MESSAGE } from '../../libs/books.ts'
 import { EXAM_KIND_LABELS, isScoreText } from '../../libs/exams.ts'
+import { REQUIRED_MESSAGE } from '../../libs/forms.ts'
 import { SUBJECT_LABELS, SUBJECTS } from '../../libs/subjects.ts'
 import Button from '../ui/Button.tsx'
 import ChipGroup, { type ChipOption } from '../ui/ChipGroup.tsx'
@@ -76,7 +76,13 @@ export default function ExamScoreForm({ id, onAdd, onCancel }: ExamScoreFormProp
         />
       </FormField>
       <FormField label="응시일" htmlFor="exam-taken-on" required error={shown?.takenOn} shake={shake}>
-        <DatePicker id="exam-taken-on" label="응시일" value={takenOn} onChange={setTakenOn} />
+        <DatePicker
+          id="exam-taken-on"
+          label="응시일"
+          value={takenOn}
+          invalid={!!shown?.takenOn}
+          onChange={setTakenOn}
+        />
       </FormField>
       <FormField label="과목별 점수" required error={shown?.scores} shake={shake}>
         <div className="grid grid-cols-2 gap-3">
