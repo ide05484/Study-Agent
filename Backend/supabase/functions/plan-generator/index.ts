@@ -25,17 +25,20 @@ export default {
 
     // 시험일이 없거나 지났으면 오늘부터의 미진행 계획만 지운다(빈 배열로 교체)
     if (!profile.exam_date) {
-      const error = await replaceTasks(supabase, today, []);
-      if (error) return errorResponse(error);
+      const result = await replaceTasks(supabase, today, []);
+      if ("error" in result) return errorResponse(result.error);
       return Response.json({ generated: 0, days: 0, skipped: "no_exam_date" });
     }
     // 시험 당일은 비우고 전날까지 공부한다
     const days = diffDays(today, profile.exam_date);
     if (days <= 0) {
-      const error = await replaceTasks(supabase, today, []);
-      if (error) return errorResponse(error);
+      const result = await replaceTasks(supabase, today, []);
+      if ("error" in result) return errorResponse(result.error);
       return Response.json({ generated: 0, days: 0, skipped: "exam_passed" });
     }
+
+    // 교재는 잠금 밖에서 읽는다. 두 탭에서 거의 동시에 부르면 먼저 읽은 쪽이 나중에 교체해 낡은 계획이 남을 수 있지만
+    // (같은 줄이 두 번 생기지는 않는다), 다음 저장 때 다시 나눠져 맞춰진다. 한 화면 안의 교재 변경은 useBooks가 순서대로 부른다
 
     const { data: books, error: booksError } = await supabase
       .from("books")
@@ -54,10 +57,11 @@ export default {
       }))
     );
 
-    const error = await replaceTasks(supabase, today, tasks);
-    if (error) return errorResponse(error);
+    const result = await replaceTasks(supabase, today, tasks);
+    if ("error" in result) return errorResponse(result.error);
 
-    return Response.json({ generated: tasks.length, days });
+    // 도중에 지워진 교재의 줄은 DB가 넣지 않으므로, 실제로 넣은 줄 수를 돌려준다
+    return Response.json({ generated: result.inserted, days });
   }),
 };
 
@@ -69,24 +73,27 @@ interface TaskRow {
   end_page: number;
 }
 
-// 지우기와 넣기를 DB 함수 replace_daily_tasks 한 번(한 트랜잭션, 사용자별 잠금)으로 한다. 실패하면 오류 문구
+// 지우기와 넣기를 DB 함수 replace_daily_tasks 한 번(한 트랜잭션, 사용자별 잠금)으로 한다.
+// 성공하면 DB가 넣은 줄 수, 실패하면 오류 문구
 async function replaceTasks(
   supabase: RpcClient,
   from: string,
   tasks: TaskRow[],
-): Promise<string | null> {
-  const { error } = await supabase.rpc("replace_daily_tasks", {
+): Promise<{ inserted: number } | { error: string }> {
+  const { data, error } = await supabase.rpc("replace_daily_tasks", {
     p_from: from,
     p_tasks: tasks,
   });
-  return error ? error.message : null;
+  if (error) return { error: error.message };
+  return { inserted: typeof data === "number" ? data : tasks.length };
 }
 
+// ctx.supabase는 DB 타입 없이 만들어지므로 rpc 모양만 적어 둔다
 interface RpcClient {
   rpc(
-    fn: string,
-    args: Record<string, unknown>,
-  ): PromiseLike<{ error: { message: string } | null }>;
+    fn: "replace_daily_tasks",
+    args: { p_from: string; p_tasks: TaskRow[] },
+  ): PromiseLike<{ data: unknown; error: { message: string } | null }>;
 }
 
 function errorResponse(message: string): Response {

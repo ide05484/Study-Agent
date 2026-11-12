@@ -57,7 +57,7 @@ export default function ScoreTabs({ value, onChange, idPrefix }: ScoreTabsProps)
             aria-selected={selected}
             aria-controls={`${idPrefix}-panel`}
             tabIndex={selected ? 0 : -1}
-            className={`-mb-px min-h-11 flex-1 border-b-2 px-1 text-sm whitespace-nowrap ${TAB_CLASS[selected ? 'selected' : 'idle']}`}
+            className={`-mb-px min-h-11 flex-1 border-b-2 px-0.5 text-sm whitespace-nowrap ${TAB_CLASS[selected ? 'selected' : 'idle']}`}
             onClick={() => onChange(view)}
           >
             {scoreViewLabel(view)}

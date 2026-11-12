@@ -45,6 +45,8 @@ export default function ScoreTrendChart({ exams, subject }: ScoreTrendChartProps
   const plotWidth = Math.max(width - PAD.left - PAD.right, 0)
   const plotHeight = HEIGHT - PAD.top - PAD.bottom
   const gap = count > 1 ? plotWidth / (count - 1) : Infinity
+  // 점이 촘촘하면 투명 영역이 옆 점을 가리지 않도록 간격의 절반까지만 넓힌다
+  const hitRadius = Math.max(Math.min(HIT_RADIUS, gap / 2), DOT_RADIUS)
   function xAt(i: number): number {
     return count === 1 ? PAD.left + plotWidth / 2 : PAD.left + gap * i
   }
@@ -59,6 +61,8 @@ export default function ScoreTrendChart({ exams, subject }: ScoreTrendChartProps
   return (
     <div ref={containerRef}>
       {count === 0 && <Notice>이 과목 점수가 아직 없어요.</Notice>}
+      {/* 폭을 재기 전에도 자리를 잡아 두어 그래프가 나타날 때 아래 내용이 밀리지 않게 한다 */}
+      {count > 0 && width === 0 && <div className="h-50" />}
 
       {count > 0 && width > 0 && (
         <svg width={width} height={HEIGHT} className="block" aria-hidden="true">
@@ -99,7 +103,7 @@ export default function ScoreTrendChart({ exams, subject }: ScoreTrendChartProps
             <g key={point.id}>
               <title>{`${formatFullDate(point.taken_on)} ${EXAM_KIND_LABELS[point.kind]} ${point.name}: ${point.score}점`}</title>
               {/* 점보다 넓은 투명 영역으로 마우스를 올리기 쉽게 한다 */}
-              <circle cx={xAt(i)} cy={yAt(point.score)} r={HIT_RADIUS} fill="transparent" />
+              <circle cx={xAt(i)} cy={yAt(point.score)} r={hitRadius} fill="transparent" />
               <circle
                 className={DOT_CLASS[point.kind]}
                 cx={xAt(i)}

@@ -36,6 +36,8 @@ export default function SettingsPage() {
   const cancelSelectRef = useRef<HTMLButtonElement>(null)
   // 목록에서 사라진 교재는 선택에서 빼고 센다
   const selectedBookIds = books.filter((book) => selectedIds.has(book.id)).map((book) => book.id)
+  // 선택 삭제 중에는 추가 폼을 열지 않는다
+  const bookFormOpen = adding && !selecting
 
   // 선택 모드로 들어가면 제목 ⋮가 사라지므로 포커스를 취소 버튼으로 옮긴다
   useEffect(() => {
@@ -116,7 +118,13 @@ export default function SettingsPage() {
           )
         }
       >
-        {adding && !selecting && <BookAddForm id="book-add-form" onAdd={add} onCancel={() => setAdding(false)} />}
+        {bookFormOpen && <BookAddForm id="book-add-form" onAdd={add} onCancel={() => setAdding(false)} />}
+        {/* 폼이 열려 있으면 저장 실패를 폼 바로 아래에 보여 준다(목록이 길면 아래 문구가 화면 밖에 있다) */}
+        {bookFormOpen && error && (
+          <div className="mb-4">
+            <Notice tone="error">{error}</Notice>
+          </div>
+        )}
         {loading && <Notice>불러오는 중…</Notice>}
         {!loading && books.length === 0 && (
           <Notice>등록된 교재가 없어요. 교재를 추가하면 시험일까지 매일 분량을 나눠 드려요.</Notice>
@@ -175,7 +183,7 @@ export default function SettingsPage() {
             <Notice>{notice}</Notice>
           </div>
         )}
-        {error && (
+        {!bookFormOpen && error && (
           <div className="mt-2">
             <Notice tone="error">{error}</Notice>
           </div>
@@ -209,6 +217,11 @@ export default function SettingsPage() {
         }
       >
         {addingExam && <ExamScoreForm id="exam-score-form" onAdd={addExam} onCancel={() => setAddingExam(false)} />}
+        {addingExam && examsError && (
+          <div className="mb-4">
+            <Notice tone="error">{examsError}</Notice>
+          </div>
+        )}
         {examsLoading && <Notice>불러오는 중…</Notice>}
         {!examsLoading && exams.length === 0 && (
           <Notice>등록된 점수가 없어요. 모의고사나 시험을 보면 점수를 넣어 주세요.</Notice>
@@ -225,7 +238,7 @@ export default function SettingsPage() {
             </div>
           </>
         )}
-        {examsError && (
+        {!addingExam && examsError && (
           <div className="mt-2">
             <Notice tone="error">{examsError}</Notice>
           </div>
