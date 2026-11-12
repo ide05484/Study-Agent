@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useOverdueTargets } from '../../hooks/useOverdueTargets.ts'
-import { addDays, todayKey } from '../../libs/date.ts'
+import { todayKey } from '../../libs/date.ts'
 import Button from '../ui/Button.tsx'
 import DatePicker from '../ui/DatePicker.tsx'
 import Modal from '../ui/Modal.tsx'
@@ -23,7 +23,7 @@ export default function OverdueTargetsModal({ examDate }: OverdueTargetsModalPro
   async function run(action: () => Promise<boolean>) {
     setSaving(true)
     try {
-      await action()
+      if (await action()) setPicked({})
     } finally {
       setSaving(false)
     }
@@ -51,7 +51,7 @@ export default function OverdueTargetsModal({ examDate }: OverdueTargetsModalPro
     >
       <p className="text-muted">다음 목표일을 정하면 계획을 다시 나눠 드려요.</p>
       <ul className="mt-4 flex flex-col gap-4">
-        {items.map(({ book, round }) => (
+        {items.map(({ book, round, maxDate }) => (
           <li key={book.id}>
             <label htmlFor={`overdue-${book.id}`} className="mb-1 block text-sm font-semibold">
               {book.title} · {round}회독
@@ -61,7 +61,7 @@ export default function OverdueTargetsModal({ examDate }: OverdueTargetsModalPro
               label={`${book.title} ${round}회독 목표일`}
               value={dates[book.id]}
               minDate={todayKey()}
-              maxDate={examDate ? addDays(examDate, -1) : undefined}
+              maxDate={maxDate}
               disabled={saving}
               onChange={(value) => setPicked({ ...picked, [book.id]: value })}
             />
