@@ -43,13 +43,13 @@ export function currentTarget(book: Book): string | null {
 // 지금 회독의 목표일이 지났는데 그 회독을 아직 못 끝냈다
 export function isTargetOverdue(book: Book, today: string): boolean {
   const target = currentTarget(book)
-  return target !== null && target < today && book.current_unit < book.total_units && !isBookFinished(book)
+  return target !== null && target < today && book.current_unit < book.total_units
 }
 
-// 2회독 목표 12월 31일, 1회독 목표일 지남. 목표일이 없거나 교재를 다 끝냈으면 null
+// 2회독 목표 12월 31일, 1회독 목표일 지남. 목표일이 없거나 그 회독을 끝냈으면 null
 export function targetLabel(book: Book, today: string): string | null {
   const target = currentTarget(book)
-  if (target === null || isBookFinished(book)) return null
+  if (target === null || book.current_unit >= book.total_units) return null
   if (isTargetOverdue(book, today)) return `${book.current_round}회독 목표일 지남`
   return `${book.current_round}회독 목표 ${formatMonthDay(target)}`
 }

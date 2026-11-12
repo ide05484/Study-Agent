@@ -154,47 +154,50 @@ export default function SettingsPage() {
               <div key={subject}>
                 <h3 className="text-sm font-bold text-muted">{SUBJECT_LABELS[subject]}</h3>
                 <ul className="divide-y divide-line">
-                  {own.map((book) => (
-                    <li key={book.id}>
-                      {selecting ? (
-                        <label className="flex min-h-11 items-center gap-3">
-                          <input
-                            type="checkbox"
-                            className="size-5 shrink-0 accent-accent"
-                            disabled={removing}
-                            checked={selectedIds.has(book.id)}
-                            onChange={() => toggleSelected(book.id)}
+                  {own.map((book) => {
+                    const label = targetLabel(book, today)
+                    return (
+                      <li key={book.id}>
+                        {selecting ? (
+                          <label className="flex min-h-11 items-center gap-3">
+                            <input
+                              type="checkbox"
+                              className="size-5 shrink-0 accent-accent"
+                              disabled={removing}
+                              checked={selectedIds.has(book.id)}
+                              onChange={() => toggleSelected(book.id)}
+                            />
+                            <span className="min-w-0 flex-1 truncate">{book.title}</span>
+                            <span className="text-sm text-muted tabular-nums">{progressLabel(book)}</span>
+                          </label>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <span className="min-w-0 flex-1 truncate">{book.title}</span>
+                            <span className="text-sm text-muted tabular-nums">{progressLabel(book)}</span>
+                            <Menu
+                              label={`${book.title} 메뉴`}
+                              items={[
+                                { label: '수정', onSelect: () => setEditingId(book.id) },
+                                { label: '삭제', tone: 'danger', onSelect: () => void removeOne(book.id, book.title) },
+                              ]}
+                            />
+                          </div>
+                        )}
+                        {label && (
+                          <p className={`text-xs ${isTargetOverdue(book, today) ? 'text-danger' : 'text-muted'}`}>
+                            {label}
+                          </p>
+                        )}
+                        {!selecting && editingId === book.id && (
+                          <BookProgressForm
+                            book={book}
+                            onSave={(input) => update(book.id, input)}
+                            onCancel={() => setEditingId(null)}
                           />
-                          <span className="min-w-0 flex-1 truncate">{book.title}</span>
-                          <span className="text-sm text-muted tabular-nums">{progressLabel(book)}</span>
-                        </label>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <span className="min-w-0 flex-1 truncate">{book.title}</span>
-                          <span className="text-sm text-muted tabular-nums">{progressLabel(book)}</span>
-                          <Menu
-                            label={`${book.title} 메뉴`}
-                            items={[
-                              { label: '수정', onSelect: () => setEditingId(book.id) },
-                              { label: '삭제', tone: 'danger', onSelect: () => void removeOne(book.id, book.title) },
-                            ]}
-                          />
-                        </div>
-                      )}
-                      {targetLabel(book, today) !== null && (
-                        <p className={`text-xs ${isTargetOverdue(book, today) ? 'text-danger' : 'text-muted'}`}>
-                          {targetLabel(book, today)}
-                        </p>
-                      )}
-                      {!selecting && editingId === book.id && (
-                        <BookProgressForm
-                          book={book}
-                          onSave={(input) => update(book.id, input)}
-                          onCancel={() => setEditingId(null)}
-                        />
-                      )}
-                    </li>
-                  ))}
+                        )}
+                      </li>
+                    )
+                  })}
                 </ul>
               </div>
             )

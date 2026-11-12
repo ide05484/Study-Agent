@@ -10,6 +10,8 @@ import ChipGroup, { type ChipOption } from '../ui/ChipGroup.tsx'
 import TextField from '../ui/TextField.tsx'
 import RoundTargetFields from './RoundTargetFields.tsx'
 
+const TARGETS_INVALID_MESSAGE = '목표일은 오늘부터 시험 전날 사이에서 회독 순서대로 골라 주세요.'
+
 interface BookAddFormProps {
   id?: string // 제목 줄 + 버튼의 aria-controls 대상
   onAdd: (input: NewBook) => Promise<boolean>
@@ -37,11 +39,12 @@ export default function BookAddForm({ id, onAdd, onCancel }: BookAddFormProps) {
   const today = todayKey()
   const examDate = profile?.exam_date ?? null
   const roundsCount = isIntegerInRange(targetRounds, 1, 10) ? Number(targetRounds) : 0
+  const targetsValid = isRoundTargetsValid(roundTargets.slice(0, roundsCount), 1, today, examDate)
   const valid =
     title.trim() !== '' &&
     isIntegerInRange(totalPages, 1) &&
     roundsCount > 0 &&
-    isRoundTargetsValid(roundTargets.slice(0, roundsCount), 1, today, examDate) &&
+    targetsValid &&
     (dailyAmount.trim() === '' || isIntegerInRange(dailyAmount, 1))
 
   // 목표 회독을 줄이면 넘치는 목표일은 지운다
@@ -117,6 +120,7 @@ export default function BookAddForm({ id, onAdd, onCancel }: BookAddFormProps) {
         examDate={examDate}
         onChange={setRoundTargets}
       />
+      {!targetsValid && <p className="text-xs text-danger">{TARGETS_INVALID_MESSAGE}</p>}
       <TextField
         type="number"
         inputMode="numeric"

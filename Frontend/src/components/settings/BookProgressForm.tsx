@@ -7,6 +7,8 @@ import Button from '../ui/Button.tsx'
 import TextField from '../ui/TextField.tsx'
 import RoundTargetFields from './RoundTargetFields.tsx'
 
+const TARGETS_INVALID_MESSAGE = '목표일은 오늘부터 시험 전날 사이에서 회독 순서대로 골라 주세요.'
+
 interface BookProgressFormProps {
   book: Book
   onSave: (input: BookPlanUpdate) => Promise<boolean>
@@ -26,13 +28,17 @@ export default function BookProgressForm({ book, onSave, onCancel }: BookProgres
   const today = todayKey()
   const examDate = profile?.exam_date ?? null
   const roundsCount = isIntegerInRange(targetRounds, 1, 10) ? Number(targetRounds) : 0
-  // 끝낸 회독의 목표일은 늘 과거라 검사하지 않는다. 현재 회독부터만 본다
-  const fromRound = isIntegerInRange(currentRound, 1) ? Number(currentRound) : 1
+  // 끝낸 회독의 목표일은 늘 과거라 검사하지 않는다. 현재 회독부터 보고, 그 회독을 끝냈으면 다음 회독부터 본다
+  const roundFinished = isIntegerInRange(currentPage, 0) && Number(currentPage) === book.total_units
+  const fromRound = isIntegerInRange(currentRound, 1)
+    ? Math.min(Number(currentRound) + (roundFinished ? 1 : 0), Math.max(roundsCount, 1))
+    : 1
+  const targetsValid = isRoundTargetsValid(roundTargets.slice(0, roundsCount), fromRound, today, examDate)
   const valid =
     isIntegerInRange(targetRounds, 1, 10) &&
     isIntegerInRange(currentRound, 1, Number(targetRounds)) &&
     isIntegerInRange(currentPage, 0, book.total_units) &&
-    isRoundTargetsValid(roundTargets.slice(0, roundsCount), fromRound, today, examDate) &&
+    targetsValid &&
     (dailyAmount.trim() === '' || isIntegerInRange(dailyAmount, 1))
 
   // 목표 회독을 줄이면 넘치는 목표일은 지운다(DB check: 목표일 수 ≤ 목표 회독)
@@ -97,6 +103,7 @@ export default function BookProgressForm({ book, onSave, onCancel }: BookProgres
         examDate={examDate}
         onChange={setRoundTargets}
       />
+      {!targetsValid && <p className="text-xs text-danger">{TARGETS_INVALID_MESSAGE}</p>}
       <TextField
         type="number"
         inputMode="numeric"
