@@ -28,7 +28,7 @@
 | 대상 | 규칙 | 예 |
 |---|---|---|
 | 변수, 함수 | camelCase | `todayKey`, `fetchBooks` |
-| 모듈 상수 | UPPER_SNAKE_CASE | `APP_TIMEZONE`, `INSERT_CHUNK_SIZE`, `SUBJECT_LABELS` |
+| 모듈 상수 | UPPER_SNAKE_CASE | `APP_TIMEZONE`, `SUBJECT_LABELS` |
 | 타입, 인터페이스 | PascalCase, 접두사 `I` 없음 | `Book`, `DailyTaskWithBook` |
 | 컴포넌트 props 타입 | `컴포넌트명Props` | `BookAddFormProps` |
 | 훅 상태 타입 | `이름State` | `ProfileState` |

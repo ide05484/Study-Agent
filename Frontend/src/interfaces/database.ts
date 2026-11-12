@@ -369,7 +369,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      replace_daily_tasks: {
+        Args: { p_from: string; p_tasks: Json }
+        Returns: number
+      }
     }
     Enums: {
       book_unit: "page" | "day"

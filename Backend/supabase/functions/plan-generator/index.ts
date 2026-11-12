@@ -1,5 +1,6 @@
 // [plan-generator] 교재 추가·삭제, 진도·시험일 변경 후 프론트엔드가 호출한다.
 // 오늘부터의 미진행(pending) daily_tasks를 지우고, 교재별 남은 분량(목표 회독까지)을 시험 전날까지 날짜별로 다시 나눈다.
+// 지우기·넣기는 DB 함수 replace_daily_tasks가 한 트랜잭션으로 하고, 사용자별 잠금으로 겹친 호출을 순서대로 처리한다.
 // 나누는 규칙은 _shared/plan.ts의 planBook을 따른다.
 // 이미 진행한 계획(done/partial)과 지난 날짜의 계획은 그대로 둔다.
 // 응답 형식은 Frontend/src/interfaces/plan.ts의 `PlanResponse`를 따른다.
@@ -9,13 +10,10 @@ import { withSupabase } from "@supabase/server";
 import { addDays, diffDays, toDateKey } from "../_shared/date.ts";
 import { type PlanBook, planBook } from "../_shared/plan.ts";
 
-const INSERT_CHUNK_SIZE = 500;
-
 export default {
   // 사용자 JWT 필수. ctx.supabase는 RLS가 적용되어 본인 데이터만 다룬다
   fetch: withSupabase({ auth: "user" }, async (_req, ctx) => {
     const { supabase } = ctx;
-    const userId = ctx.userClaims!.id;
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
@@ -25,19 +23,17 @@ export default {
 
     const today = toDateKey(new Date(), profile.timezone);
 
-    const { error: deleteError } = await supabase
-      .from("daily_tasks")
-      .delete()
-      .gte("task_date", today)
-      .eq("status", "pending");
-    if (deleteError) return errorResponse(deleteError.message);
-
+    // 시험일이 없거나 지났으면 오늘부터의 미진행 계획만 지운다(빈 배열로 교체)
     if (!profile.exam_date) {
+      const error = await replaceTasks(supabase, today, []);
+      if (error) return errorResponse(error);
       return Response.json({ generated: 0, days: 0, skipped: "no_exam_date" });
     }
     // 시험 당일은 비우고 전날까지 공부한다
     const days = diffDays(today, profile.exam_date);
     if (days <= 0) {
+      const error = await replaceTasks(supabase, today, []);
+      if (error) return errorResponse(error);
       return Response.json({ generated: 0, days: 0, skipped: "exam_passed" });
     }
 
@@ -48,9 +44,8 @@ export default {
       );
     if (booksError) return errorResponse(booksError.message);
 
-    const rows = (books as PlanBook[]).flatMap((book) =>
+    const tasks = (books as PlanBook[]).flatMap((book) =>
       planBook(book, days).map((task) => ({
-        user_id: userId,
         book_id: task.book_id,
         task_date: addDays(today, task.day),
         round: task.round,
@@ -59,16 +54,40 @@ export default {
       }))
     );
 
-    for (let i = 0; i < rows.length; i += INSERT_CHUNK_SIZE) {
-      const { error } = await supabase
-        .from("daily_tasks")
-        .insert(rows.slice(i, i + INSERT_CHUNK_SIZE));
-      if (error) return errorResponse(error.message);
-    }
+    const error = await replaceTasks(supabase, today, tasks);
+    if (error) return errorResponse(error);
 
-    return Response.json({ generated: rows.length, days });
+    return Response.json({ generated: tasks.length, days });
   }),
 };
+
+interface TaskRow {
+  book_id: string;
+  task_date: string;
+  round: number;
+  start_page: number;
+  end_page: number;
+}
+
+// 지우기와 넣기를 DB 함수 replace_daily_tasks 한 번(한 트랜잭션, 사용자별 잠금)으로 한다. 실패하면 오류 문구
+async function replaceTasks(
+  supabase: RpcClient,
+  from: string,
+  tasks: TaskRow[],
+): Promise<string | null> {
+  const { error } = await supabase.rpc("replace_daily_tasks", {
+    p_from: from,
+    p_tasks: tasks,
+  });
+  return error ? error.message : null;
+}
+
+interface RpcClient {
+  rpc(
+    fn: string,
+    args: Record<string, unknown>,
+  ): PromiseLike<{ error: { message: string } | null }>;
+}
 
 function errorResponse(message: string): Response {
   return Response.json({ error: message }, { status: 500 });
