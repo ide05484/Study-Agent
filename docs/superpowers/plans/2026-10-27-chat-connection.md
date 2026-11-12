@@ -48,14 +48,18 @@
 
 이 계획은 2단계([2026-11-10-study-data.md](2026-11-10-study-data.md)) 전에 썼다. 2단계에서 `books`에 `unit`(`page`/`day`)·`target_rounds`·`current_round`·`daily_amount`, `daily_tasks`에 `round`가 생겼고, 진도는 "몇 회독째 + 어디까지"가 됐다. 회독 기준 완료 분량은 Backend `_shared/plan.ts`의 `completedUnits`, Frontend `libs/books.ts`의 `completedUnits`·`progressLabel`이 같은 식으로 계산한다. 계획 교체는 DB 함수 `replace_daily_tasks`가 한다. Task 3~7을 시작할 때 아래를 먼저 계획에 반영하고 사용자와 정한다(브랜치 리뷰 task-reviewer 정리, [History](../../../History/2026-11-10-공부-데이터-채우기.md) "push와 PR").
 
+**2026-11-12 묶음 A 이후 바뀐 것**([설계](../specs/2026-11-12-book-units-and-targets-design.md)): 쪽 단위가 없어지고 단위는 `day`·`chapter`·`session`(회차)이다. 칸 이름이 `books.total_units`·`current_unit`, `daily_tasks`·`study_logs`의 `start_unit`·`end_unit`으로 바뀌었다(이 계획 본문의 `*_page`는 모두 `*_unit`으로 읽는다). `books.round_targets`(회독별 목표일)가 생겼고 `daily_amount`는 하루 **최소** 분량이다. 화면 표기는 `12–14회`, `3–4챕터`, `Day 3–4`, 진도 `1/3회독 21/60회`(`libs/books.ts`의 `withUnit`·`rangeLabel`·`progressLabel`).
+
 | Task | 바꿀 곳 | 정할 것 |
 |---|---|---|
-| 3 | `BookRef`에 `unit`·`current_round`·`target_rounds`를 더하고, 테스트 데이터와 분석 지시문의 교재 목록(진도 표기)에도 넣는다 | Day 교재의 "Day 12까지"를 `end_page`로 받을지(지금 `total_pages`·`current_page`에 Day 수를 쓴다) |
-| 4 | `nextCurrentPage`는 같은 회독 안에서만 `max`를 쓴다. 회독 끝 쪽을 넘거나 다음 회독 앞부분을 보고하면 `current_round`도 바뀐다(`completedUnits` 기준으로 비교). `taskStatusAfter`·`recordStudyLogs`는 회독 경계 날 같은 교재가 두 줄(`round`가 다름)인 경우를 구분한다 | 보고한 범위가 지금 회독인지 다음 회독인지 판단 규칙 |
-| 5 | `subjectPercents` = `round(Σ완료 / Σ(target_rounds × total_pages) × 100)`(Frontend `useDashboard`의 `buildSubjects`와 같은 식). `CoachContext.books`에 회독·단위와 표기(`1/3회독 120/456쪽`, `Day 12/60`)를 넣는다 | |
-| 6 | `loadProfileAndBooks`의 조회 칸에 새 칸을 더한다. 진도가 바뀌면 계획을 다시 나눌지(`plan-generator` 호출) 정한다 | 채팅 기록 뒤 재분배 여부 |
-| 6·7 | 검증 시나리오의 기대값이 Mock 데이터에서 달라진다. 보건행정 기본서가 이미 119쪽이라 "30~70p 보고 뒤 70" 대신 `max` 규칙으로 119가 유지된다. 시나리오 교재·쪽을 Mock에 맞게 바꾼다 | |
-| 미룬 채팅 교재 추가 | `NewBook`의 새 칸(`unit`, `target_rounds`, `daily_amount`)을 채팅에서 받을지 | |
+| 3 | `BookRef`에 `unit`·`current_round`·`target_rounds`를 더하고, 테스트 데이터와 분석 지시문의 교재 목록(진도 표기)에도 넣는다. 학습 기록 예시를 쪽이 아니라 회차·챕터·Day로("보건행정 기본서 15~17강") | "Day 12까지", "17강까지"를 `end_unit`으로 받는 규칙 |
+| 4 | `nextCurrentUnit`(옛 `nextCurrentPage`)은 같은 회독 안에서만 `max`를 쓴다. 회독 끝을 넘거나 다음 회독 앞부분을 보고하면 `current_round`도 바뀐다(`completedUnits` 기준으로 비교). `taskStatusAfter`·`recordStudyLogs`는 회독 경계 날 같은 교재가 두 줄(`round`가 다름)인 경우를 구분한다 | 보고한 범위가 지금 회독인지 다음 회독인지 판단 규칙 |
+| 5 | `subjectPercents` = `round(Σ완료 / Σ(target_rounds × total_units) × 100)`(Frontend `useDashboard`의 `buildSubjects`와 같은 식). `CoachContext.books`에 회독·단위·목표일과 표기(`1/3회독 21/60회`, `Day 12/60`, `2회독 목표 12월 31일`)를 넣는다 | |
+| 6 | `loadProfileAndBooks`의 조회 칸에 새 칸을 더한다. 진도가 바뀌면 계획을 다시 나눈다(`plan-generator` 호출) — 요구사항 C로 정해짐 | |
+| 6·7 | 검증 시나리오의 기대값이 Mock 데이터에서 달라진다(기본서는 각 60회, 보건행정 기본서는 15회까지 진행). 시나리오 교재·회차를 Mock에 맞게 바꾼다 | |
+| 미룬 채팅 교재 추가 | `NewBook`의 새 칸(`unit`, `target_rounds`, `daily_amount`, `round_targets`)을 채팅에서 받을지 | |
+
+**요구사항 C (2026-11-12 사용자 요청)**: 채팅으로 "나 ~ 완료했어"처럼 보고하면 LLM이 이해해 오늘의 분량 상태(`daily_tasks.status`)와 진도(`books.current_round`·`current_unit`)에 반영한다. 오늘의 분량이 아닌 공부(다른 교재, 앞서 나간 분량)도 진도에 반영하고 계획을 다시 나눠 다른 날의 계획에도 영향이 가게 한다. 화면 체크박스로 완료하는 경로(묶음 B)와 같은 반영 함수를 쓴다.
 
 ---
 
