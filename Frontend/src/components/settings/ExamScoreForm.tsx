@@ -4,8 +4,8 @@ import type { Subject } from '../../interfaces/subject.ts'
 import { EXAM_KIND_LABELS, isScoreText } from '../../libs/exams.ts'
 import { SUBJECT_LABELS, SUBJECTS } from '../../libs/subjects.ts'
 import Button from '../ui/Button.tsx'
+import ChipGroup, { type ChipOption } from '../ui/ChipGroup.tsx'
 import DatePicker from '../ui/DatePicker.tsx'
-import Select from '../ui/Select.tsx'
 import TextField from '../ui/TextField.tsx'
 
 interface ExamScoreFormProps {
@@ -13,6 +13,11 @@ interface ExamScoreFormProps {
   onAdd: (input: NewMockExam) => Promise<boolean>
   onCancel: () => void
 }
+
+const KIND_OPTIONS: ChipOption<ExamKind>[] = [
+  { value: 'mock', label: EXAM_KIND_LABELS.mock },
+  { value: 'official', label: EXAM_KIND_LABELS.official },
+]
 
 type ScoreTexts = Record<Subject, string>
 
@@ -40,10 +45,10 @@ export default function ExamScoreForm({ id, onAdd, onCancel }: ExamScoreFormProp
 
   return (
     <form id={id} className="mb-4 grid gap-2" aria-label="점수 추가" onSubmit={handleSubmit}>
-      <Select value={kind} onChange={(e) => setKind(e.target.value as ExamKind)} aria-label="구분">
-        <option value="mock">{EXAM_KIND_LABELS.mock}</option>
-        <option value="official">{EXAM_KIND_LABELS.official}</option>
-      </Select>
+      <div className="grid gap-1">
+        <p className="text-sm text-muted">구분</p>
+        <ChipGroup label="구분" options={KIND_OPTIONS} value={kind} onChange={setKind} />
+      </div>
       <TextField
         value={name}
         onChange={(e) => setName(e.target.value)}

@@ -55,6 +55,12 @@ export function formatDateTitle(key: string): string {
   return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일 (${WEEKDAYS[d.getUTCDay()]})`
 }
 
+// 연도와 요일 없이. 예) 12월 31일
+export function formatMonthDay(key: string): string {
+  const d = parseKey(key)
+  return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일`
+}
+
 // 예) 2027년 2월 27일 (토)
 export function formatFullDate(key: string): string {
   return `${key.slice(0, 4)}년 ${formatDateTitle(key)}`

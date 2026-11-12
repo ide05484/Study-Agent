@@ -13,7 +13,6 @@ import Menu from '../components/ui/Menu.tsx'
 import Modal from '../components/ui/Modal.tsx'
 import Notice from '../components/ui/Notice.tsx'
 import Section from '../components/ui/Section.tsx'
-import Select from '../components/ui/Select.tsx'
 import TextArea from '../components/ui/TextArea.tsx'
 import TextField from '../components/ui/TextField.tsx'
 import { useAlert, useConfirm } from '../hooks/useDialog.ts'
@@ -154,18 +153,6 @@ function CatalogColumn({ themeClass, idPrefix }: CatalogColumnProps) {
             <div className="flex flex-col gap-3">
               <TextField aria-label="일반" placeholder="일반" />
               <TextField aria-label="비활성" placeholder="비활성" disabled />
-            </div>
-          </Section>
-
-          <Section title="Select">
-            <div className="flex flex-col gap-3">
-              <Select aria-label="일반" defaultValue="korean">
-                <option value="korean">국어</option>
-                <option value="english">영어</option>
-              </Select>
-              <Select aria-label="비활성" defaultValue="korean" disabled>
-                <option value="korean">국어</option>
-              </Select>
             </div>
           </Section>
 

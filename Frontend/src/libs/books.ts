@@ -1,4 +1,5 @@
 import type { Book, BookUnit } from '../interfaces/study.ts'
+import { addDays, formatMonthDay } from './date.ts'
 
 export const UNIT_LABELS: Record<BookUnit, string> = { day: 'Day', chapter: '챕터', session: '회차' }
 
@@ -32,4 +33,55 @@ export function isIntegerInRange(text: string, min: number, max = Infinity): boo
 export function progressLabel(book: Book): string {
   const position = withUnit(book.unit, `${book.current_unit}/${book.total_units}`)
   return book.target_rounds >= 2 ? `${book.current_round}/${book.target_rounds}회독 ${position}` : position
+}
+
+// 지금 회독의 목표일. 정하지 않았으면 null
+export function currentTarget(book: Book): string | null {
+  return book.round_targets[book.current_round - 1] ?? null
+}
+
+// 지금 회독의 목표일이 지났는데 그 회독을 아직 못 끝냈다
+export function isTargetOverdue(book: Book, today: string): boolean {
+  const target = currentTarget(book)
+  return target !== null && target < today && book.current_unit < book.total_units && !isBookFinished(book)
+}
+
+// 2회독 목표 12월 31일, 1회독 목표일 지남. 목표일이 없거나 교재를 다 끝냈으면 null
+export function targetLabel(book: Book, today: string): string | null {
+  const target = currentTarget(book)
+  if (target === null || isBookFinished(book)) return null
+  if (isTargetOverdue(book, today)) return `${book.current_round}회독 목표일 지남`
+  return `${book.current_round}회독 목표 ${formatMonthDay(target)}`
+}
+
+// index번째(0부터) 회독 목표일을 고를 수 있는 범위. fromRound(1부터) 앞 회독은 이미 지난 값이라 따지지 않는다
+// min: 오늘과 앞 회독 중 마지막으로 채운 목표일 중 늦은 날, max: 시험 전날(시험일이 없으면 없음)
+export function roundTargetBounds(
+  targets: (string | null)[],
+  index: number,
+  fromRound: number,
+  today: string,
+  examDate: string | null,
+): { min: string; max: string | undefined } {
+  let min = today
+  for (const target of targets.slice(fromRound - 1, index)) {
+    if (target !== null && target > min) min = target
+  }
+  return { min, max: examDate ? addDays(examDate, -1) : undefined }
+}
+
+// fromRound 이상 회독의 채운 목표일이 오늘 이상, 시험일 미만이고 순서대로 줄지 않는지. 앞 회독 값은 검사하지 않는다
+export function isRoundTargetsValid(
+  targets: (string | null)[],
+  fromRound: number,
+  today: string,
+  examDate: string | null,
+): boolean {
+  let previous = today
+  for (const target of targets.slice(fromRound - 1)) {
+    if (target === null) continue
+    if (target < previous || (examDate !== null && target >= examDate)) return false
+    previous = target
+  }
+  return true
 }

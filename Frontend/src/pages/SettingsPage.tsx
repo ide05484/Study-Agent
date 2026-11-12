@@ -17,7 +17,8 @@ import { useBooks } from '../hooks/useBooks.ts'
 import { useConfirm } from '../hooks/useDialog.ts'
 import { useMockExams } from '../hooks/useMockExams.ts'
 import { useProfileContext } from '../hooks/useProfile.ts'
-import { progressLabel } from '../libs/books.ts'
+import { isTargetOverdue, progressLabel, targetLabel } from '../libs/books.ts'
+import { todayKey } from '../libs/date.ts'
 import { SUBJECT_LABELS, SUBJECTS } from '../libs/subjects.ts'
 
 // 공부 설정 변경: 시험일, D-Day까지 남은 공부 분량(추가/수정/삭제), 시험 점수(시험별 블록·과목별 꺾은선 탭), 과목별 공부법 (영역은 괘선으로 구분)
@@ -26,6 +27,7 @@ export default function SettingsPage() {
   const { profile, saveExamDate } = useProfileContext()
   const { books, loading, error, notice, add, update, remove } = useBooks()
   const confirm = useConfirm()
+  const today = todayKey()
   const { exams, loading: examsLoading, error: examsError, add: addExam } = useMockExams()
   const [adding, setAdding] = useState(false)
   const [addingExam, setAddingExam] = useState(false)
@@ -178,6 +180,11 @@ export default function SettingsPage() {
                             ]}
                           />
                         </div>
+                      )}
+                      {targetLabel(book, today) !== null && (
+                        <p className={`text-xs ${isTargetOverdue(book, today) ? 'text-danger' : 'text-muted'}`}>
+                          {targetLabel(book, today)}
+                        </p>
                       )}
                       {!selecting && editingId === book.id && (
                         <BookProgressForm
