@@ -3,6 +3,9 @@ import { addDays, formatMonthDay } from './date.ts'
 
 export const UNIT_LABELS: Record<BookUnit, string> = { day: 'Day', chapter: '챕터', session: '회차' }
 
+// 교재명 최대 글자 수. DB check(books_title_length)와 같다
+export const TITLE_MAX_LENGTH = 20
+
 // 교재 폼의 목표일 오류 문구
 export const TARGETS_INVALID_MESSAGE = '목표일은 오늘부터 시험 전날 사이에서 회독 순서대로 골라 주세요.'
 

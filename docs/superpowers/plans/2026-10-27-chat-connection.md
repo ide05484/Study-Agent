@@ -57,7 +57,7 @@
 | 5 | `subjectPercents` = `round(Σ완료 / Σ(target_rounds × total_units) × 100)`(Frontend `useDashboard`의 `buildSubjects`와 같은 식). `CoachContext.books`에 회독·단위·목표일과 표기(`1/3회독 21/60회`, `Day 12/60`, `2회독 목표 12월 31일`)를 넣는다 | |
 | 6 | `loadProfileAndBooks`의 조회 칸에 새 칸을 더한다. 진도가 바뀌면 계획을 다시 나눈다(`plan-generator` 호출) — 요구사항 C로 정해짐 | |
 | 6·7 | 검증 시나리오의 기대값이 Mock 데이터에서 달라진다(기본서는 각 60회, 보건행정 기본서는 15회까지 진행). 시나리오 교재·회차를 Mock에 맞게 바꾼다 | |
-| 미룬 채팅 교재 추가 | `NewBook`의 새 칸(`unit`, `target_rounds`, `daily_amount`, `round_targets`)을 채팅에서 받을지 | |
+| 미룬 채팅 교재 추가 | `NewBook`의 새 칸(`unit`, `target_rounds`, `daily_amount`, `round_targets`)을 채팅에서 받을지. 교재명은 DB check `books_title_length`로 앞뒤 공백을 뺀 1~20자만 들어간다(2026-11-12) | 긴 교재명을 LLM이 줄일지, 되물을지 |
 
 **요구사항 C (2026-11-12 사용자 요청)**: 채팅으로 "나 ~ 완료했어"처럼 보고하면 LLM이 이해해 오늘의 분량 상태(`daily_tasks.status`)와 진도(`books.current_round`·`current_unit`)에 반영한다. 오늘의 분량이 아닌 공부(다른 교재, 앞서 나간 분량)도 진도에 반영하고 계획을 다시 나눠 다른 날의 계획에도 영향이 가게 한다. 화면 체크박스로 완료하는 경로(묶음 B)와 같은 반영 함수를 쓴다.
 

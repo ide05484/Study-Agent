@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useProfileContext } from '../../hooks/useProfile.ts'
 import type { BookUnit, NewBook } from '../../interfaces/study.ts'
 import type { Subject } from '../../interfaces/subject.ts'
-import { isRoundTargetsValid, TARGETS_INVALID_MESSAGE, UNIT_LABELS } from '../../libs/books.ts'
+import { isRoundTargetsValid, TARGETS_INVALID_MESSAGE, TITLE_MAX_LENGTH, UNIT_LABELS } from '../../libs/books.ts'
 import { todayKey } from '../../libs/date.ts'
 import { integerFieldError, REQUIRED_MESSAGE } from '../../libs/forms.ts'
 import { SUBJECT_LABELS, SUBJECTS } from '../../libs/subjects.ts'
@@ -93,9 +93,14 @@ export default function BookAddForm({ id, onAdd, onCancel }: BookAddFormProps) {
           id="book-add-title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="예: 봉투모의고사"
+          placeholder="예: 보건행정 기본서"
+          maxLength={TITLE_MAX_LENGTH}
+          aria-describedby="book-add-title-count"
           invalid={!!shown?.title}
         />
+        <p id="book-add-title-count" className="mt-1 text-right text-xs text-muted tabular-nums">
+          {title.length}/{TITLE_MAX_LENGTH}
+        </p>
       </FormField>
       <FormField label="단위" required>
         <ChipGroup label="단위" options={UNIT_OPTIONS} value={unit} onChange={setUnit} />

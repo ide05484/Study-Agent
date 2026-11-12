@@ -192,13 +192,13 @@ export default function SettingsPage() {
                                   checked={selectedIds.has(book.id)}
                                   onChange={() => toggleSelected(book.id)}
                                 />
-                                <span className="min-w-0 flex-1 truncate">{book.title}</span>
-                                <span className="text-sm text-muted tabular-nums">{progressLabel(book)}</span>
+                                <span className="min-w-0 flex-1 line-clamp-2 break-words">{book.title}</span>
+                                <span className="shrink-0 text-sm text-muted tabular-nums">{progressLabel(book)}</span>
                               </label>
                             ) : (
                               <div className="flex items-center gap-2">
-                                <span className="min-w-0 flex-1 truncate">{book.title}</span>
-                                <span className="text-sm text-muted tabular-nums">{progressLabel(book)}</span>
+                                <span className="min-w-0 flex-1 line-clamp-2 break-words">{book.title}</span>
+                                <span className="shrink-0 text-sm text-muted tabular-nums">{progressLabel(book)}</span>
                                 <Menu
                                   label={`${book.title} 메뉴`}
                                   items={[
@@ -213,7 +213,10 @@ export default function SettingsPage() {
                               </div>
                             )}
                             {label && (
-                              <p className={`text-xs ${isTargetOverdue(book, today) ? 'text-danger' : 'text-muted'}`}>
+                              // 아래 괘선과 붙지 않도록 목표일 줄 아래에 여백을 둔다
+                              <p
+                                className={`pb-3 text-xs ${isTargetOverdue(book, today) ? 'text-danger' : 'text-muted'}`}
+                              >
                                 {label}
                               </p>
                             )}
