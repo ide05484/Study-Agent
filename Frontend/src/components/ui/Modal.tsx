@@ -12,6 +12,7 @@ interface ModalProps {
 export default function Modal({ open, title, onClose, children, actions }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const titleId = useId()
+  const bodyId = useId()
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -24,17 +25,24 @@ export default function Modal({ open, title, onClose, children, actions }: Modal
     <dialog
       ref={dialogRef}
       aria-labelledby={titleId}
+      aria-describedby={bodyId}
       className="m-auto w-[calc(100%-32px)] max-w-[448px] rounded-2xl border border-line bg-bg p-5 text-fg shadow-lg backdrop:bg-scrim"
       onCancel={(e) => {
         // 닫는 일은 부모가 open을 바꿔서 한다
         e.preventDefault()
         onClose()
       }}
+      // 브라우저가 cancel 없이 직접 닫은 경우(open이 아직 true)에만 부모에게 알린다
+      onClose={() => {
+        if (open) onClose()
+      }}
     >
       <h2 id={titleId} className="text-[17px] font-bold">
         {title}
       </h2>
-      <div className="mt-2">{children}</div>
+      <div id={bodyId} className="mt-2">
+        {children}
+      </div>
       {actions && <div className="mt-5 flex justify-end gap-2">{actions}</div>}
     </dialog>
   )

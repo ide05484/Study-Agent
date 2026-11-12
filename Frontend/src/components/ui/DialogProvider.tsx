@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   DialogContext,
   type AlertOptions,
@@ -17,13 +17,21 @@ type PendingDialog =
   | { kind: 'confirm'; options: ConfirmOptions; resolve: (ok: boolean) => void }
   | { kind: 'alert'; options: AlertOptions; resolve: () => void }
 
-// Button의 primary와 배경이 겹치지 않도록 danger는 버튼을 따로 그린다
-const dangerButtonClass = 'min-h-11 rounded-xl bg-danger px-4 font-semibold text-on-accent'
-
 // useConfirm·useAlert가 여는 확인·알림 창을 그린다. 요청은 한 번에 하나만 처리한다
 export default function DialogProvider({ children }: DialogProviderProps) {
   const [pending, setPending] = useState<PendingDialog | null>(null)
+  // state는 창을 그리는 데, ref는 이미 정해진 Promise를 한 번만 푸는 데 쓴다(렌더를 기다리지 않고 읽어야 한다)
   const pendingRef = useRef<PendingDialog | null>(null)
+
+  // 제공자가 사라질 때 기다리는 쪽이 멈추지 않게 취소로 푼다
+  useEffect(() => {
+    return () => {
+      const current = pendingRef.current
+      if (current?.kind === 'confirm') current.resolve(false)
+      else current?.resolve()
+      pendingRef.current = null
+    }
+  }, [])
 
   // 이미 열린 창이 있으면 먼저 취소로 닫아 기다리는 쪽이 멈추지 않게 한다
   const open = useCallback((next: PendingDialog) => {
@@ -66,15 +74,13 @@ export default function DialogProvider({ children }: DialogProviderProps) {
               <Button type="button" variant="ghost" onClick={() => finish(false)}>
                 취소
               </Button>
-              {pending.options.tone === 'danger' ? (
-                <button type="button" className={dangerButtonClass} onClick={() => finish(true)}>
-                  {pending.options.confirmLabel ?? '확인'}
-                </button>
-              ) : (
-                <Button type="button" onClick={() => finish(true)}>
-                  {pending.options.confirmLabel ?? '확인'}
-                </Button>
-              )}
+              <Button
+                type="button"
+                variant={pending.options.tone === 'danger' ? 'danger' : 'primary'}
+                onClick={() => finish(true)}
+              >
+                {pending.options.confirmLabel ?? '확인'}
+              </Button>
             </>
           ) : (
             <Button type="button" onClick={() => finish(true)}>

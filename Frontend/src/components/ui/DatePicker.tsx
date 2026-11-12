@@ -67,6 +67,8 @@ export default function DatePicker({ id, label, value, minDate, maxDate, disable
 
   function handleKeyDown(e: KeyboardEvent<HTMLDivElement>) {
     if (open && e.key === 'Escape') {
+      // 모달 안에서도 달력만 닫히도록 <dialog>의 cancel(Esc 기본 동작)을 막는다
+      e.preventDefault()
       e.stopPropagation()
       close()
     }

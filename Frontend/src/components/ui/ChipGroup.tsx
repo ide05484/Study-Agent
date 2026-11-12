@@ -19,7 +19,7 @@ const chipStateClass = {
   unselected: 'border-line text-muted',
 } as const
 
-// <select> 대신 쓰는 한 줄 선택. 칩 하나만 Tab 순서에 들어가고 ←·→로 옮기면 바로 선택된다
+// <select> 대신 쓰는 한 줄 선택. 칩 하나만 Tab 순서에 들어가고 ←·→·↑·↓로 옮기면 바로 선택된다
 export default function ChipGroup<T extends string>({ label, options, value, onChange, disabled }: ChipGroupProps<T>) {
   const chipRefs = useRef<(HTMLButtonElement | null)[]>([])
   // 고른 값이 목록에 없으면 첫 칩이 Tab을 받는다
@@ -30,8 +30,8 @@ export default function ChipGroup<T extends string>({ label, options, value, onC
 
   function handleKeyDown(e: KeyboardEvent<HTMLButtonElement>, index: number) {
     let next: number
-    if (e.key === 'ArrowRight') next = (index + 1) % options.length
-    else if (e.key === 'ArrowLeft') next = (index - 1 + options.length) % options.length
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (index + 1) % options.length
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (index - 1 + options.length) % options.length
     else return
     e.preventDefault()
     onChange(options[next].value)

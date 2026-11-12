@@ -279,7 +279,7 @@
 
 공용 컴포넌트는 `Frontend/src/components/ui/`에 있고 모두 default export다. 개발 모드의 `/ui`에서 라이트·다크로 나란히 볼 수 있다.
 
-- **Button**: 저장·보내기 같은 동작. `type`(`button`|`submit`, 필수), `variant`(`primary` 주황 채움 | `ghost` 테두리), `block`(가로 가득), 나머지 button 속성. 비활성은 투명도 50%.
+- **Button**: 저장·보내기 같은 동작. `type`(`button`|`submit`, 필수), `variant`(`primary` 주황 채움 | `ghost` 테두리 | `danger` 삭제 같은 되돌릴 수 없는 동작의 빨강 채움), `block`(가로 가득), 나머지 button 속성. 비활성은 투명도 50%.
 - **ButtonLink**: 화면 이동용 버튼 모양 링크(404의 "오늘 채팅으로 가기" 등). `to`, `variant`, `block`.
 - **TextField · Select · TextArea**: 설정·폼의 입력 칸. 각 HTML 요소의 속성을 그대로 받고 `className`은 받지 않는다.
 - **Section**: 대시보드·공부 설정의 영역. `title`(없으면 제목 줄도 없음), `action`(제목 줄 오른쪽 끝, 예: `IconButton`의 `+`, `Menu`), children.
@@ -290,9 +290,9 @@
 - **Chevron**: 꺾쇠 화살표. `direction`(`down`|`up`|`right`).
 - **Mascot**: 합격이. 로그인·앱 시작·404에만. `mood`(`base`|`cheer`|`think`|`oops`), `size`(px).
 - **DatePicker**: 날짜 선택(아래 규칙 참고). `minDate`·`maxDate`로 고를 수 있는 범위를 막는다.
-- **ChipGroup**: `<select>` 대신 쓰는 한 줄 선택. `label`(그룹 접근성 이름), `options`(`value`, `label`), `value`, `onChange`, `disabled`. `role="radiogroup"`이고 칩은 `role="radio"`다. 칩 하나만 Tab 순서에 들어가고 ←·→로 옮기면 바로 선택된다. 칩은 `min-h-11 rounded-xl border px-3`, 고른 칩은 `border-accent bg-accent-soft font-bold`, 나머지는 `border-line text-muted`, 줄이 모자라면 아래로 넘긴다.
+- **ChipGroup**: `<select>` 대신 쓰는 한 줄 선택. `label`(그룹 접근성 이름), `options`(`value`, `label`), `value`, `onChange`, `disabled`. `role="radiogroup"`이고 칩은 `role="radio"`다. 칩 하나만 Tab 순서에 들어가고 ←·→·↑·↓로 옮기면 바로 선택된다. 칩은 `min-h-11 rounded-xl border px-3`, 고른 칩은 `border-accent bg-accent-soft font-bold`, 나머지는 `border-line text-muted`, 줄이 모자라면 아래로 넘긴다.
 - **Modal**: 네이티브 `<dialog>`(`showModal`)로 연 가운데 창. `open`, `title`, `onClose`(Esc), children, `actions`(아래 오른쪽 버튼 줄). 폭은 `100% - 32px`에 최대 448px, `rounded-2xl border-line bg-bg shadow-lg`, 바깥은 `bg-scrim`. 포커스가 창 밖으로 나가지 않고, 입력 중 실수를 막으려고 바깥을 눌러서는 닫지 않는다.
-- **확인·알림 창**: `window.confirm`·`window.alert`를 쓰지 않는다. `useConfirm()`은 `{ title, message, confirmLabel?, tone? }`를 받아 확인이면 `true`, 취소·Esc면 `false`를 돌려주고, `tone: 'danger'`면 확인 버튼이 `bg-danger`다. `useAlert()`는 `확인` 버튼 하나다. `AppLayout`의 `DialogProvider`가 그리며, 한 번에 하나만 연다.
+- **확인·알림 창**: `window.confirm`·`window.alert`를 쓰지 않는다. `useConfirm()`은 `{ title, message, confirmLabel?, tone? }`를 받아 확인이면 `true`, 취소·Esc면 `false`를 돌려주고, `tone: 'danger'`면 확인 버튼이 `Button`의 `danger`다. `useAlert()`는 `확인` 버튼 하나다. `AppLayout`의 `DialogProvider`가 그리며, 한 번에 하나만 연다.
 - 화면 단위 `components/layout/SplashScreen`(앱 시작 화면, props 없음)과 `pages/NotFoundPage`도 `/ui`에서 본다.
 - 예외로 컴포넌트를 쓰지 않는 곳: 채팅 입력 줄·보내기, 로그인의 카카오 버튼, DatePicker 트리거, `AppHeader`의 메뉴(햄버거) 버튼. 햄버거 버튼은 아이콘을 더하면 `IconButton`으로 옮길 수 있다.
 

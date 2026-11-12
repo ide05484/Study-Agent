@@ -2,4 +2,5 @@
 export const BUTTON_VARIANT_CLASSES = {
   primary: 'bg-accent font-semibold text-on-accent',
   ghost: 'border border-line bg-bg text-fg',
+  danger: 'bg-danger font-semibold text-on-accent',
 } as const
