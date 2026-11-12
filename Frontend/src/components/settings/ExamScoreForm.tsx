@@ -9,6 +9,7 @@ import Select from '../ui/Select.tsx'
 import TextField from '../ui/TextField.tsx'
 
 interface ExamScoreFormProps {
+  id?: string // 제목 줄 + 버튼의 aria-controls 대상
   onAdd: (input: NewMockExam) => Promise<boolean>
   onCancel: () => void
 }
@@ -17,8 +18,8 @@ type ScoreTexts = Record<Subject, string>
 
 const EMPTY_SCORES: ScoreTexts = { korean: '', english: '', public_health: '', health_admin: '' }
 
-// 구분, 시험 이름, 응시일, 과목별 점수. 빈 칸 과목은 저장하지 않는다
-export default function ExamScoreForm({ onAdd, onCancel }: ExamScoreFormProps) {
+// 영역 제목 바로 아래에 열린다. 구분, 시험 이름, 응시일, 과목별 점수. 빈 칸 과목은 저장하지 않는다
+export default function ExamScoreForm({ id, onAdd, onCancel }: ExamScoreFormProps) {
   const [kind, setKind] = useState<ExamKind>('mock')
   const [name, setName] = useState('')
   const [takenOn, setTakenOn] = useState('')
@@ -38,7 +39,7 @@ export default function ExamScoreForm({ onAdd, onCancel }: ExamScoreFormProps) {
   }
 
   return (
-    <form className="mt-3 grid gap-2" onSubmit={handleSubmit}>
+    <form id={id} className="mb-4 grid gap-2" aria-label="점수 추가" onSubmit={handleSubmit}>
       <Select value={kind} onChange={(e) => setKind(e.target.value as ExamKind)} aria-label="구분">
         <option value="mock">{EXAM_KIND_LABELS.mock}</option>
         <option value="official">{EXAM_KIND_LABELS.official}</option>

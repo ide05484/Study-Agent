@@ -6,6 +6,7 @@ import ExamScoreForm from '../components/settings/ExamScoreForm.tsx'
 import ExamScoreList from '../components/settings/ExamScoreList.tsx'
 import Button from '../components/ui/Button.tsx'
 import Disclosure from '../components/ui/Disclosure.tsx'
+import IconButton from '../components/ui/IconButton.tsx'
 import Menu from '../components/ui/Menu.tsx'
 import Notice from '../components/ui/Notice.tsx'
 import Section from '../components/ui/Section.tsx'
@@ -92,12 +93,27 @@ export default function SettingsPage() {
       <Section
         title="D-Day까지 남은 공부 분량"
         action={
-          books.length > 0 &&
+          // 선택 삭제 중에는 추가 폼과 겹치지 않도록 +와 ⋮를 숨긴다
           !selecting && (
-            <Menu label="남은 공부 분량 메뉴" items={[{ label: '삭제', tone: 'danger', onSelect: startSelecting }]} />
+            <div className="flex">
+              <IconButton
+                icon="plus"
+                label="교재 추가"
+                aria-expanded={adding}
+                aria-controls={adding ? 'book-add-form' : undefined}
+                onClick={() => setAdding(!adding)}
+              />
+              {books.length > 0 && (
+                <Menu
+                  label="남은 공부 분량 메뉴"
+                  items={[{ label: '삭제', tone: 'danger', onSelect: startSelecting }]}
+                />
+              )}
+            </div>
           )
         }
       >
+        {adding && !selecting && <BookAddForm id="book-add-form" onAdd={add} onCancel={() => setAdding(false)} />}
         {loading && <Notice>불러오는 중…</Notice>}
         {!loading && books.length === 0 && (
           <Notice>등록된 교재가 없어요. 교재를 추가하면 시험일까지 매일 분량을 나눠 드려요.</Notice>
@@ -161,7 +177,7 @@ export default function SettingsPage() {
             <Notice tone="error">{error}</Notice>
           </div>
         )}
-        {selecting ? (
+        {selecting && (
           <div className="mt-3 grid grid-cols-2 gap-2">
             <Button ref={cancelSelectRef} type="button" variant="ghost" disabled={removing} onClick={stopSelecting}>
               취소
@@ -174,18 +190,22 @@ export default function SettingsPage() {
               {removing ? '삭제하는 중…' : `선택 삭제 (${selectedBookIds.length})`}
             </Button>
           </div>
-        ) : adding ? (
-          <BookAddForm onAdd={add} onCancel={() => setAdding(false)} />
-        ) : (
-          <div className="mt-3">
-            <Button type="button" variant="ghost" block onClick={() => setAdding(true)}>
-              교재 추가
-            </Button>
-          </div>
         )}
       </Section>
 
-      <Section title="시험 점수">
+      <Section
+        title="시험 점수"
+        action={
+          <IconButton
+            icon="plus"
+            label="점수 추가"
+            aria-expanded={addingExam}
+            aria-controls={addingExam ? 'exam-score-form' : undefined}
+            onClick={() => setAddingExam(!addingExam)}
+          />
+        }
+      >
+        {addingExam && <ExamScoreForm id="exam-score-form" onAdd={addExam} onCancel={() => setAddingExam(false)} />}
         {examsLoading && <Notice>불러오는 중…</Notice>}
         {!examsLoading && exams.length === 0 && (
           <Notice>등록된 점수가 없어요. 모의고사나 시험을 보면 점수를 넣어 주세요.</Notice>
@@ -194,15 +214,6 @@ export default function SettingsPage() {
         {examsError && (
           <div className="mt-2">
             <Notice tone="error">{examsError}</Notice>
-          </div>
-        )}
-        {addingExam ? (
-          <ExamScoreForm onAdd={addExam} onCancel={() => setAddingExam(false)} />
-        ) : (
-          <div className="mt-3">
-            <Button type="button" variant="ghost" block onClick={() => setAddingExam(true)}>
-              점수 추가
-            </Button>
           </div>
         )}
       </Section>

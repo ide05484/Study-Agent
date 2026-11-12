@@ -8,12 +8,13 @@ import Select from '../ui/Select.tsx'
 import TextField from '../ui/TextField.tsx'
 
 interface BookAddFormProps {
+  id?: string // 제목 줄 + 버튼의 aria-controls 대상
   onAdd: (input: NewBook) => Promise<boolean>
   onCancel: () => void
 }
 
-// 분량 단위는 쪽 또는 Day. 하루 고정 분량을 비우면 시험일까지 고르게 나눈다
-export default function BookAddForm({ onAdd, onCancel }: BookAddFormProps) {
+// 영역 제목 바로 아래에 열린다. 분량 단위는 쪽 또는 Day. 하루 고정 분량을 비우면 시험일까지 고르게 나눈다
+export default function BookAddForm({ id, onAdd, onCancel }: BookAddFormProps) {
   const [subject, setSubject] = useState<Subject>('korean')
   const [title, setTitle] = useState('')
   const [unit, setUnit] = useState<BookUnit>('page')
@@ -44,7 +45,7 @@ export default function BookAddForm({ onAdd, onCancel }: BookAddFormProps) {
   }
 
   return (
-    <form className="mt-3 grid gap-2" onSubmit={handleSubmit}>
+    <form id={id} className="mb-4 grid gap-2" aria-label="교재 추가" onSubmit={handleSubmit}>
       <Select value={subject} onChange={(e) => setSubject(e.target.value as Subject)} aria-label="과목">
         {SUBJECTS.map((s) => (
           <option key={s} value={s}>

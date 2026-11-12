@@ -5,6 +5,7 @@ import ButtonLink from '../components/ui/ButtonLink.tsx'
 import Chevron from '../components/ui/Chevron.tsx'
 import DatePicker from '../components/ui/DatePicker.tsx'
 import Disclosure from '../components/ui/Disclosure.tsx'
+import IconButton from '../components/ui/IconButton.tsx'
 import Mascot, { type MascotMood } from '../components/ui/Mascot.tsx'
 import Menu from '../components/ui/Menu.tsx'
 import Notice from '../components/ui/Notice.tsx'
@@ -132,11 +133,24 @@ function CatalogColumn({ themeClass, idPrefix }: CatalogColumnProps) {
               <p>제목이 없는 영역</p>
             </Section>
             <Section
-              title="오른쪽 끝 메뉴(action)"
-              action={<Menu label="예시 영역 메뉴" items={[{ label: '삭제', tone: 'danger', onSelect: () => {} }]} />}
+              title="오른쪽 끝 버튼(action)"
+              action={
+                <div className="flex">
+                  <IconButton icon="plus" label="예시 추가" />
+                  <Menu label="예시 영역 메뉴" items={[{ label: '삭제', tone: 'danger', onSelect: () => {} }]} />
+                </div>
+              }
             >
-              <p>제목 줄 오른쪽에 Menu</p>
+              <p>제목 줄 오른쪽에 + 와 Menu</p>
             </Section>
+          </div>
+        </Section>
+
+        <Section title="IconButton">
+          <div className="flex gap-2">
+            <IconButton icon="plus" label="예시 추가" />
+            <IconButton icon="kebab" label="예시 더보기" />
+            <IconButton icon="plus" label="예시 비활성" disabled />
           </div>
         </Section>
 

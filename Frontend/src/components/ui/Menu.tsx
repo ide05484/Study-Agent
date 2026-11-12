@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type FocusEvent, type KeyboardEvent } from 'react'
+import IconButton from './IconButton.tsx'
 
 export interface MenuItem {
   label: string
@@ -72,18 +73,15 @@ export default function Menu({ label, items }: MenuProps) {
 
   return (
     <div ref={rootRef} className="relative" onKeyDown={handleKeyDown} onBlur={handleBlur}>
-      <button
+      <IconButton
         ref={triggerRef}
-        type="button"
-        className="grid size-11 place-items-center rounded-xl text-muted hover:bg-surface"
-        aria-label={label}
+        icon="kebab"
+        label={label}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         onClick={() => setOpen(!open)}
-      >
-        <KebabIcon />
-      </button>
+      />
 
       {open && (
         <div
@@ -107,15 +105,5 @@ export default function Menu({ label, items }: MenuProps) {
         </div>
       )}
     </div>
-  )
-}
-
-function KebabIcon() {
-  return (
-    <svg className="size-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <circle cx="12" cy="5" r="1.8" />
-      <circle cx="12" cy="12" r="1.8" />
-      <circle cx="12" cy="19" r="1.8" />
-    </svg>
   )
 }
