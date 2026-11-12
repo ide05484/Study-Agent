@@ -3,6 +3,7 @@ import { matchPath, Outlet, useLocation } from 'react-router'
 import { useProfile } from '../../hooks/useProfile.ts'
 import { formatDateTitle, isDateKey, todayKey } from '../../libs/date.ts'
 import { MENU } from '../../libs/menu.ts'
+import DialogProvider from '../ui/DialogProvider.tsx'
 import AppHeader from './AppHeader.tsx'
 import Sidebar from './Sidebar.tsx'
 
@@ -22,7 +23,9 @@ export default function AppLayout() {
         onMenuClick={() => setSidebarOpen(true)}
       />
       <main className="min-h-0 flex-1 overflow-y-auto">
-        <Outlet context={profileState} />
+        <DialogProvider>
+          <Outlet context={profileState} />
+        </DialogProvider>
       </main>
       <Sidebar open={sidebarOpen} onClose={closeSidebar} />
     </div>

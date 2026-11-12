@@ -20,7 +20,7 @@
 - **채팅방은 하루에 하나.** 날짜별로 채팅방이 나뉘고, 지난 채팅방은 읽기만 할 수 있다.
 - **모바일 우선.** 한 손으로 쓰는 PWA를 기준으로 하며, 콘텐츠 최대 폭은 480px이다.
 - **깔끔한 모노톤 + 주황 포인트.** 웜그레이 계열 모노톤 위에 주황색을 포인트로만 써서 따뜻한 느낌을 낸다.
-- **수험생의 플래너처럼.** 주황은 칠하는 색이 아니라 **형광펜 자국**으로 쓴다. 오늘 할 분량처럼 꼭 봐야 할 숫자에만 긋는다. 영역은 카드 대신 괘선으로 나누고, 그림자·그라데이션·장식 라벨은 쓰지 않는다. 예외로 공부 설정의 시험 점수는 시험마다 테두리 블록(그림자 없음)으로 묶고, 내용 위에 떠서 열리는 팝업(`Menu`의 메뉴, `DatePicker`의 달력)만 아래 내용과 구분되도록 그림자(`shadow-lg`)를 쓴다. 눈에 띄는 요소는 형광펜 하나로 충분하다.
+- **수험생의 플래너처럼.** 주황은 칠하는 색이 아니라 **형광펜 자국**으로 쓴다. 오늘 할 분량처럼 꼭 봐야 할 숫자에만 긋는다. 영역은 카드 대신 괘선으로 나누고, 그림자·그라데이션·장식 라벨은 쓰지 않는다. 예외로 공부 설정의 시험 점수는 시험마다 테두리 블록(그림자 없음)으로 묶고, 내용 위에 떠서 열리는 팝업(`Menu`의 메뉴, `DatePicker`의 달력, `Modal`의 창)만 아래 내용과 구분되도록 그림자(`shadow-lg`)를 쓴다. 눈에 띄는 요소는 형광펜 하나로 충분하다.
 - **응원하는 톤.** 수험생이 부담을 느끼지 않도록 짧고 따뜻한 문장을 쓴다.
 
 ## 화면 목록
@@ -289,7 +289,10 @@
 - **Notice**: 안내·오류 문구. `tone`(`info`|`error`). 오류는 `role="alert"`.
 - **Chevron**: 꺾쇠 화살표. `direction`(`down`|`up`|`right`).
 - **Mascot**: 합격이. 로그인·앱 시작·404에만. `mood`(`base`|`cheer`|`think`|`oops`), `size`(px).
-- **DatePicker**: 날짜 선택(아래 규칙 참고).
+- **DatePicker**: 날짜 선택(아래 규칙 참고). `minDate`·`maxDate`로 고를 수 있는 범위를 막는다.
+- **ChipGroup**: `<select>` 대신 쓰는 한 줄 선택. `label`(그룹 접근성 이름), `options`(`value`, `label`), `value`, `onChange`, `disabled`. `role="radiogroup"`이고 칩은 `role="radio"`다. 칩 하나만 Tab 순서에 들어가고 ←·→로 옮기면 바로 선택된다. 칩은 `min-h-11 rounded-xl border px-3`, 고른 칩은 `border-accent bg-accent-soft font-bold`, 나머지는 `border-line text-muted`, 줄이 모자라면 아래로 넘긴다.
+- **Modal**: 네이티브 `<dialog>`(`showModal`)로 연 가운데 창. `open`, `title`, `onClose`(Esc), children, `actions`(아래 오른쪽 버튼 줄). 폭은 `100% - 32px`에 최대 448px, `rounded-2xl border-line bg-bg shadow-lg`, 바깥은 `bg-scrim`. 포커스가 창 밖으로 나가지 않고, 입력 중 실수를 막으려고 바깥을 눌러서는 닫지 않는다.
+- **확인·알림 창**: `window.confirm`·`window.alert`를 쓰지 않는다. `useConfirm()`은 `{ title, message, confirmLabel?, tone? }`를 받아 확인이면 `true`, 취소·Esc면 `false`를 돌려주고, `tone: 'danger'`면 확인 버튼이 `bg-danger`다. `useAlert()`는 `확인` 버튼 하나다. `AppLayout`의 `DialogProvider`가 그리며, 한 번에 하나만 연다.
 - 화면 단위 `components/layout/SplashScreen`(앱 시작 화면, props 없음)과 `pages/NotFoundPage`도 `/ui`에서 본다.
 - 예외로 컴포넌트를 쓰지 않는 곳: 채팅 입력 줄·보내기, 로그인의 카카오 버튼, DatePicker 트리거, `AppHeader`의 메뉴(햄버거) 버튼. 햄버거 버튼은 아이콘을 더하면 `IconButton`으로 옮길 수 있다.
 
@@ -302,7 +305,7 @@
   - 고른 날은 `bg-accent`, 오늘은 `text-accent` 굵게, 앞뒤 달의 날은 `text-muted`, 고를 수 없는 날은 흐리게 보인다. 마우스를 올리면 `bg-surface`.
   - 날짜를 누르면 값이 바뀌고 달력이 닫힌다. 바깥을 누르거나 Esc를 눌러도 닫힌다. 값이 있으면 아래에 "날짜 지우기"가 있다.
   - 시험일은 내일부터 고를 수 있다.
-- **터치 영역**: 햄버거 버튼, 아코디언 행, `+`·⋮ 버튼과 메뉴 항목, 체크박스 행 등은 최소 44×44px.
+- **터치 영역**: 햄버거 버튼, 아코디언 행, `+`·⋮ 버튼과 메뉴 항목, 체크박스 행, `ChipGroup`의 칩, 모달의 버튼 등은 최소 44×44px.
 - **움직임**: 사용자 동작(사이드바 열기, 아코디언 펼치기)에 반응하는 전환만 쓰고, 화면 진입 애니메이션은 넣지 않는다. `prefers-reduced-motion`이면 전환을 끈다.
 
 ## 라이브러리·도구
@@ -310,7 +313,7 @@
 - **Tailwind CSS v4** (`@tailwindcss/vite` 플러그인). 스타일은 컴포넌트의 유틸리티 클래스로 작성하고, 별도 CSS 클래스는 만들지 않는다.
   - `index.css`에는 색상 토큰, `@theme`, 기본 스타일(`@layer base`)만 둔다.
   - `index.css`의 `@utility marker`(형광펜)는 예외로 둔 유일한 커스텀 유틸리티다.
-  - 여러 화면에서 반복되는 모양은 `components/ui/`의 컴포넌트로 둔다: `Button`, `ButtonLink`, `TextField`, `Select`, `TextArea`, `Section`, `Disclosure`, `Chevron`, `Notice`, `IconButton`, `Menu`(날짜 선택은 `DatePicker`).
+  - 여러 화면에서 반복되는 모양은 `components/ui/`의 컴포넌트로 둔다: `Button`, `ButtonLink`, `TextField`, `Select`, `TextArea`, `Section`, `Disclosure`, `Chevron`, `Notice`, `IconButton`, `Menu`, `ChipGroup`, `Modal`(날짜 선택은 `DatePicker`, 확인·알림은 `DialogProvider`).
   - `/ui`(개발 모드에서만 열리는 컴포넌트 카탈로그). 색상 토큰과 위 컴포넌트를 라이트·다크로 나란히 보여 준다. 새 공용 컴포넌트를 만들면 여기에도 넣는다. 운영 빌드에는 들어가지 않는다.
   - 클래스 이름은 문자열을 이어 붙여 만들지 않는다(`bg-heat-${n}` ✕). Tailwind가 소스에서 찾을 수 있도록 전체 이름을 적은 매핑을 쓴다.
 - **react-calendar** (날짜 선택). 라이브러리 CSS(`react-calendar/dist/Calendar.css`)는 불러오지 않는다.

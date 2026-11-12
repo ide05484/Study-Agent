@@ -13,6 +13,7 @@ import Menu from '../components/ui/Menu.tsx'
 import Notice from '../components/ui/Notice.tsx'
 import Section from '../components/ui/Section.tsx'
 import TextArea from '../components/ui/TextArea.tsx'
+import { useConfirm } from '../hooks/useDialog.ts'
 import { useBooks } from '../hooks/useBooks.ts'
 import { useMockExams } from '../hooks/useMockExams.ts'
 import { useProfileContext } from '../hooks/useProfile.ts'
@@ -24,6 +25,7 @@ import { SUBJECT_LABELS, SUBJECTS } from '../libs/subjects.ts'
 export default function SettingsPage() {
   const { profile, saveExamDate } = useProfileContext()
   const { books, loading, error, notice, add, update, remove } = useBooks()
+  const confirm = useConfirm()
   const { exams, loading: examsLoading, error: examsError, add: addExam } = useMockExams()
   const [adding, setAdding] = useState(false)
   const [addingExam, setAddingExam] = useState(false)
@@ -45,12 +47,19 @@ export default function SettingsPage() {
   }, [selecting])
 
   async function removeOne(id: string, title: string) {
-    if (removing || !window.confirm(`'${title}'을(를) 삭제할까요?`)) return
+    if (removing) return
+    const ok = await confirm({
+      title: '교재 삭제',
+      message: `'${title}'을(를) 삭제할까요?`,
+      confirmLabel: '삭제',
+      tone: 'danger',
+    })
+    if (!ok) return
     setRemoving(true)
-    const ok = await remove([id])
+    const removed = await remove([id])
     setRemoving(false)
     // 삭제한 교재의 수정 폼이 열려 있었다면 닫는다
-    if (ok) setEditingId((current) => (current === id ? null : current))
+    if (removed) setEditingId((current) => (current === id ? null : current))
   }
 
   function startSelecting() {
@@ -76,11 +85,17 @@ export default function SettingsPage() {
 
   async function removeSelected() {
     if (selectedBookIds.length === 0 || removing) return
-    if (!window.confirm(`교재 ${selectedBookIds.length}권을 삭제할까요?`)) return
+    const confirmed = await confirm({
+      title: '교재 삭제',
+      message: `교재 ${selectedBookIds.length}권을 삭제할까요?`,
+      confirmLabel: '삭제',
+      tone: 'danger',
+    })
+    if (!confirmed) return
     setRemoving(true)
-    const ok = await remove(selectedBookIds)
+    const removed = await remove(selectedBookIds)
     setRemoving(false)
-    if (ok) stopSelecting()
+    if (removed) stopSelecting()
   }
 
   return (

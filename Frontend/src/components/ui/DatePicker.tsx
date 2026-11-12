@@ -7,6 +7,7 @@ interface DatePickerProps {
   label: string // 달력 창의 접근성 이름
   value: string // YYYY-MM-DD, 비어 있으면 ''
   minDate?: string // 이 날짜보다 앞은 고를 수 없다
+  maxDate?: string // 이 날짜보다 뒤는 고를 수 없다
   disabled?: boolean
   onChange: (value: string) => void
 }
@@ -37,7 +38,7 @@ function shiftMonth(date: Date, months: number): Date {
 }
 
 // 구글 캘린더의 작은 달력처럼 날짜 칸을 원으로 그리는 날짜 선택. 입력 칸을 누르면 아래에 달력이 열린다
-export default function DatePicker({ id, label, value, minDate, disabled, onChange }: DatePickerProps) {
+export default function DatePicker({ id, label, value, minDate, maxDate, disabled, onChange }: DatePickerProps) {
   const [open, setOpen] = useState(false)
   const [viewMonth, setViewMonth] = useState(() => monthStart(value || todayKey()))
   const rootRef = useRef<HTMLDivElement>(null)
@@ -78,6 +79,7 @@ export default function DatePicker({ id, label, value, minDate, disabled, onChan
 
   const today = todayKey()
   const canGoPrev = !minDate || viewMonth > monthStart(minDate)
+  const canGoNext = !maxDate || viewMonth < monthStart(maxDate)
 
   function tileClassName({ date, view }: TileArgs): string[] | null {
     if (view !== 'month') return null
@@ -135,6 +137,7 @@ export default function DatePicker({ id, label, value, minDate, disabled, onChan
                 type="button"
                 className={navButtonClass}
                 aria-label="다음 달"
+                disabled={!canGoNext}
                 onClick={() => setViewMonth(shiftMonth(viewMonth, 1))}
               >
                 <ArrowIcon direction="next" />
@@ -153,6 +156,7 @@ export default function DatePicker({ id, label, value, minDate, disabled, onChan
             onActiveStartDateChange={handleActiveStartDateChange}
             value={value ? keyToLocalDate(value) : null}
             minDate={minDate ? keyToLocalDate(minDate) : undefined}
+            maxDate={maxDate ? keyToLocalDate(maxDate) : undefined}
             formatDay={(_locale, date) => String(date.getDate())}
             tileClassName={tileClassName}
             onClickDay={(date) => select(localDateToKey(date))}
