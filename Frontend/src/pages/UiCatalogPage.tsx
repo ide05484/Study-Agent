@@ -14,6 +14,7 @@ import Menu from '../components/ui/Menu.tsx'
 import Modal from '../components/ui/Modal.tsx'
 import Notice from '../components/ui/Notice.tsx'
 import Section from '../components/ui/Section.tsx'
+import Tabs, { type TabItem } from '../components/ui/Tabs.tsx'
 import TextArea from '../components/ui/TextArea.tsx'
 import TextField from '../components/ui/TextField.tsx'
 import { useAlert, useConfirm, useProgress } from '../hooks/useDialog.ts'
@@ -103,6 +104,40 @@ function DialogExamples() {
         {result}
       </p>
     </>
+  )
+}
+
+const TAB_ITEMS: TabItem<'a' | 'b' | 'c'>[] = [
+  { value: 'a', label: '남은 공부 분량' },
+  { value: 'b', label: '시험 점수' },
+  { value: 'c', label: '과목별 공부법' },
+]
+const SUB_TAB_ITEMS: TabItem<'all' | 'ko' | 'en'>[] = [
+  { value: 'all', label: '시험별' },
+  { value: 'ko', label: '국어' },
+  { value: 'en', label: '영어' },
+]
+
+interface TabsExampleProps {
+  idPrefix: string
+}
+
+// md: 화면을 나누는 탭(공부 설정), sm: 영역 안의 보기 탭(시험 점수)
+function TabsExample({ idPrefix }: TabsExampleProps) {
+  const [tab, setTab] = useState<'a' | 'b' | 'c'>('a')
+  const [subTab, setSubTab] = useState<'all' | 'ko' | 'en'>('all')
+  return (
+    <div className="flex flex-col gap-6">
+      <Tabs label="예시 화면 탭" items={TAB_ITEMS} value={tab} onChange={setTab} idPrefix={`${idPrefix}-tabs`} />
+      <Tabs
+        label="예시 보기 탭"
+        items={SUB_TAB_ITEMS}
+        value={subTab}
+        onChange={setSubTab}
+        idPrefix={`${idPrefix}-subtabs`}
+        size="sm"
+      />
+    </div>
   )
 }
 
@@ -268,6 +303,10 @@ function CatalogColumn({ themeClass, idPrefix }: CatalogColumnProps) {
               <ChipGroup label="예시 단위" options={UNIT_OPTIONS} value={unit} onChange={setUnit} />
               <ChipGroup label="예시 단위 비활성" options={UNIT_OPTIONS} value="day" onChange={() => {}} disabled />
             </div>
+          </Section>
+
+          <Section title="Tabs">
+            <TabsExample idPrefix={idPrefix} />
           </Section>
 
           <Section title="Modal">
