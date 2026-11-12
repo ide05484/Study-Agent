@@ -44,6 +44,19 @@
 
 리뷰에서 나온 지적과 처리 결과도 History에 남긴다.
 
+## 2단계 반영: Task 3~7 시작 전에 고칠 것 (2026-11-12 추가)
+
+이 계획은 2단계([2026-11-10-study-data.md](2026-11-10-study-data.md)) 전에 썼다. 2단계에서 `books`에 `unit`(`page`/`day`)·`target_rounds`·`current_round`·`daily_amount`, `daily_tasks`에 `round`가 생겼고, 진도는 "몇 회독째 + 어디까지"가 됐다. 회독 기준 완료 분량은 Backend `_shared/plan.ts`의 `completedUnits`, Frontend `libs/books.ts`의 `completedUnits`·`progressLabel`이 같은 식으로 계산한다. 계획 교체는 DB 함수 `replace_daily_tasks`가 한다. Task 3~7을 시작할 때 아래를 먼저 계획에 반영하고 사용자와 정한다(브랜치 리뷰 task-reviewer 정리, [History](../../../History/2026-11-10-공부-데이터-채우기.md) "push와 PR").
+
+| Task | 바꿀 곳 | 정할 것 |
+|---|---|---|
+| 3 | `BookRef`에 `unit`·`current_round`·`target_rounds`를 더하고, 테스트 데이터와 분석 지시문의 교재 목록(진도 표기)에도 넣는다 | Day 교재의 "Day 12까지"를 `end_page`로 받을지(지금 `total_pages`·`current_page`에 Day 수를 쓴다) |
+| 4 | `nextCurrentPage`는 같은 회독 안에서만 `max`를 쓴다. 회독 끝 쪽을 넘거나 다음 회독 앞부분을 보고하면 `current_round`도 바뀐다(`completedUnits` 기준으로 비교). `taskStatusAfter`·`recordStudyLogs`는 회독 경계 날 같은 교재가 두 줄(`round`가 다름)인 경우를 구분한다 | 보고한 범위가 지금 회독인지 다음 회독인지 판단 규칙 |
+| 5 | `subjectPercents` = `round(Σ완료 / Σ(target_rounds × total_pages) × 100)`(Frontend `useDashboard`의 `buildSubjects`와 같은 식). `CoachContext.books`에 회독·단위와 표기(`1/3회독 120/456쪽`, `Day 12/60`)를 넣는다 | |
+| 6 | `loadProfileAndBooks`의 조회 칸에 새 칸을 더한다. 진도가 바뀌면 계획을 다시 나눌지(`plan-generator` 호출) 정한다 | 채팅 기록 뒤 재분배 여부 |
+| 6·7 | 검증 시나리오의 기대값이 Mock 데이터에서 달라진다. 보건행정 기본서가 이미 119쪽이라 "30~70p 보고 뒤 70" 대신 `max` 규칙으로 119가 유지된다. 시나리오 교재·쪽을 Mock에 맞게 바꾼다 | |
+| 미룬 채팅 교재 추가 | `NewBook`의 새 칸(`unit`, `target_rounds`, `daily_amount`)을 채팅에서 받을지 | |
+
 ---
 
 ### Task 1: 개발 프로젝트 연결과 DB 타입
@@ -199,6 +212,8 @@ git commit -m "feat: 카카오 로그인과 인증 가드"
 
 ### Task 3: 메시지 분석 결과 검증 (Deno 테스트 도입)
 
+> 시작 전에 위 "2단계 반영" 표의 Task 3 줄(`BookRef`의 회독·단위)을 반영한다.
+
 **Files:**
 - Create: `Backend/supabase/functions/chat/analysis.ts`, `Backend/supabase/functions/chat/analysis_test.ts`
 - Modify: `Backend/package.json` (devDependency `deno`, 스크립트 `test`), `CLAUDE.md` ("테스트 프레임워크는 아직 없다" → Backend 테스트 명령)
@@ -304,6 +319,8 @@ git commit -m "feat: chat 메시지 분석 결과 검증과 Deno 테스트"
 
 ### Task 4: 학습 기록 반영 계산
 
+> 시작 전에 위 "2단계 반영" 표의 Task 4 줄(회독 경계를 넘는 진도, 회독별 두 줄)을 반영한다. 아래 `nextCurrentPage`·`taskStatusAfter` 식과 테스트는 회독 이전 기준이다.
+
 **Files:**
 - Create: `Backend/supabase/functions/chat/study-log.ts`, `Backend/supabase/functions/chat/study-log_test.ts`, `Backend/supabase/functions/_shared/date_test.ts`
 
@@ -362,6 +379,8 @@ git commit -m "feat: 학습 기록의 진도·오늘 분량 반영 계산"
 ---
 
 ### Task 5: 코치 컨텍스트와 답변 문구
+
+> 시작 전에 위 "2단계 반영" 표의 Task 5 줄(`subjectPercents` 식, 회독 표기)을 반영한다. 아래 `subjectPercents` 식은 회독 이전 기준이다.
 
 **Files:**
 - Create: `Backend/supabase/functions/_shared/coach.ts`, `Backend/supabase/functions/chat/context.ts`, `Backend/supabase/functions/chat/context_test.ts`, `Backend/supabase/functions/chat/reply.ts`, `Backend/supabase/functions/chat/reply_test.ts`
@@ -463,6 +482,8 @@ git commit -m "feat: 코치 컨텍스트와 답변 지침"
 
 ### Task 6: `chat` Edge Function 연결과 배포
 
+> 시작 전에 위 "2단계 반영" 표의 Task 6·6·7 줄(조회 칸, 재분배 여부, 검증 시나리오 기대값)을 반영한다.
+
 **Files:**
 - Create: `Backend/supabase/functions/chat/llm.ts`, `Backend/supabase/functions/chat/db.ts`
 - Modify: `Backend/supabase/functions/chat/index.ts` (템플릿 전부 교체), `Backend/supabase/functions/chat/deno.json`, `Backend/supabase/functions/_shared/openai.ts`, `Frontend/src/interfaces/chat.ts`, `CLAUDE.md`, `SERVICE_FLOW.md`
@@ -533,6 +554,8 @@ git commit -m "feat: chat Edge Function 의도 분류·학습 기록·코치 답
 ---
 
 ### Task 7: 프론트엔드 채팅 연결
+
+> 시작 전에 위 "2단계 반영" 표의 6·7 줄(검증 시나리오 기대값)을 반영한다.
 
 **Files:**
 - Modify: `Frontend/src/hooks/useChat.ts`, `Frontend/src/hooks/useTodayTasks.ts`, `Frontend/src/components/chat/TodayPlan.tsx`, `Frontend/src/pages/ChatPage.tsx`, `Frontend/src/api/chat.ts`, `README.md`
