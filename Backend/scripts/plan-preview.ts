@@ -44,7 +44,7 @@ const weekly = Array.from({ length: PREVIEW_WEEKS }, () => new Map<Subject, numb
 console.log("\n[교재] 과목 | 교재 | 남은 분량 | 하루 평균 | 회독별 끝나는 날 | 못 끝낸 분량");
 mock.books.forEach((book, i) => {
   const planBookInput = { ...book, id: String(i) };
-  const tasks = planBook(planBookInput, days);
+  const tasks = planBook(planBookInput, { days, targetDays: [], lastWeekCap: null });
   const unit = UNIT_SUFFIX[book.unit];
   const remaining = book.target_rounds * book.total_units - completedUnits(planBookInput);
   const planned = tasks.reduce((sum, t) => sum + amount(t), 0);

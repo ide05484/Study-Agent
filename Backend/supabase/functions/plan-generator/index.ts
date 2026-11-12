@@ -1,14 +1,24 @@
 // [plan-generator] 교재 추가·삭제, 진도·시험일 변경 후 프론트엔드가 호출한다.
 // 오늘부터의 미진행(pending) daily_tasks를 지우고, 교재별 남은 분량(목표 회독까지)을 시험 전날까지 날짜별로 다시 나눈다.
 // 지우기·넣기는 DB 함수 replace_daily_tasks가 한 트랜잭션으로 하고, 사용자별 잠금으로 겹친 호출을 순서대로 처리한다.
-// 나누는 규칙은 _shared/plan.ts의 planBook을 따른다.
+// 나누는 규칙은 _shared/plan.ts의 planBook을 따른다(회독별 목표일, 하루 최소 분량, 마지막 주 상한).
 // 이미 진행한 계획(done/partial)과 지난 날짜의 계획은 그대로 둔다.
 // 응답 형식은 Frontend/src/interfaces/plan.ts의 `PlanResponse`를 따른다.
 
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { withSupabase } from "@supabase/server";
 import { addDays, diffDays, toDateKey } from "../_shared/date.ts";
-import { type PlanBook, planBook } from "../_shared/plan.ts";
+import { LAST_WEEK_DAYS, type PlanBook, planBook } from "../_shared/plan.ts";
+
+interface BookRow extends PlanBook {
+  round_targets: (string | null)[]; // 회독별 목표일, null은 목표일 없음
+}
+
+interface D8Row {
+  book_id: string;
+  start_unit: number;
+  end_unit: number;
+}
 
 export default {
   // 사용자 JWT 필수. ctx.supabase는 RLS가 적용되어 본인 데이터만 다룬다
@@ -43,12 +53,32 @@ export default {
     const { data: books, error: booksError } = await supabase
       .from("books")
       .select(
-        "id, total_units, current_unit, current_round, target_rounds, daily_amount",
+        "id, total_units, current_unit, current_round, target_rounds, daily_amount, round_targets",
       );
     if (booksError) return errorResponse(booksError.message);
 
-    const tasks = (books as PlanBook[]).flatMap((book) =>
-      planBook(book, days).map((task) => ({
+    // 마지막 주(D-7 이후)에는 교재별 D-8 분량을 하루 상한으로 넘긴다. D-8은 지난 날이라 계획이 지워지지 않고 남아 있다
+    const caps = new Map<string, number>();
+    if (days <= LAST_WEEK_DAYS) {
+      const { data: d8, error: d8Error } = await supabase
+        .from("daily_tasks")
+        .select("book_id, start_unit, end_unit")
+        .eq("task_date", addDays(profile.exam_date, -(LAST_WEEK_DAYS + 1)));
+      if (d8Error) return errorResponse(d8Error.message);
+      for (const row of d8 as D8Row[]) {
+        const amount = row.end_unit - row.start_unit + 1;
+        caps.set(row.book_id, (caps.get(row.book_id) ?? 0) + amount);
+      }
+    }
+
+    const tasks = (books as BookRow[]).flatMap((book) =>
+      planBook(book, {
+        days,
+        targetDays: book.round_targets.map((date) =>
+          date ? diffDays(today, date) : null
+        ),
+        lastWeekCap: caps.get(book.id) ?? null,
+      }).map((task) => ({
         book_id: task.book_id,
         task_date: addDays(today, task.day),
         round: task.round,
