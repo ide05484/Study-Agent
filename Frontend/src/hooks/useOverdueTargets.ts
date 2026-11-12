@@ -50,7 +50,8 @@ export function useOverdueTargets(examDate: string | null): OverdueTargetsState 
               const round = book.current_round
               const next = book.round_targets[round] // 다음 회독 목표일
               const examMax = roundTargetBounds(book.round_targets, round - 1, round, today, examDate).max ?? lastDay
-              const maxDate = next && next < examMax ? next : examMax
+              // 다음 회독 목표일이 이미 지났으면 상한에서 뺀다(고를 날짜가 없어 나중에가 과거 날짜를 저장하게 된다)
+              const maxDate = next && next >= today && next < examMax ? next : examMax
               const wanted = addDays(today, 14)
               return { book, round, defaultDate: wanted < maxDate ? wanted : maxDate, maxDate }
             }),
