@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Navigate, useParams } from 'react-router'
-import TodayPlan from '../components/chat/TodayPlan.tsx'
+import TodayPlanButton from '../components/chat/TodayPlanButton.tsx'
+import TodayPlanSheet from '../components/chat/TodayPlanSheet.tsx'
 import { useChat } from '../hooks/useChat.ts'
+import { useTodayTasks } from '../hooks/useTodayTasks.ts'
 import type { ChatRole } from '../interfaces/chat.ts'
 import { isDateKey, todayKey } from '../libs/date.ts'
 import { WELCOME_MESSAGE } from '../libs/menu.ts'
@@ -47,8 +49,7 @@ function ChatRoom({ date, readOnly }: ChatRoomProps) {
 
   return (
     <section className="flex h-full flex-col">
-      {!readOnly && <TodayPlan date={date} />}
-      <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-4">
+      <div className={`flex flex-1 flex-col gap-2 overflow-y-auto p-4 ${readOnly ? '' : 'pb-16'}`}>
         <Bubble role="assistant">{WELCOME_MESSAGE}</Bubble>
         {messages.map((m) => (
           <Bubble key={m.id} role={m.role}>
@@ -61,34 +62,59 @@ function ChatRoom({ date, readOnly }: ChatRoomProps) {
       {readOnly ? (
         <p className="border-t border-line px-4 py-3.5 text-center text-sm text-muted">지난 대화는 볼 수만 있어요.</p>
       ) : (
-        <form className="flex gap-2 border-t border-line px-3 py-2" onSubmit={handleSubmit}>
-          <input
-            className="min-w-0 flex-1 rounded-full border border-line bg-bg px-4 py-2.5"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="예) 보건행정 30~70p, 기출 20문제 중 5개 틀림"
-            aria-label="메시지 입력"
-          />
-          <button
-            type="submit"
-            className="grid size-11 flex-none place-items-center rounded-full bg-accent text-on-accent disabled:opacity-40"
-            aria-label="보내기"
-            disabled={sending || !draft.trim()}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M4 12h14M12 5l7 7-7 7"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-        </form>
+        <div className="relative">
+          <TodayPlanDock date={date} />
+          <form className="flex gap-2 border-t border-line px-3 py-2" onSubmit={handleSubmit}>
+            <input
+              className="min-w-0 flex-1 rounded-full border border-line bg-bg px-4 py-2.5"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="예) 보건행정 30~70p, 기출 20문제 중 5개 틀림"
+              aria-label="메시지 입력"
+            />
+            <button
+              type="submit"
+              className="grid size-11 flex-none place-items-center rounded-full bg-accent text-on-accent disabled:opacity-40"
+              aria-label="보내기"
+              disabled={sending || !draft.trim()}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M4 12h14M12 5l7 7-7 7"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </form>
+        </div>
       )}
     </section>
+  )
+}
+
+// 오늘 채팅방에서만 그린다(지난 날짜로 조회하지 않도록 조회·시트 상태를 여기서 갖는다)
+function TodayPlanDock({ date }: { date: string }) {
+  const { tasks, error, reload, toggle, savingIds, toggleError } = useTodayTasks(date)
+  const [open, setOpen] = useState(false)
+
+  return (
+    <>
+      <div className="absolute right-3 bottom-full mb-2">
+        <TodayPlanButton tasks={tasks} error={error} onOpen={() => setOpen(true)} onRetry={reload} />
+      </div>
+      <TodayPlanSheet
+        open={open}
+        onClose={() => setOpen(false)}
+        tasks={tasks ?? []}
+        savingIds={savingIds}
+        toggleError={toggleError}
+        onToggle={(taskId, done) => void toggle(taskId, done)}
+      />
+    </>
   )
 }
 

@@ -66,6 +66,12 @@ export async function fetchDailyTasks(from: string, to: string): Promise<DailyTa
   return data as DailyTaskWithBook[]
 }
 
+// 분량 하나를 끝냄(done)/안 끝냄(pending)으로 바꾸고 교재 진도도 함께 맞춘다(DB 함수)
+export async function setTaskDone(taskId: string, done: boolean): Promise<void> {
+  const { error } = await supabase.rpc('set_task_done', { p_task_id: taskId, p_done: done })
+  if (error) throw error
+}
+
 // 학습 기록이 있는 날짜 목록
 export async function fetchStudyDates(): Promise<string[]> {
   const { data, error } = await supabase

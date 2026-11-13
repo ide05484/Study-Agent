@@ -1,4 +1,4 @@
-import type { Book, BookUnit } from '../interfaces/study.ts'
+import type { Book, BookUnit, DailyTaskWithBook } from '../interfaces/study.ts'
 import { addDays, formatMonthDay } from './date.ts'
 
 export const UNIT_LABELS: Record<BookUnit, string> = { day: 'Day', chapter: '챕터', session: '회차' }
@@ -27,6 +27,12 @@ export function withUnit(unit: BookUnit, value: string | number): string {
 // Day 3–4, 3–4챕터, 12–14회
 export function rangeLabel(unit: BookUnit, start: number, end: number): string {
   return withUnit(unit, start === end ? `${start}` : `${start}–${end}`)
+}
+
+// 분량 한 줄의 범위. 목표가 2회독 이상인 교재만 몇 회독째인지 앞에 붙인다
+export function taskLabel(task: DailyTaskWithBook): string {
+  const range = rangeLabel(task.book.unit, task.start_unit, task.end_unit)
+  return task.book.target_rounds >= 2 ? `${task.round}회독 ${range}` : range
 }
 
 // 12/30회, Day 12/60, 3/20챕터. 목표가 2회독 이상이면 앞에 2/3회독을 붙인다
