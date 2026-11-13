@@ -376,6 +376,10 @@ export type Database = {
         Args: { p_from: string; p_tasks: Json }
         Returns: number
       }
+      set_task_done: {
+        Args: { p_done: boolean; p_task_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       book_unit: "day" | "chapter" | "session"
