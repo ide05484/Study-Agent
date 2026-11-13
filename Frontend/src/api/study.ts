@@ -66,6 +66,18 @@ export async function fetchDailyTasks(from: string, to: string): Promise<DailyTa
   return data as DailyTaskWithBook[]
 }
 
+// before 이전 날짜에 아직 안 한(pending) 분량이 하나라도 있는지(앱을 열 때 이월할지 확인)
+export async function hasMissedTasks(before: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('daily_tasks')
+    .select('id')
+    .lt('task_date', before)
+    .eq('status', 'pending')
+    .limit(1)
+  if (error) throw error
+  return data.length > 0
+}
+
 // 분량 하나를 끝냄(done)/안 끝냄(pending)으로 바꾸고 교재 진도도 함께 맞춘다(DB 함수)
 export async function setTaskDone(taskId: string, done: boolean): Promise<void> {
   const { error } = await supabase.rpc('set_task_done', { p_task_id: taskId, p_done: done })
