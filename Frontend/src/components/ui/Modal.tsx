@@ -7,7 +7,7 @@ interface ModalProps {
   onClose: () => void // Esc를 눌렀을 때(시트는 ✕·바깥을 눌렀을 때도). 가운데 창은 바깥을 눌러서는 닫지 않는다
   children: ReactNode
   actions?: ReactNode // 아래 오른쪽 정렬 버튼 줄
-  variant?: 'dialog' | 'sheet' // dialog: 가운데 창(기본), sheet: 아래에서 올라오는 시트
+  variant?: 'dialog' | 'sheet' // dialog: 가운데 창(기본), sheet: 아래에 붙는 시트
   titleAside?: ReactNode // 시트 제목 오른쪽 보조 글(예: 1/4)
 }
 

@@ -49,6 +49,7 @@ function ChatRoom({ date, readOnly }: ChatRoomProps) {
 
   return (
     <section className="flex h-full flex-col">
+      {/* pb-16(64px): 오늘의 분량 버튼 44px + mb-2 8px = 52px보다 커야 한다. 버튼 크기를 바꾸면 함께 고친다 */}
       <div className={`flex flex-1 flex-col gap-2 overflow-y-auto p-4 ${readOnly ? '' : 'pb-16'}`}>
         <Bubble role="assistant">{WELCOME_MESSAGE}</Bubble>
         {messages.map((m) => (
@@ -97,14 +98,26 @@ function ChatRoom({ date, readOnly }: ChatRoomProps) {
 }
 
 // 오늘 채팅방에서만 그린다(지난 날짜로 조회하지 않도록 조회·시트 상태를 여기서 갖는다)
-function TodayPlanDock({ date }: { date: string }) {
-  const { tasks, error, reload, toggle, savingIds, toggleError } = useTodayTasks(date)
+interface TodayPlanDockProps {
+  date: string
+}
+
+function TodayPlanDock({ date }: TodayPlanDockProps) {
+  const { tasks, error, reload, toggle, savingIds, toggleError, clearToggleError } = useTodayTasks(date)
   const [open, setOpen] = useState(false)
 
   return (
     <>
       <div className="absolute right-3 bottom-full mb-2">
-        <TodayPlanButton tasks={tasks} error={error} onOpen={() => setOpen(true)} onRetry={reload} />
+        <TodayPlanButton
+          tasks={tasks}
+          error={error}
+          onOpen={() => {
+            clearToggleError() // 지난 저장 실패 문구는 시트를 열 때 비운다
+            setOpen(true)
+          }}
+          onRetry={reload}
+        />
       </div>
       <TodayPlanSheet
         open={open}

@@ -5,7 +5,7 @@ import { toErrorMessage } from '../libs/errors.ts'
 import { onPlanChanged } from '../libs/planEvents.ts'
 import { SUBJECTS } from '../libs/subjects.ts'
 
-export const TOGGLE_ERROR_MESSAGE = '저장하지 못했어요. 다시 눌러 주세요.'
+const TOGGLE_ERROR_MESSAGE = '저장하지 못했어요. 다시 눌러 주세요.'
 
 const EMPTY_IDS: ReadonlySet<string> = new Set()
 
@@ -13,17 +13,18 @@ function sortBySubject(tasks: DailyTaskWithBook[]): DailyTaskWithBook[] {
   return tasks.toSorted((a, b) => SUBJECTS.indexOf(a.book.subject) - SUBJECTS.indexOf(b.book.subject))
 }
 
-interface TodayTasks {
+interface TodayTasksState {
   tasks: DailyTaskWithBook[] | null
   error: string | null
   reload: () => void
   toggle: (taskId: string, done: boolean) => Promise<void>
   savingIds: ReadonlySet<string>
   toggleError: string | null
+  clearToggleError: () => void
 }
 
 // 채팅의 "오늘의 분량": date 하루의 계획을 과목 순서대로, 체크로 끝냄/안 끝냄을 바꾼다
-export function useTodayTasks(date: string): TodayTasks {
+export function useTodayTasks(date: string): TodayTasksState {
   const [tasks, setTasks] = useState<DailyTaskWithBook[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [savingIds, setSavingIds] = useState<ReadonlySet<string>>(EMPTY_IDS)
@@ -84,6 +85,8 @@ export function useTodayTasks(date: string): TodayTasks {
     }
   }, [load])
 
+  const clearToggleError = useCallback(() => setToggleError(null), [])
+
   const toggle = useCallback(
     async (taskId: string, done: boolean) => {
       if (savingRef.current.has(taskId)) return
@@ -110,5 +113,5 @@ export function useTodayTasks(date: string): TodayTasks {
     [applyTasks, updateSaving, load],
   )
 
-  return { tasks, error, reload, toggle, savingIds, toggleError }
+  return { tasks, error, reload, toggle, savingIds, toggleError, clearToggleError }
 }

@@ -1,5 +1,4 @@
 import { Link } from 'react-router'
-import { TOGGLE_ERROR_MESSAGE } from '../../hooks/useTodayTasks.ts'
 import type { DailyTaskWithBook } from '../../interfaces/study.ts'
 import { taskLabel } from '../../libs/books.ts'
 import { SUBJECT_LABELS } from '../../libs/subjects.ts'
@@ -40,7 +39,7 @@ export default function TodayPlanSheet({
     >
       {toggleError && (
         <div className="pb-2">
-          <Notice tone="error">{TOGGLE_ERROR_MESSAGE}</Notice>
+          <Notice tone="error">{toggleError}</Notice>
         </div>
       )}
       {tasks.length === 0 ? (
