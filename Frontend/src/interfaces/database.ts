@@ -367,14 +367,51 @@ export type Database = {
           },
         ]
       }
+      study_time: {
+        Row: {
+          created_at: string
+          minutes: number
+          study_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          minutes: number
+          study_date: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          minutes?: number
+          study_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      record_study_time: {
+        Args: { p_add: boolean; p_date: string; p_minutes: number }
+        Returns: number
+      }
       replace_daily_tasks: {
         Args: { p_from: string; p_tasks: Json }
         Returns: number
+      }
+      report_progress: {
+        Args: {
+          p_book_id: string
+          p_date: string
+          p_end_unit: number
+          p_round: number
+        }
+        Returns: undefined
       }
       set_task_done: {
         Args: { p_done: boolean; p_task_id: string }
