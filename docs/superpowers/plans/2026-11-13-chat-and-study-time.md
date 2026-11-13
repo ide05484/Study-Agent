@@ -36,7 +36,8 @@
 - 순공시간: 1~1080분. 잔디 단계 120분 미만 1, 120~239분 2, 240~359분 3, 360분 이상 4. 사용자 시간대로 0~3시 59분에 "오늘"이라고 보낸 순공시간은 전날.
 - 날짜 키는 `profiles.timezone` 기준 `YYYY-MM-DD`. `study_logs.study_date`는 항상 명시한다.
 - 채팅 보고는 계획을 다시 나누지 않는다(`plan-generator`를 부르지 않는다).
-- LLM 모델은 `_shared/openai.ts`의 `MODEL = "gpt-5.6"` 하나로.
+- LLM 모델은 `_shared/openai.ts`의 `MODEL = "gpt-5.6"` 하나로(분석·답변 모두, 2026-11-13 사용자 결정).
+- GPT 비용 장치(2026-11-13 사용자 요청): 메시지당 호출은 분석 1번 + 답변 1번까지, 다시 시도하지 않는다. 사용법·교재 추가·순공시간만·하루 상한은 답변 호출 없이 정해진 문구. 지난 대화는 최근 6개, 최근 7일 기록은 10줄, 모의고사 3회까지. `reasoning: { effort: "low" }`, `max_output_tokens` 분석 1500·답변 2000(넘어서 `incomplete`면 실패로 본다). 사용자당 하루 사용자 메시지 100개를 넘으면 분석도 부르지 않는다. 호출마다 `usage`(입력·출력 토큰)를 `console.log`로 남긴다.
 - Frontend 의존 방향 `pages → hooks → api → libs`. DESIGN.md 토큰만, 클래스는 전체 이름 매핑. 새 색 토큰은 만들지 않는다.
 - ☁️ 단계는 개발 프로젝트(`ishtebcswgyagbbaakpx`)에만. 이미 반영된 마이그레이션은 고치지 않는다. 사용자 UUID와 API 키는 파일·커밋·History에 적지 않는다.
 - Task마다 `feature/chat_connect`에 경로 지정 커밋, push 안 함, 커밋에 Claude 표시 줄 없음, History 기록(메인 세션, Task마다 바로 커밋).
@@ -226,7 +227,7 @@ Deno.test("분 표기", () => assertEquals([formatMinutes(200), formatMinutes(18
 **Interfaces:**
 - Consumes: `Subject`, `SUBJECT_LABELS`, `diffDays`, `completedUnits`(`_shared/plan.ts`), Task 2 `Intent`, Task 3 표기 함수
 - Produces:
-  - `_shared/coach.ts`: `COACH_TONE_INSTRUCTIONS`, `USAGE_GUIDE`, `BOOK_ADD_PENDING`, `STUDY_TIME_ASK` (string)
+  - `_shared/coach.ts`: `COACH_TONE_INSTRUCTIONS`, `USAGE_GUIDE`, `BOOK_ADD_PENDING`, `STUDY_TIME_ASK`, `DAILY_LIMIT_REPLY` (string), `DAILY_MESSAGE_LIMIT = 100`
   - `chat/context.ts`:
     ```ts
     export type TaskStatus = "pending" | "done" | "partial" | "skipped";
@@ -269,6 +270,7 @@ Deno.test("분 표기", () => assertEquals([formatMinutes(200), formatMinutes(18
   ```
 - `BOOK_ADD_PENDING`: `교재 추가는 지금은 메뉴의 '공부 설정 변경'에서 할 수 있어요. 과목, 교재명, 단위와 총량을 넣으면 시험일까지 분량을 다시 나눠 드려요.`
 - `STUDY_TIME_ASK`: `순공시간을 다시 알려 주세요. 하루 1분부터 18시간까지 적을 수 있어요. 예) 오늘 순공 3시간 20분`
+- `DAILY_LIMIT_REPLY`: `오늘은 메시지를 충분히 받았어요. 내일 다시 이야기해요. 오늘의 분량 체크는 입력창 위 버튼으로 계속할 수 있어요.`
 - `studyTimeReply`: 날짜가 오늘이면 `오늘 순공 {formatMinutes}으로 적어 뒀어요. 오늘도 수고 많으셨어요.`, 아니면 `{M월 D일} 순공 {formatMinutes}으로 적어 뒀어요. 수고 많으셨어요.`
 - `replyInstructions(intent, savedStudyTime)` = `COACH_TONE_INSTRUCTIONS` + intent별 한 문단 + (`savedStudyTime`이 있으면) `이번 메시지의 순공시간 {savedStudyTime}을 적어 뒀다고 한 문장으로 알려 준다. 다른 날과 비교하지 않는다.`
   - `study_log`: 방금 저장한 기록을 확인하고, 그 과목 진도율과 과목 간 균형을 한 번 짚는다. 계획을 다시 나눴다고 말하지 않는다.
@@ -295,12 +297,14 @@ Deno.test("분 표기", () => assertEquals([formatMinutes(200), formatMinutes(18
 - Produces:
   - `_shared/openai.ts`: `export const MODEL = "gpt-5.6"`
   - `chat/llm.ts`(chat에서 OpenAI를 import하는 유일한 파일): `analyzeMessage(content: string, books: BookRef[], today: string): Promise<Analysis>` — `responses.create`에 `text: { format: { type: "json_schema", name: "chat_analysis", strict: true, schema: ANALYSIS_SCHEMA } }`, instructions에 교재 목록(id·과목·제목·`progressLabel`)과 규칙("15~17강"→ start 15·end 17, "Day 12까지"→ end 12, 회독은 말했을 때만, 순공시간은 분으로, "더"·"추가"면 add)을 넣고 `parseAnalysis`로 검증. `generateReply({ content, intent, ctx, history, savedStudyTime }): Promise<string>`
-  - `chat/db.ts`(`deno.json` imports에 `"@supabase/supabase-js": "npm:@supabase/supabase-js@^2"`, 타입 import만): `loadProfileAndBooks(sb)`, `insertMessage(sb, userId, role, content, subject)`, `recordStudyLogs(sb, userId, today, messageId, entries, books): RecordedLog[]`(`study_logs` insert는 `study_date: today`, `resolvePosition`이 값을 주면 `rpc("report_progress", { p_book_id, p_round, p_end_unit, p_date: today })`), `saveStudyTime(sb, date, report): number | null`(`rpc("record_study_time")`, SQLSTATE `22023`이면 `null`), `loadCoachContext(sb, today, examDate)`, `loadTodayHistory(sb, today, timezone, limit = 10)`
+  - `chat/db.ts`(`deno.json` imports에 `"@supabase/supabase-js": "npm:@supabase/supabase-js@^2"`, 타입 import만): `loadProfileAndBooks(sb)`, `insertMessage(sb, userId, role, content, subject)`, `recordStudyLogs(sb, userId, today, messageId, entries, books): RecordedLog[]`(`study_logs` insert는 `study_date: today`, `resolvePosition`이 값을 주면 `rpc("report_progress", { p_book_id, p_round, p_end_unit, p_date: today })`), `saveStudyTime(sb, date, report): number | null`(`rpc("record_study_time")`, SQLSTATE `22023`이면 `null`), `loadCoachContext(sb, today, examDate)`(최근 7일 기록 최신 10줄, 모의고사 3회), `loadTodayHistory(sb, today, timezone, limit = 6)`, `countTodayUserMessages(sb, today, timezone): number`
+  - `llm.ts`의 두 함수 모두 `model: MODEL`, `reasoning: { effort: "low" }`, `max_output_tokens`(분석 1500, 답변 2000). `status`가 `"completed"`가 아니면 실패로 던진다. 호출 뒤 `console.log(JSON.stringify({ call: "analyze" | "reply", usage: response.usage }))`
   - `interfaces/chat.ts` `ChatResponse`에 `logged: boolean`(진도·학습 기록을 저장했으면 true)
 
 처리 순서(`withSupabase({ auth: "user" })`):
 1. `content` trim, 비었거나 1000자 초과 → 400 `{ error: "invalid_content" }`.
 2. `loadProfileAndBooks` → `now = new Date()`, `today = toDateKey(now, timezone)`.
+2-1. 오늘 사용자 메시지 수(`countTodayUserMessages(sb, today, timezone)`, `count: "exact", head: true`)가 `DAILY_MESSAGE_LIMIT` 이상이면 GPT를 부르지 않고 사용자 메시지(`subject: null`)와 `DAILY_LIMIT_REPLY`를 저장해 응답(`logged: false`).
 3. `analyzeMessage` 실패 → 502 `{ error: "analysis_failed" }`. 여기까지는 아무것도 저장하지 않는다.
 4. 사용자 메시지 저장(`subject` = 분석 결과).
 5. entry가 있으면 `recordStudyLogs`.
