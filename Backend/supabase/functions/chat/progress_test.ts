@@ -54,3 +54,10 @@ Deno.test("교재나 끝 단위가 없으면 null", () =>
     resolvePosition(book, entry({ book_id: null, end_unit: 17 })),
     null,
   ));
+Deno.test("회독을 막 끝낸 뒤 마지막 단위를 보고하면 진도를 바꾸지 않는다", () =>
+  assertEquals(
+    resolvePosition({ ...book, current_unit: 60 }, entry({ end_unit: 60 })),
+    null,
+  ));
+Deno.test("목표 밖 회독은 진도를 바꾸지 않는다", () =>
+  assertEquals(resolvePosition(book, entry({ round: 3, end_unit: 3 })), null));
