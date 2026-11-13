@@ -25,3 +25,24 @@ export function diffDays(from: string, to: string): number {
     (parseKey(to).getTime() - parseKey(from).getTime()) / DAY_MS,
   );
 }
+
+// timeZone 기준 시각(0~23)
+export function localHour(date: Date, timeZone: string): number {
+  const hour = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour: "numeric",
+    hourCycle: "h23",
+  }).format(date);
+  return Number(hour);
+}
+
+// 순공시간을 기록할 날짜. 새벽 0~3시 59분에 "오늘"이라고 보내면 전날로 센다
+export function studyTimeDate(
+  now: Date,
+  timeZone: string,
+  day: "today" | "yesterday",
+): string {
+  const today = toDateKey(now, timeZone);
+  if (day === "yesterday") return addDays(today, -1);
+  return localHour(now, timeZone) < 4 ? addDays(today, -1) : today;
+}
