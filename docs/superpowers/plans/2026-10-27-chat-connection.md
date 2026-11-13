@@ -55,11 +55,13 @@
 | 3 | `BookRef`에 `unit`·`current_round`·`target_rounds`를 더하고, 테스트 데이터와 분석 지시문의 교재 목록(진도 표기)에도 넣는다. 학습 기록 예시를 쪽이 아니라 회차·챕터·Day로("보건행정 기본서 15~17강") | "Day 12까지", "17강까지"를 `end_unit`으로 받는 규칙 |
 | 4 | `nextCurrentUnit`(옛 `nextCurrentPage`)은 같은 회독 안에서만 `max`를 쓴다. 회독 끝을 넘거나 다음 회독 앞부분을 보고하면 `current_round`도 바뀐다(`completedUnits` 기준으로 비교). `taskStatusAfter`·`recordStudyLogs`는 회독 경계 날 같은 교재가 두 줄(`round`가 다름)인 경우를 구분한다 | 보고한 범위가 지금 회독인지 다음 회독인지 판단 규칙 |
 | 5 | `subjectPercents` = `round(Σ완료 / Σ(target_rounds × total_units) × 100)`(Frontend `useDashboard`의 `buildSubjects`와 같은 식). `CoachContext.books`에 회독·단위·목표일과 표기(`1/3회독 21/60회`, `Day 12/60`, `2회독 목표 12월 31일`)를 넣는다 | |
-| 6 | `loadProfileAndBooks`의 조회 칸에 새 칸을 더한다. 진도가 바뀌면 계획을 다시 나눈다(`plan-generator` 호출) — 요구사항 C로 정해짐 | |
+| 6 | `loadProfileAndBooks`의 조회 칸에 새 칸을 더한다. 채팅 보고로 진도가 바뀌어도 계획은 바로 다시 나누지 않는다(요구사항 C, 2026-11-13 변경. 다음 계획은 밤 재분배·앱 열 때 이월에서 맞춰짐) | |
 | 6·7 | 검증 시나리오의 기대값이 Mock 데이터에서 달라진다(기본서는 각 60회, 보건행정 기본서는 15회까지 진행). 시나리오 교재·회차를 Mock에 맞게 바꾼다 | |
 | 미룬 채팅 교재 추가 | `NewBook`의 새 칸(`unit`, `target_rounds`, `daily_amount`, `round_targets`)을 채팅에서 받을지. 교재명은 DB check `books_title_length`로 앞뒤 공백을 뺀 1~20자만 들어간다(2026-11-12) | 긴 교재명을 LLM이 줄일지, 되물을지 |
 
-**요구사항 C (2026-11-12 사용자 요청)**: 채팅으로 "나 ~ 완료했어"처럼 보고하면 LLM이 이해해 오늘의 분량 상태(`daily_tasks.status`)와 진도(`books.current_round`·`current_unit`)에 반영한다. 오늘의 분량이 아닌 공부(다른 교재, 앞서 나간 분량)도 진도에 반영하고 계획을 다시 나눠 다른 날의 계획에도 영향이 가게 한다. 화면 체크박스로 완료하는 경로(묶음 B)와 같은 반영 함수를 쓴다: DB 함수 `public.set_task_done(p_task_id uuid, p_done boolean)`(마이그레이션 `20261113011208_set_task_done.sql`, `chat` 함수는 사용자 토큰으로 `rpc('set_task_done', { p_task_id, p_done })`). 보고한 범위에 맞는 오늘 분량이 있으면 그 분량으로 부르고, 계획 밖 공부는 진도 수정 + 재분배로 처리한다.
+**요구사항 C (2026-11-12 사용자 요청)**: 채팅으로 "나 ~ 완료했어"처럼 보고하면 LLM이 이해해 오늘의 분량 상태(`daily_tasks.status`)와 진도(`books.current_round`·`current_unit`)에 반영한다. 오늘의 분량이 아닌 공부(다른 교재, 앞서 나간 분량)도 진도에 반영한다. **채팅 보고는 진도만 바꾸고 계획을 바로 다시 나누지 않는다**(2026-11-13 사용자 결정, [묶음 C 설계](../specs/2026-11-13-study-time-heatmap-design.md) C1). 다른 날 계획은 매일 새벽 밤 재분배(아침 알림 단계에서 구현, 그 전에는 앱을 열 때 이월)에서 맞춰진다. 화면 체크박스로 완료하는 경로(묶음 B)와 같은 반영 함수를 쓴다: DB 함수 `public.set_task_done(p_task_id uuid, p_done boolean)`(마이그레이션 `20261113011208_set_task_done.sql`, `chat` 함수는 사용자 토큰으로 `rpc('set_task_done', { p_task_id, p_done })`). 보고한 범위에 맞는 오늘 분량이 있으면 그 분량으로 부르고, 계획 밖 공부는 진도만 고친다.
+
+**순공시간 보고 (2026-11-13 사용자 요청)**: "오늘 순공 3시간 20분"을 DB 함수 `record_study_time`으로 저장한다. 의도·날짜 규칙·답장은 [묶음 C 설계](../specs/2026-11-13-study-time-heatmap-design.md) "C2. 순공시간"을 따른다.
 
 ---
 
