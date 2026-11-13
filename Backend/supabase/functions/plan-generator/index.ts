@@ -55,6 +55,7 @@ export default {
 
     // 교재는 잠금 밖에서 읽는다. 두 탭에서 거의 동시에 부르면 먼저 읽은 쪽이 나중에 교체해 낡은 계획이 남을 수 있지만
     // (같은 줄이 두 번 생기지는 않는다), 다음 저장 때 다시 나눠져 맞춰진다. 한 화면 안의 교재 변경은 useBooks가 순서대로 부른다
+    // 오늘 끝낸 교재의 오늘 줄은 replace_daily_tasks가 잠금 안에서 한 번 더 거른다
 
     const { data: books, error: booksError } = await supabase
       .from("books")
