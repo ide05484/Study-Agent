@@ -101,9 +101,10 @@ export function useTodayTasks(date: string): TodayTasks {
         updateSaving((ids) => ids.delete(taskId))
         load()
       } catch {
-        setStatus(before)
+        setStatus(before) // 다시 불러오기가 실패할 때를 위한 임시 값
         updateSaving((ids) => ids.delete(taskId))
         setToggleError(TOGGLE_ERROR_MESSAGE)
+        load() // 서버 상태(연쇄로 바뀐 줄, 사라진 분량)에 맞춘다
       }
     },
     [applyTasks, updateSaving, load],
