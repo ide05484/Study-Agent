@@ -181,6 +181,7 @@ function CatalogColumn({ themeClass, idPrefix }: CatalogColumnProps) {
   const [date, setDate] = useState('')
   const [unit, setUnit] = useState('session')
   const [modalOpen, setModalOpen] = useState(false)
+  const [sheetOpen, setSheetOpen] = useState(false)
 
   return (
     <div className={`${themeClass} min-w-0 flex-1 bg-bg px-4 py-6 text-fg`}>
@@ -277,6 +278,7 @@ function CatalogColumn({ themeClass, idPrefix }: CatalogColumnProps) {
             <div className="flex gap-2">
               <IconButton icon="plus" label="예시 추가" />
               <IconButton icon="kebab" label="예시 더보기" />
+              <IconButton icon="close" label="예시 닫기" />
               <IconButton icon="plus" label="예시 비활성" disabled />
             </div>
           </Section>
@@ -324,6 +326,24 @@ function CatalogColumn({ themeClass, idPrefix }: CatalogColumnProps) {
               }
             >
               <p className="text-muted">Esc를 누르거나 닫기를 누르면 닫혀요. 바깥을 눌러서는 닫히지 않아요.</p>
+            </Modal>
+            <Button type="button" variant="ghost" onClick={() => setSheetOpen(true)}>
+              시트 열기
+            </Button>
+            <Modal
+              variant="sheet"
+              open={sheetOpen}
+              title="예시 시트"
+              titleAside="1/4"
+              onClose={() => setSheetOpen(false)}
+            >
+              <ul>
+                {[1, 2, 3, 4, 5, 6].map((n) => (
+                  <li key={n} className="border-b border-line py-6 text-muted last:border-b-0">
+                    긴 목록 예시 줄 {n}
+                  </li>
+                ))}
+              </ul>
             </Modal>
           </Section>
 
