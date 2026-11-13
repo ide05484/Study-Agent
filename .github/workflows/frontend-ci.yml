@@ -1,0 +1,29 @@
+# Frontend 변경 시 린트·빌드 검증. 실제 배포는 Vercel GitHub 연동이 담당한다.
+name: Frontend CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths: ['Frontend/**', '.github/workflows/frontend-ci.yml']
+  pull_request:
+    paths: ['Frontend/**']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: Frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+        env:
+          VITE_SUPABASE_URL: http://127.0.0.1:54321
+          VITE_SUPABASE_PUBLISHABLE_KEY: ci-placeholder

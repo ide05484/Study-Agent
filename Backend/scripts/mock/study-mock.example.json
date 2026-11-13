@@ -1,0 +1,19 @@
+{
+  "exam_date": "2027-06-19",
+  "books": [
+    { "subject": "korean", "title": "국어 올인원 기본서", "unit": "session", "total_units": 60, "current_round": 1, "current_unit": 57, "target_rounds": 3, "daily_amount": null, "round_targets": ["2026-11-30"] },
+    { "subject": "korean", "title": "쉬운국어 한 권으로 끝", "unit": "session", "total_units": 30, "current_round": 1, "current_unit": 0, "target_rounds": 1, "daily_amount": null, "round_targets": [] },
+    { "subject": "english", "title": "영어 올인원 기본서 (전3권)", "unit": "session", "total_units": 60, "current_round": 1, "current_unit": 21, "target_rounds": 3, "daily_amount": null, "round_targets": ["2027-01-31"] },
+    { "subject": "english", "title": "영어 매일 하프모의고사 20회분", "unit": "session", "total_units": 20, "current_round": 1, "current_unit": 0, "target_rounds": 1, "daily_amount": null, "round_targets": [] },
+    { "subject": "english", "title": "영어 단어 (1·2권)", "unit": "day", "total_units": 60, "current_round": 1, "current_unit": 0, "target_rounds": 4, "daily_amount": 1, "round_targets": [] },
+    { "subject": "public_health", "title": "공중보건 기본서 (전2권)", "unit": "session", "total_units": 60, "current_round": 1, "current_unit": 24, "target_rounds": 3, "daily_amount": null, "round_targets": [] },
+    { "subject": "public_health", "title": "공중보건 실전동형모의고사", "unit": "session", "total_units": 15, "current_round": 1, "current_unit": 0, "target_rounds": 1, "daily_amount": null, "round_targets": [] },
+    { "subject": "health_admin", "title": "보건행정 기본서", "unit": "session", "total_units": 60, "current_round": 1, "current_unit": 15, "target_rounds": 3, "daily_amount": null, "round_targets": [] },
+    { "subject": "health_admin", "title": "보건행정 실전동형모의고사", "unit": "session", "total_units": 15, "current_round": 1, "current_unit": 0, "target_rounds": 1, "daily_amount": null, "round_targets": [] }
+  ],
+  "exams": [
+    { "kind": "official", "name": "2024 지방직 9급", "taken_on": "2024-06-22", "scores": { "korean": 70, "english": 45, "public_health": 50, "health_admin": 45 } },
+    { "kind": "official", "name": "2025 지방직 9급", "taken_on": "2025-06-21", "scores": { "korean": 72, "english": 48, "public_health": 57, "health_admin": 50 } },
+    { "kind": "mock", "name": "해커스 모의고사", "taken_on": "2026-10-09", "scores": { "korean": 78, "english": 56, "public_health": 62, "health_admin": 58 } }
+  ]
+}
