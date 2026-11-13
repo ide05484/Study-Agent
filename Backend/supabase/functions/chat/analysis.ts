@@ -125,7 +125,9 @@ function parseEntry(v: unknown, books: BookRef[]): StudyEntry | null {
 
   let start = intAtLeast(v.start_unit, 1);
   let end = intAtLeast(v.end_unit, 1);
-  if (start !== null && end !== null && start > end) [start, end] = [end, start];
+  if (start !== null && end !== null && start > end) {
+    [start, end] = [end, start];
+  }
   if (book) {
     if (start !== null && start > book.total_units) start = null;
     if (end !== null && end > book.total_units) end = null;
