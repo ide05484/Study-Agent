@@ -2,13 +2,19 @@
 // 오늘부터의 미진행(pending) daily_tasks를 지우고, 교재별 남은 분량(목표 회독까지)을 시험 전날까지 날짜별로 다시 나눈다.
 // 지우기·넣기는 DB 함수 replace_daily_tasks가 한 트랜잭션으로 하고, 사용자별 잠금으로 겹친 호출을 순서대로 처리한다.
 // 나누는 규칙은 _shared/plan.ts의 planBook을 따른다(회독별 목표일, 하루 최소 분량, 마지막 주 상한).
-// 이미 진행한 계획(done/partial)과 지난 날짜의 계획은 그대로 둔다.
+// 이미 진행한 계획(done/partial)은 그대로 두고, 지난 날짜의 미진행 계획은 skipped(못 해서 뒤로 넘김)로 바꾼다.
+// 오늘 이미 분량을 끝낸(done/partial) 교재는 내일부터 나눈다(planBookFromTomorrow). 오늘 분량이 또 생기지 않게 한다.
 // 응답 형식은 Frontend/src/interfaces/plan.ts의 `PlanResponse`를 따른다.
 
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { withSupabase } from "@supabase/server";
 import { addDays, diffDays, toDateKey } from "../_shared/date.ts";
-import { LAST_WEEK_DAYS, type PlanBook, planBook } from "../_shared/plan.ts";
+import {
+  LAST_WEEK_DAYS,
+  type PlanBook,
+  planBook,
+  planBookFromTomorrow,
+} from "../_shared/plan.ts";
 
 interface BookRow extends PlanBook {
   round_targets: (string | null)[]; // 회독별 목표일, null은 목표일 없음
@@ -71,8 +77,19 @@ export default {
       }
     }
 
+    // 오늘 이미 끝낸(done/partial) 분량이 있는 교재
+    const { data: doneToday, error: doneError } = await supabase
+      .from("daily_tasks")
+      .select("book_id")
+      .eq("task_date", today)
+      .in("status", ["done", "partial"]);
+    if (doneError) return errorResponse(doneError.message);
+    const doneBookIds = new Set(
+      (doneToday as { book_id: string }[]).map((row) => row.book_id),
+    );
+
     const tasks = (books as BookRow[]).flatMap((book) =>
-      planBook(book, {
+      (doneBookIds.has(book.id) ? planBookFromTomorrow : planBook)(book, {
         days,
         targetDays: book.round_targets.map((date) =>
           date ? diffDays(today, date) : null

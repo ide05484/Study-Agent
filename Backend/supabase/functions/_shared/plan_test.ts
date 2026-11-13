@@ -1,5 +1,11 @@
-import { assertEquals } from "jsr:@std/assert";
-import { type PlanBook, planBook, type PlanOptions } from "./plan.ts";
+import { assert, assertEquals } from "jsr:@std/assert";
+import {
+  type PlanBook,
+  planBook,
+  planBookFromTomorrow,
+  type PlannedTask,
+  type PlanOptions,
+} from "./plan.ts";
 
 const book = (o: Partial<PlanBook>): PlanBook => ({
   id: "b",
@@ -240,4 +246,52 @@ Deno.test("목표일이 오늘이면 그 회독의 남은 분량을 오늘에 �
     )[0],
     t(0, 1, 5, 10),
   );
+});
+
+// 오늘 이미 끝낸 교재는 내일부터 나눈다(planBookFromTomorrow)
+const sumUnits = (tasks: PlannedTask[]) =>
+  tasks.reduce((sum, task) => sum + task.end_unit - task.start_unit + 1, 0);
+const fresh60 = book({ total_units: 60 });
+
+Deno.test("내일부터 나누면 오늘(0일째) 분량이 없다", () => {
+  const tasks = planBookFromTomorrow(fresh60, opts(30));
+  assert(tasks.length > 0 && tasks.every((task) => task.day >= 1));
+  assertEquals(sumUnits(tasks), 60); // 남은 분량은 그대로 다 나눈다
+});
+
+Deno.test("남은 날이 오늘뿐이면 빈 배열", () => {
+  assertEquals(planBookFromTomorrow(fresh60, opts(1)), []);
+});
+
+Deno.test("내일부터 나눠도 마지막 주 상한은 같은 날짜에 걸린다", () => {
+  // days 10 → D-7은 3일째. 남은 30, 상한 1
+  const tasks = planBookFromTomorrow(
+    book({ total_units: 30 }),
+    opts(10, [], 1),
+  );
+  assert(tasks.every((task) => task.day >= 1));
+  for (const task of tasks.filter((task) => task.day >= 3)) {
+    assert(
+      task.end_unit - task.start_unit + 1 <= 1,
+      `${task.day}일째 상한 넘음`,
+    );
+  }
+  // 상한이 3일째부터 걸리므로 1·2일째에 상한 없이 나눈 분량이 있다
+  assert(
+    tasks.some((task) =>
+      task.day < 3 && task.end_unit - task.start_unit + 1 > 1
+    ),
+  );
+});
+
+Deno.test("목표일 날짜도 하루 당겨 계산한다", () => {
+  // 10일째가 1회독 목표일 → 1회독은 10일째까지, 2회독은 그 뒤
+  const tasks = planBookFromTomorrow(
+    book({ total_units: 60, target_rounds: 2 }),
+    opts(30, [10]),
+  );
+  const round1 = tasks.filter((task) => task.round === 1);
+  assertEquals(sumUnits(round1), 60);
+  assertEquals(Math.max(...round1.map((task) => task.day)), 10);
+  assert(tasks.every((task) => task.day >= 1));
 });

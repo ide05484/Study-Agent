@@ -141,3 +141,20 @@ export function planBook(book: PlanBook, options: PlanOptions): PlannedTask[] {
   }
   return tasks;
 }
+
+// 오늘 이미 분량을 끝낸 교재는 내일(1일째)부터 나눈다. 하루 수와 목표일 날짜 수를 하루씩 당겨 planBook을 부르고
+// 날짜를 하루 민다. 그래서 마지막 주 상한은 같은 날짜에 걸리고, 목표일이 오늘인 회독은 지난 목표일(14일 유예)이 된다.
+// 남은 날이 오늘뿐(days <= 1)이면 나눌 날이 없다
+export function planBookFromTomorrow(
+  book: PlanBook,
+  options: PlanOptions,
+): PlannedTask[] {
+  if (options.days <= 1) return [];
+  return planBook(book, {
+    days: options.days - 1,
+    targetDays: options.targetDays.map((target) =>
+      target === null ? null : target - 1
+    ),
+    lastWeekCap: options.lastWeekCap,
+  }).map((task) => ({ ...task, day: task.day + 1 }));
+}
