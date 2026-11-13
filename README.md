@@ -171,15 +171,15 @@ erDiagram
         uuid id PK
         enum subject
         text title
-        int total_pages
-        int current_page
+        int total_units
+        int current_unit
     }
     daily_tasks {
         uuid id PK
         uuid book_id FK
         date task_date
-        int start_page
-        int end_page
+        int start_unit
+        int end_unit
         enum status
     }
     study_logs {

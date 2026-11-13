@@ -116,8 +116,12 @@ PWA(서비스워커, 설치, 푸시)는 `npm run dev`에서는 동작하지 않�
 
 ```bash
 npm run plan:preview -- --today 2026-11-10       # DB 없이 계획 계산 결과 보기
-npm run mock:sql -- <USER_ID> > <저장소 밖 경로>/study-mock.sql   # 한 사용자에게 넣을 SQL
+npm run --silent mock:sql -- <USER_ID> > <저장소 밖 경로>/study-mock.sql   # 한 사용자에게 넣을 SQL
+npx supabase db query --linked -f <저장소 밖 경로>/study-mock.sql      # 개발 프로젝트에 실행 (link 필요)
 ```
+
+- 미리보기는 회독마다 `목표일 → 끝나는 날`과 못 끝낸 분량을 보여 준다. `--today`를 시험 7일 전 이후로 주면 마지막 주 상한(D-8 분량)을 적용한 결과가 나온다.
+- SQL은 delete를 포함하므로 Supabase MCP `execute_sql`로는 막힌다. CLI `db query`나 대시보드 SQL Editor로 실행한다. `--silent`를 빼면 npm 안내 줄이 SQL 파일에 섞인다.
 
 - 원본은 `scripts/mock/study-mock.json`이다. 실제 점수가 들어 있어 git에 올리지 않는다(저장소가 공개). 없으면 가짜 값의 `study-mock.example.json`을 쓴다. 다른 파일을 쓰려면 경로를 인자로 준다.
 - **개발 프로젝트에서만 실행한다.** SQL은 그 사용자의 교재·계획·시험 기록을 지우고 다시 넣고, 시험일을 바꾼다. 채팅과 학습 기록은 그대로 둔다.

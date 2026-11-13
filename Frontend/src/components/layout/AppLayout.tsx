@@ -1,14 +1,20 @@
 import { useCallback, useState } from 'react'
 import { matchPath, Outlet, useLocation } from 'react-router'
+import { useCarryOver } from '../../hooks/useCarryOver.ts'
 import { useProfile } from '../../hooks/useProfile.ts'
 import { formatDateTitle, isDateKey, todayKey } from '../../libs/date.ts'
 import { MENU } from '../../libs/menu.ts'
+import DialogProvider from '../ui/DialogProvider.tsx'
 import AppHeader from './AppHeader.tsx'
+import OverdueTargetsModal from './OverdueTargetsModal.tsx'
 import Sidebar from './Sidebar.tsx'
 
 // 모든 화면 공통: 헤더(햄버거 / 제목 / D-day) + 본문, 햄버거로 여는 왼쪽 사이드바
 export default function AppLayout() {
   const profileState = useProfile()
+  const examDate = profileState.profile?.exam_date ?? null
+  // 앱을 열 때 지난 날짜에 못 끝낸 분량을 남은 날로 다시 나눈다(목표일 지남 창과 함께 돌아도 DB 잠금으로 차례로 돈다)
+  useCarryOver(examDate)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const closeSidebar = useCallback(() => setSidebarOpen(false), [])
   const { pathname } = useLocation()
@@ -17,12 +23,15 @@ export default function AppLayout() {
     <div className="relative mx-auto flex h-dvh max-w-[480px] flex-col overflow-hidden">
       <AppHeader
         title={pageTitle(pathname)}
-        examDate={profileState.profile?.exam_date ?? null}
+        examDate={examDate}
         sidebarOpen={sidebarOpen}
         onMenuClick={() => setSidebarOpen(true)}
       />
       <main className="min-h-0 flex-1 overflow-y-auto">
-        <Outlet context={profileState} />
+        <DialogProvider>
+          <Outlet context={profileState} />
+          <OverdueTargetsModal examDate={examDate} />
+        </DialogProvider>
       </main>
       <Sidebar open={sidebarOpen} onClose={closeSidebar} />
     </div>

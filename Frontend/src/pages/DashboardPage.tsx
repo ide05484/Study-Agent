@@ -5,6 +5,7 @@ import Chevron from '../components/ui/Chevron.tsx'
 import Notice from '../components/ui/Notice.tsx'
 import Section from '../components/ui/Section.tsx'
 import { useDashboard } from '../hooks/useDashboard.ts'
+import { withUnit } from '../libs/books.ts'
 import { SUBJECT_LABELS } from '../libs/subjects.ts'
 
 // 현재 공부상태: 공부 잔디 → 연속 공부 → 이번주 목표량 → 과목별 진도율 (영역은 괘선으로 구분)
@@ -43,7 +44,9 @@ export default function DashboardPage() {
               {data.weekly.map((goal) => (
                 <li key={goal.subject} className="flex justify-between">
                   <span className="text-muted">{SUBJECT_LABELS[goal.subject]}</span>
-                  <span className="tabular-nums">{goal.pages}쪽</span>
+                  <span className="tabular-nums">
+                    {goal.amounts.map(({ unit, amount }) => withUnit(unit, amount)).join(' · ')}
+                  </span>
                 </li>
               ))}
             </ul>

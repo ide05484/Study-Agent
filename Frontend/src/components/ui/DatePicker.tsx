@@ -7,7 +7,9 @@ interface DatePickerProps {
   label: string // 달력 창의 접근성 이름
   value: string // YYYY-MM-DD, 비어 있으면 ''
   minDate?: string // 이 날짜보다 앞은 고를 수 없다
+  maxDate?: string // 이 날짜보다 뒤는 고를 수 없다
   disabled?: boolean
+  invalid?: boolean // 폼 오류일 때 테두리를 danger로
   onChange: (value: string) => void
 }
 
@@ -25,6 +27,12 @@ const tileStateClass = {
   normal: 'enabled:hover:bg-surface',
 } as const
 
+// 두 문자열은 테두리 색만 다르다. 한쪽을 고치면 다른 쪽도 맞춘다
+const triggerClass =
+  'flex min-h-11 w-full items-center justify-between gap-2 rounded-xl border border-line bg-bg px-3 py-2 text-left tabular-nums disabled:opacity-60'
+const triggerInvalidClass =
+  'flex min-h-11 w-full items-center justify-between gap-2 rounded-xl border border-danger bg-bg px-3 py-2 text-left tabular-nums disabled:opacity-60'
+
 const navButtonClass = 'grid size-9 place-items-center rounded-full text-muted hover:bg-surface disabled:opacity-30'
 
 function monthStart(key: string): Date {
@@ -37,7 +45,16 @@ function shiftMonth(date: Date, months: number): Date {
 }
 
 // 구글 캘린더의 작은 달력처럼 날짜 칸을 원으로 그리는 날짜 선택. 입력 칸을 누르면 아래에 달력이 열린다
-export default function DatePicker({ id, label, value, minDate, disabled, onChange }: DatePickerProps) {
+export default function DatePicker({
+  id,
+  label,
+  value,
+  minDate,
+  maxDate,
+  disabled,
+  invalid = false,
+  onChange,
+}: DatePickerProps) {
   const [open, setOpen] = useState(false)
   const [viewMonth, setViewMonth] = useState(() => monthStart(value || todayKey()))
   const rootRef = useRef<HTMLDivElement>(null)
@@ -66,6 +83,8 @@ export default function DatePicker({ id, label, value, minDate, disabled, onChan
 
   function handleKeyDown(e: KeyboardEvent<HTMLDivElement>) {
     if (open && e.key === 'Escape') {
+      // 모달 안에서도 달력만 닫히도록 <dialog>의 cancel(Esc 기본 동작)을 막는다
+      e.preventDefault()
       e.stopPropagation()
       close()
     }
@@ -78,6 +97,7 @@ export default function DatePicker({ id, label, value, minDate, disabled, onChan
 
   const today = todayKey()
   const canGoPrev = !minDate || viewMonth > monthStart(minDate)
+  const canGoNext = !maxDate || viewMonth < monthStart(maxDate)
 
   function tileClassName({ date, view }: TileArgs): string[] | null {
     if (view !== 'month') return null
@@ -99,8 +119,9 @@ export default function DatePicker({ id, label, value, minDate, disabled, onChan
         ref={triggerRef}
         id={id}
         type="button"
-        className="flex min-h-11 w-full items-center justify-between gap-2 rounded-xl border border-line bg-bg px-3 py-2 text-left tabular-nums disabled:opacity-60"
+        className={invalid ? triggerInvalidClass : triggerClass}
         aria-haspopup="dialog"
+        aria-invalid={invalid || undefined}
         aria-expanded={open}
         aria-controls={dialogId}
         disabled={disabled}
@@ -135,6 +156,7 @@ export default function DatePicker({ id, label, value, minDate, disabled, onChan
                 type="button"
                 className={navButtonClass}
                 aria-label="다음 달"
+                disabled={!canGoNext}
                 onClick={() => setViewMonth(shiftMonth(viewMonth, 1))}
               >
                 <ArrowIcon direction="next" />
@@ -153,6 +175,7 @@ export default function DatePicker({ id, label, value, minDate, disabled, onChan
             onActiveStartDateChange={handleActiveStartDateChange}
             value={value ? keyToLocalDate(value) : null}
             minDate={minDate ? keyToLocalDate(minDate) : undefined}
+            maxDate={maxDate ? keyToLocalDate(maxDate) : undefined}
             formatDay={(_locale, date) => String(date.getDate())}
             tileClassName={tileClassName}
             onClickDay={(date) => select(localDateToKey(date))}

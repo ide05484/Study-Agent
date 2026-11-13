@@ -1,4 +1,4 @@
-import type { ExamKind, MockExamScore } from '../interfaces/mockExam.ts'
+import type { ExamKind, MockExam, MockExamScore } from '../interfaces/mockExam.ts'
 import type { Subject } from '../interfaces/subject.ts'
 import { SUBJECT_LABELS, SUBJECTS } from './subjects.ts'
 
@@ -24,6 +24,26 @@ export function subjectScores(scores: MockExamScore[]): SubjectScore[] {
     label: SUBJECT_LABELS[subject],
     score: scores.find((s) => s.subject === subject)?.score ?? null,
   }))
+}
+
+export interface TrendPoint {
+  id: string
+  name: string
+  kind: ExamKind
+  taken_on: string
+  score: number
+}
+
+// 그 과목 점수가 있는 시험만 응시일 오래된 순으로(같은 날은 넘겨받은 순서를 뒤집어 먼저 넣은 시험이 앞)
+export function scoreTrend(exams: MockExam[], subject: Subject): TrendPoint[] {
+  const points: TrendPoint[] = []
+  for (const exam of exams) {
+    const score = exam.scores.find((s) => s.subject === subject)?.score
+    if (score === undefined) continue
+    points.push({ id: exam.id, name: exam.name, kind: exam.kind, taken_on: exam.taken_on, score })
+  }
+  // exams는 최신순(응시일, 등록일 내림차순)이므로 뒤집은 뒤 응시일로 안정 정렬한다
+  return points.reverse().sort((a, b) => a.taken_on.localeCompare(b.taken_on))
 }
 
 // 넣은 과목만 더한 총점과 만점(과목 수 × 100). 소수는 둘째 자리까지

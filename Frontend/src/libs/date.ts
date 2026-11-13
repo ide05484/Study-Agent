@@ -55,9 +55,21 @@ export function formatDateTitle(key: string): string {
   return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일 (${WEEKDAYS[d.getUTCDay()]})`
 }
 
+// 연도와 요일 없이. 예) 12월 31일
+export function formatMonthDay(key: string): string {
+  const d = parseKey(key)
+  return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일`
+}
+
 // 예) 2027년 2월 27일 (토)
 export function formatFullDate(key: string): string {
   return `${key.slice(0, 4)}년 ${formatDateTitle(key)}`
+}
+
+// 그래프 축처럼 좁은 곳에 쓰는 짧은 날짜. 예) 2026-10-09 → 26.10.9
+export function formatShortDate(key: string): string {
+  const [year, month, day] = key.split('-')
+  return `${year.slice(2)}.${Number(month)}.${Number(day)}`
 }
 
 // 달력(react-calendar)은 브라우저 시간대의 Date를 다루므로, 날짜 키와는 연·월·일 값으로만 바꾼다

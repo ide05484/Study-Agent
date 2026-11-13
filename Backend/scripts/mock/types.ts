@@ -4,14 +4,16 @@ import type { Subject } from "../../supabase/functions/_shared/subjects.ts";
 export interface MockBook {
   subject: Subject;
   title: string;
-  unit: "page" | "day";
-  // unit 단위의 총량(Day 교재면 Day 수)
-  total_pages: number;
+  unit: "day" | "chapter" | "session";
+  // unit 단위의 총량(Day·챕터·회차 수)
+  total_units: number;
   current_round: number;
-  current_page: number;
+  current_unit: number;
   target_rounds: number;
-  // null이면 시험 전날까지 고르게 나눈다
+  // 하루 최소 분량. null이면 목표일(없으면 시험 전날)까지 고르게 나눈다
   daily_amount: number | null;
+  // 회독별 목표일(YYYY-MM-DD). n번째 값이 n회독 목표일, null은 목표일 없음. 생략하면 []
+  round_targets?: (string | null)[];
 }
 
 export interface MockExamInput {

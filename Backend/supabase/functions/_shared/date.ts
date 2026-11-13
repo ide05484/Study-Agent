@@ -21,5 +21,7 @@ export function addDays(key: string, days: number): string {
 }
 
 export function diffDays(from: string, to: string): number {
-  return Math.round((parseKey(to).getTime() - parseKey(from).getTime()) / DAY_MS);
+  return Math.round(
+    (parseKey(to).getTime() - parseKey(from).getTime()) / DAY_MS,
+  );
 }

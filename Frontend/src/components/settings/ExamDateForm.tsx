@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { useAlert, useProgress } from '../../hooks/useDialog.ts'
 import { addDays, todayKey } from '../../libs/date.ts'
 import { toErrorMessage } from '../../libs/errors.ts'
 import Button from '../ui/Button.tsx'
@@ -8,24 +9,32 @@ import Notice from '../ui/Notice.tsx'
 interface ExamDateFormProps {
   examDate: string | null
   disabled: boolean
+  // 저장하고 계획을 다시 나눈 뒤 결과 안내 문구를 돌려준다. 실패하면 오류를 던진다
   onSave: (examDate: string | null) => Promise<string>
 }
 
+// 시험일 저장은 계획 전체를 다시 나누므로 기다리는 동안 진행 창을 띄우고, 끝나면 결과 창으로 알린다
 export default function ExamDateForm({ examDate, disabled, onSave }: ExamDateFormProps) {
   const [draft, setDraft] = useState(examDate ?? '')
   const [saving, setSaving] = useState(false)
-  const [notice, setNotice] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const progress = useProgress()
+  const alert = useAlert()
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    if (saving) return
     setSaving(true)
-    setNotice(null)
-    setError(null)
     try {
-      setNotice(await onSave(draft || null))
+      const message = await progress(
+        {
+          title: '계획을 나누는 중이에요',
+          message: '시험일에 맞춰 날짜별 분량을 다시 나누고 있어요. 잠시만 기다려 주세요.',
+        },
+        () => onSave(draft || null),
+      )
+      await alert({ title: '계획을 세웠어요', message })
     } catch (err) {
-      setError(toErrorMessage(err))
+      await alert({ title: '계획을 세우지 못했어요', message: toErrorMessage(err) })
     } finally {
       setSaving(false)
     }
@@ -50,16 +59,6 @@ export default function ExamDateForm({ examDate, disabled, onSave }: ExamDateFor
       {disabled && (
         <div className="col-span-full">
           <Notice>로그인 후 설정할 수 있어요.</Notice>
-        </div>
-      )}
-      {notice && (
-        <div className="col-span-full">
-          <Notice>{notice}</Notice>
-        </div>
-      )}
-      {error && (
-        <div className="col-span-full">
-          <Notice tone="error">{error}</Notice>
         </div>
       )}
     </form>

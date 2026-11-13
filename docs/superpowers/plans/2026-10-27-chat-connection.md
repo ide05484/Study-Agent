@@ -44,6 +44,25 @@
 
 리뷰에서 나온 지적과 처리 결과도 History에 남긴다.
 
+## 2단계 반영: Task 3~7 시작 전에 고칠 것 (2026-11-12 추가)
+
+이 계획은 2단계([2026-11-10-study-data.md](2026-11-10-study-data.md)) 전에 썼다. 2단계에서 `books`에 `unit`(`page`/`day`)·`target_rounds`·`current_round`·`daily_amount`, `daily_tasks`에 `round`가 생겼고, 진도는 "몇 회독째 + 어디까지"가 됐다. 회독 기준 완료 분량은 Backend `_shared/plan.ts`의 `completedUnits`, Frontend `libs/books.ts`의 `completedUnits`·`progressLabel`이 같은 식으로 계산한다. 계획 교체는 DB 함수 `replace_daily_tasks`가 한다. Task 3~7을 시작할 때 아래를 먼저 계획에 반영하고 사용자와 정한다(브랜치 리뷰 task-reviewer 정리, [History](../../../History/2026-11-10-공부-데이터-채우기.md) "push와 PR").
+
+**2026-11-12 묶음 A 이후 바뀐 것**([설계](../specs/2026-11-12-book-units-and-targets-design.md)): 쪽 단위가 없어지고 단위는 `day`·`chapter`·`session`(회차)이다. 칸 이름이 `books.total_units`·`current_unit`, `daily_tasks`·`study_logs`의 `start_unit`·`end_unit`으로 바뀌었다(이 계획 본문의 `*_page`는 모두 `*_unit`으로 읽는다). `books.round_targets`(회독별 목표일)가 생겼고 `daily_amount`는 하루 **최소** 분량이다. 화면 표기는 `12–14회`, `3–4챕터`, `Day 3–4`, 진도 `1/3회독 21/60회`(`libs/books.ts`의 `withUnit`·`rangeLabel`·`progressLabel`).
+
+| Task | 바꿀 곳 | 정할 것 |
+|---|---|---|
+| 3 | `BookRef`에 `unit`·`current_round`·`target_rounds`를 더하고, 테스트 데이터와 분석 지시문의 교재 목록(진도 표기)에도 넣는다. 학습 기록 예시를 쪽이 아니라 회차·챕터·Day로("보건행정 기본서 15~17강") | "Day 12까지", "17강까지"를 `end_unit`으로 받는 규칙 |
+| 4 | `nextCurrentUnit`(옛 `nextCurrentPage`)은 같은 회독 안에서만 `max`를 쓴다. 회독 끝을 넘거나 다음 회독 앞부분을 보고하면 `current_round`도 바뀐다(`completedUnits` 기준으로 비교). `taskStatusAfter`·`recordStudyLogs`는 회독 경계 날 같은 교재가 두 줄(`round`가 다름)인 경우를 구분한다 | 보고한 범위가 지금 회독인지 다음 회독인지 판단 규칙 |
+| 5 | `subjectPercents` = `round(Σ완료 / Σ(target_rounds × total_units) × 100)`(Frontend `useDashboard`의 `buildSubjects`와 같은 식). `CoachContext.books`에 회독·단위·목표일과 표기(`1/3회독 21/60회`, `Day 12/60`, `2회독 목표 12월 31일`)를 넣는다 | |
+| 6 | `loadProfileAndBooks`의 조회 칸에 새 칸을 더한다. 채팅 보고로 진도가 바뀌어도 계획은 바로 다시 나누지 않는다(요구사항 C, 2026-11-13 변경. 다음 계획은 밤 재분배·앱 열 때 이월에서 맞춰짐) | |
+| 6·7 | 검증 시나리오의 기대값이 Mock 데이터에서 달라진다(기본서는 각 60회, 보건행정 기본서는 15회까지 진행). 시나리오 교재·회차를 Mock에 맞게 바꾼다 | |
+| 미룬 채팅 교재 추가 | `NewBook`의 새 칸(`unit`, `target_rounds`, `daily_amount`, `round_targets`)을 채팅에서 받을지. 교재명은 DB check `books_title_length`로 앞뒤 공백을 뺀 1~20자만 들어간다(2026-11-12) | 긴 교재명을 LLM이 줄일지, 되물을지 |
+
+**요구사항 C (2026-11-12 사용자 요청)**: 채팅으로 "나 ~ 완료했어"처럼 보고하면 LLM이 이해해 오늘의 분량 상태(`daily_tasks.status`)와 진도(`books.current_round`·`current_unit`)에 반영한다. 오늘의 분량이 아닌 공부(다른 교재, 앞서 나간 분량)도 진도에 반영한다. **채팅 보고는 진도만 바꾸고 계획을 바로 다시 나누지 않는다**(2026-11-13 사용자 결정, [묶음 C 설계](../specs/2026-11-13-study-time-heatmap-design.md) C1). 다른 날 계획은 매일 새벽 재분배(아침 알림 단계에서 구현, 그때까지는 앱을 열 때 이월이 대신함)에서 맞춰진다. 화면 체크박스로 완료하는 경로(묶음 B)와 같은 반영 함수를 쓴다: DB 함수 `public.set_task_done(p_task_id uuid, p_done boolean)`(마이그레이션 `20261113011208_set_task_done.sql`, `chat` 함수는 사용자 토큰으로 `rpc('set_task_done', { p_task_id, p_done })`). 보고한 범위에 맞는 오늘 분량이 있으면 그 분량으로 부르고, 계획 밖 공부는 진도만 고친다.
+
+**순공시간 보고 (2026-11-13 사용자 요청)**: "오늘 순공 3시간 20분"을 DB 함수 `record_study_time`으로 저장한다. 의도·날짜 규칙·답장은 [묶음 C 설계](../specs/2026-11-13-study-time-heatmap-design.md) "C2. 순공시간"을 따른다.
+
 ---
 
 ### Task 1: 개발 프로젝트 연결과 DB 타입
@@ -199,6 +218,8 @@ git commit -m "feat: 카카오 로그인과 인증 가드"
 
 ### Task 3: 메시지 분석 결과 검증 (Deno 테스트 도입)
 
+> 시작 전에 위 "2단계 반영" 표의 Task 3 줄(`BookRef`의 회독·단위)을 반영한다.
+
 **Files:**
 - Create: `Backend/supabase/functions/chat/analysis.ts`, `Backend/supabase/functions/chat/analysis_test.ts`
 - Modify: `Backend/package.json` (devDependency `deno`, 스크립트 `test`), `CLAUDE.md` ("테스트 프레임워크는 아직 없다" → Backend 테스트 명령)
@@ -304,6 +325,8 @@ git commit -m "feat: chat 메시지 분석 결과 검증과 Deno 테스트"
 
 ### Task 4: 학습 기록 반영 계산
 
+> 시작 전에 위 "2단계 반영" 표의 Task 4 줄(회독 경계를 넘는 진도, 회독별 두 줄)을 반영한다. 아래 `nextCurrentPage`·`taskStatusAfter` 식과 테스트는 회독 이전 기준이다.
+
 **Files:**
 - Create: `Backend/supabase/functions/chat/study-log.ts`, `Backend/supabase/functions/chat/study-log_test.ts`, `Backend/supabase/functions/_shared/date_test.ts`
 
@@ -362,6 +385,8 @@ git commit -m "feat: 학습 기록의 진도·오늘 분량 반영 계산"
 ---
 
 ### Task 5: 코치 컨텍스트와 답변 문구
+
+> 시작 전에 위 "2단계 반영" 표의 Task 5 줄(`subjectPercents` 식, 회독 표기)을 반영한다. 아래 `subjectPercents` 식은 회독 이전 기준이다.
 
 **Files:**
 - Create: `Backend/supabase/functions/_shared/coach.ts`, `Backend/supabase/functions/chat/context.ts`, `Backend/supabase/functions/chat/context_test.ts`, `Backend/supabase/functions/chat/reply.ts`, `Backend/supabase/functions/chat/reply_test.ts`
@@ -463,6 +488,8 @@ git commit -m "feat: 코치 컨텍스트와 답변 지침"
 
 ### Task 6: `chat` Edge Function 연결과 배포
 
+> 시작 전에 위 "2단계 반영" 표의 Task 6·6·7 줄(조회 칸, 재분배 여부, 검증 시나리오 기대값)을 반영한다.
+
 **Files:**
 - Create: `Backend/supabase/functions/chat/llm.ts`, `Backend/supabase/functions/chat/db.ts`
 - Modify: `Backend/supabase/functions/chat/index.ts` (템플릿 전부 교체), `Backend/supabase/functions/chat/deno.json`, `Backend/supabase/functions/_shared/openai.ts`, `Frontend/src/interfaces/chat.ts`, `CLAUDE.md`, `SERVICE_FLOW.md`
@@ -516,7 +543,7 @@ curl -s -X POST "https://ishtebcswgyagbbaakpx.supabase.co/functions/v1/chat" \
 ```
 Expected: `messages[1].content`가 `USAGE_GUIDE`와 같고 `"logged":false`.
 같은 방식으로 `{"content":""}` → 400 `invalid_content`.
-검증용 계정은 화면에 로그인할 수 없으므로 데이터는 Table Editor로 넣는다: `profiles.exam_date`를 2027-02-27로 두고(교재는 Task 1 Step 4.5에서 넣은 해커스 교재 8권), 같은 토큰으로 `plan-generator`를 호출해 오늘 분량을 만든다. 그다음 `{"content":"보건행정 기본서 30~70p, 기출 20문제 중 5개 틀림"}` → `"logged":true`, 대시보드 Table Editor에서 `study_logs` 1행(`study_date` = 오늘 한국 날짜), "해커스공무원 최성희 보건행정 기본서"의 `current_page = 70`. 보건행정 교재가 2권이므로 교재명 없이 "보건행정 30~70p"만 보내면 `book_id`가 비고 진도는 그대로여야 한다(Review Focus 3)는 것도 함께 확인한다.
+검증용 계정은 화면에 로그인할 수 없으므로 데이터는 Table Editor로 넣는다: `profiles.exam_date`를 2027-02-27로 두고(교재는 Task 1 Step 4.5에서 넣은 해커스 교재 8권), 같은 토큰으로 `plan-generator`를 호출해 오늘 분량을 만든다. 그다음 `{"content":"보건행정 기본서 30~70p, 기출 20문제 중 5개 틀림"}` → `"logged":true`, 대시보드 Table Editor에서 `study_logs` 1행(`study_date` = 오늘 한국 날짜), "보건행정 기본서"(2026-11-12 Mock 제목을 짧게 바꿈)의 `current_page = 70`. 보건행정 교재가 2권이므로 교재명 없이 "보건행정 30~70p"만 보내면 `book_id`가 비고 진도는 그대로여야 한다(Review Focus 3)는 것도 함께 확인한다.
 
 - [ ] **Step 4: 문서 갱신**
 
@@ -533,6 +560,8 @@ git commit -m "feat: chat Edge Function 의도 분류·학습 기록·코치 답
 ---
 
 ### Task 7: 프론트엔드 채팅 연결
+
+> 시작 전에 위 "2단계 반영" 표의 6·7 줄(검증 시나리오 기대값)을 반영한다.
 
 **Files:**
 - Modify: `Frontend/src/hooks/useChat.ts`, `Frontend/src/hooks/useTodayTasks.ts`, `Frontend/src/components/chat/TodayPlan.tsx`, `Frontend/src/pages/ChatPage.tsx`, `Frontend/src/api/chat.ts`, `README.md`
