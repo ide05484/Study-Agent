@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { fetchBooks, fetchDailyTasks, fetchStudyDates, fetchStudyTime, fetchStudyTimeDates } from '../api/study.ts'
+import { fetchBooks, fetchDailyTasks, fetchStudyDates, fetchStudyTime } from '../api/study.ts'
 import type { Subject } from '../interfaces/subject.ts'
 import type { Book, BookUnit, DailyTaskWithBook } from '../interfaces/study.ts'
 import { completedUnits, isBookFinished } from '../libs/books.ts'
@@ -10,6 +10,8 @@ import { SUBJECTS } from '../libs/subjects.ts'
 
 // 공부 잔디 표시 기간 (480px 폭 기준)
 export const HEATMAP_WEEKS = 20
+// 연속 공부를 세는 최대 날 수(시험 주기 1년)
+const STREAK_MAX_DAYS = 365
 
 export type HeatLevel = 0 | 1 | 2 | 3 | 4
 
@@ -53,20 +55,25 @@ export function useDashboard(): { data: DashboardData | null; error: string | nu
 
     const heatEnd = addDays(thisWeek, 6)
 
+    // 연속 공부는 시험 주기(1년)까지만 센다. 학습 기록·순공시간은 이 기간을 한 번에 받아 잔디에도 쓴다
+    const streakStart = addDays(today, -(STREAK_MAX_DAYS - 1))
+    const from = streakStart < heatStart ? streakStart : heatStart
+
     Promise.all([
       fetchBooks(),
       fetchDailyTasks(heatStart, heatEnd),
-      fetchStudyDates(),
-      fetchStudyTime(heatStart, heatEnd),
-      fetchStudyTimeDates(),
+      fetchStudyDates(from, heatEnd),
+      fetchStudyTime(from, heatEnd),
     ])
-      .then(([books, tasks, studyDates, studyTime, studyTimeDates]) => {
+      .then(([books, tasks, studyDates, studyTime]) => {
         if (ignore) return
         const weekTasks = tasks.filter((t) => t.task_date >= thisWeek)
-        const heat = buildHeat(heatStart, today, tasks, new Set(studyDates), studyTime)
+        const studied = new Set(studyDates)
+        const heat = buildHeat(heatStart, today, tasks, studied, studyTime)
+        const studiedBeforeHeat = new Set([...studyDates, ...studyTime.map((row) => row.study_date)])
         setData({
           heat,
-          streak: countStreak(heat, today, new Set([...studyDates, ...studyTimeDates])),
+          streak: countStreak(heat, today, studiedBeforeHeat, streakStart),
           weekly: buildWeekly(weekTasks),
           weeklyDone: weekTasks.filter((t) => t.status === 'done').length,
           weeklyTotal: weekTasks.length,
@@ -114,11 +121,12 @@ function heatDay(date: string, minutes: number | undefined, tasks: DailyTaskWith
 }
 
 // 순공시간이나 점이 있는 날을 센다. 오늘이 비어 있으면 어제까지 이어진 날을 센다.
-// 잔디 첫날까지 이어지면 그 앞은 공부한 날짜(study_logs ∪ study_time)로 계속 센다
-function countStreak(heat: HeatDay[], today: string, studiedDates: Set<string>): number {
+// 잔디 첫날보다 앞은 공부한 날짜(study_logs ∪ study_time)로 이어 세고, start(1년 전)에서 멈춘다
+function countStreak(heat: HeatDay[], today: string, studiedDates: Set<string>, start: string): number {
   const byDate = new Map(heat.map((day) => [day.date, day]))
   const heatStart = heat[0].date
   const isStudied = (date: string) => {
+    if (date < start) return false
     if (date < heatStart) return studiedDates.has(date)
     const kind = byDate.get(date)?.kind
     return kind === 'time' || kind === 'dot'

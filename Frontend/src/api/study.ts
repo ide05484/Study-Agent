@@ -95,22 +95,23 @@ export async function fetchStudyTime(from: string, to: string): Promise<{ study_
   return data
 }
 
-// 순공시간이 있는 모든 날짜(연속 공부를 잔디 기간 밖까지 세는 데 쓴다)
-export async function fetchStudyTimeDates(): Promise<string[]> {
-  const { data, error } = await supabase
-    .from('study_time')
-    .select('study_date')
-    .order('study_date', { ascending: false })
-  if (error) throw error
-  return data.map((row) => row.study_date)
-}
+// PostgREST가 한 번에 돌려주는 최대 행 수. 이보다 많으면 range로 나눠 다시 요청한다
+const PAGE_SIZE = 1000
 
-// 학습 기록이 있는 날짜 목록
-export async function fetchStudyDates(): Promise<string[]> {
-  const { data, error } = await supabase
-    .from('study_logs')
-    .select('study_date')
-    .order('study_date', { ascending: false })
-  if (error) throw error
-  return [...new Set((data as { study_date: string }[]).map((row) => row.study_date))]
+// from ~ to (양 끝 포함) 기간에 학습 기록이 있는 날짜. 하루에 여러 줄이 쌓일 수 있어 1000줄씩 나눠 가져온다
+export async function fetchStudyDates(from: string, to: string): Promise<string[]> {
+  const dates = new Set<string>()
+  for (let offset = 0; ; offset += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from('study_logs')
+      .select('study_date')
+      .gte('study_date', from)
+      .lte('study_date', to)
+      .order('study_date', { ascending: false })
+      .order('id') // 나눠 가져올 때 순서가 흔들리지 않게
+      .range(offset, offset + PAGE_SIZE - 1)
+    if (error) throw error
+    for (const row of data) dates.add(row.study_date)
+    if (data.length < PAGE_SIZE) return [...dates]
+  }
 }
