@@ -78,7 +78,7 @@ function ChatRoom({ date, readOnly }: ChatRoomProps) {
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               maxLength={1000}
-              placeholder="예) 보건행정 30~70p, 기출 20문제 중 5개 틀림"
+              placeholder="예) 보건행정 기본서 15~17강, 기출 20문제 중 5개 틀림"
               aria-label="메시지 입력"
             />
             <button

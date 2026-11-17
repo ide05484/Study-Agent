@@ -206,4 +206,4 @@ Prettier로 맞춘다(`Frontend/.prettierrc.json`). 커밋 전에 `npm run forma
 
 확정한 규칙과 어긋나는 기존 코드다. 고치면 이 목록에서 지운다. Frontend 항목은 2026-11-06 정리 작업에서 모두 고쳤다(History 참고).
 
-- **템플릿 코드**: `Backend/supabase/functions/daily-briefing/index.ts`의 `console.log`와 영어 주석 (Task 6에서 교체 예정)
+- **템플릿 코드**: `Backend/supabase/functions/daily-briefing/index.ts`의 `console.log`와 영어 주석 (아침 알림 단계에서 교체 예정)

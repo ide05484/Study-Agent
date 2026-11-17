@@ -60,12 +60,11 @@ export function fallbackReply(
   ctx: CoachContext,
   savedTime: { total: number; date: string } | null = null,
 ): string {
-  const timeReply = savedTime
-    ? studyTimeReply(savedTime.total, savedTime.date, ctx.today)
-    : null;
   if (recorded.length === 0) {
-    if (timeReply) {
-      return `${timeReply} 질문 답변은 지금 만들지 못했어요. 잠시 후 다시 물어봐 주세요.`;
+    if (savedTime) {
+      return `${
+        studyTimeReply(savedTime.total, savedTime.date, ctx.today)
+      } 질문 답변은 지금 만들지 못했어요. 잠시 후 다시 물어봐 주세요.`;
     }
     return "지금은 답변을 만들지 못했어요. 잠시 후 다시 보내주세요.";
   }
@@ -77,8 +76,16 @@ export function fallbackReply(
       ? SUBJECT_LABELS[s]
       : `${SUBJECT_LABELS[s]} 진도 ${percent}%`;
   });
-  const logged = `기록했어요. ${progress.join(", ")}. 오늘도 수고했어요.`;
-  return timeReply ? `${logged} ${timeReply}` : logged;
+  // 순공시간도 저장했으면 인사가 두 번 나오지 않게 한 문장으로 합친다
+  if (savedTime) {
+    const day = savedTime.date === ctx.today
+      ? "오늘"
+      : monthDayLabel(savedTime.date);
+    progress.push(
+      `${day} 순공 ${formatMinutes(savedTime.total)}도 적어 뒀어요`,
+    );
+  }
+  return `기록했어요. ${progress.join(", ")}. 오늘도 수고했어요.`;
 }
 
 // 순공시간만 보낸 메시지에 대한 정해진 답
