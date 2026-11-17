@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
-import { fetchChatDates, fetchChatMessages, sendChatMessage } from '../api/chat.ts'
+import { fetchChatDates, fetchChatMessages, InvalidContentError, sendChatMessage } from '../api/chat.ts'
 import type { ChatMessage } from '../interfaces/chat.ts'
 import { todayKey } from '../libs/date.ts'
 import { toErrorMessage } from '../libs/errors.ts'
 
 export const PENDING_REPLY = '답변을 쓰고 있어요…'
 const SEND_ERROR = '메시지를 보내지 못했어요. 잠시 후 다시 보내주세요.'
+const INVALID_CONTENT_ERROR = '메시지를 보내지 못했어요. 1000자 안으로 적어 다시 보내 주세요.'
 
 export interface ChatState {
   messages: ChatMessage[]
@@ -54,9 +55,10 @@ export function useChat(date: string): ChatState {
       const response = await sendChatMessage(content)
       setMessages((prev) => [...prev.filter((m) => !isPending(m)), ...response.messages])
       return true
-    } catch {
+    } catch (e) {
+      console.error('채팅 전송 실패', e) // 오류 객체만 남기고 메시지 내용은 남기지 않는다
       setMessages((prev) => prev.filter((m) => !isPending(m)))
-      setError(SEND_ERROR)
+      setError(e instanceof InvalidContentError ? INVALID_CONTENT_ERROR : SEND_ERROR)
       return false
     } finally {
       setSending(false)
