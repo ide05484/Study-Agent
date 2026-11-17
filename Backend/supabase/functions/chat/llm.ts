@@ -9,18 +9,19 @@ import {
   type Intent,
   parseAnalysis,
 } from "./analysis.ts";
-import { type CoachContext, formatCoachContext } from "./context.ts";
+import {
+  type CoachContext,
+  formatCoachContext,
+  type HistoryMessage,
+} from "./context.ts";
 import { replyInstructions } from "./reply.ts";
 
 const ANALYZE_MAX_OUTPUT_TOKENS = 1500;
 const REPLY_MAX_OUTPUT_TOKENS = 2000;
-// SDK 기본 재시도(2번)를 끈다. 실패하면 analysis_failed나 대체 답변으로 끝낸다
-const REQUEST_OPTIONS = { maxRetries: 0 };
-
-export interface HistoryMessage {
-  role: "user" | "assistant";
-  content: string;
-}
+// SDK 기본 재시도(2번)를 끈다. 실패하면 analysis_failed나 대체 답변으로 끝낸다.
+// timeout(ms)은 함수가 끝나기 전에 대체 답변을 저장할 시간을 남기려고 둔다
+const ANALYZE_REQUEST_OPTIONS = { maxRetries: 0, timeout: 20_000 };
+const REPLY_REQUEST_OPTIONS = { maxRetries: 0, timeout: 30_000 };
 
 interface LlmResponse {
   status?: string;
@@ -62,6 +63,7 @@ subject: 메시지가 주로 다루는 과목. 없으면 null.
 
 entries: 공부한 분량 보고마다 하나. 보고가 없으면 빈 배열.
 - book_id: 아래 교재 목록의 id 중 하나. 어느 교재인지 알 수 없으면 null.
+  같은 과목 교재가 여러 권인데 메시지에 교재명이 없으면 null.
 - "15~17강" → start_unit 15, end_unit 17. "Day 12까지", "12강까지" → start_unit null, end_unit 12. "3챕터" → start_unit 3, end_unit 3.
 - 페이지처럼 교재 단위와 맞지 않는 숫자는 start_unit·end_unit에 넣지 않는다.
 - round: 몇 회독인지 메시지에서 말했을 때만 숫자, 아니면 null.
@@ -95,7 +97,7 @@ export async function analyzeMessage(
         schema: ANALYSIS_SCHEMA,
       },
     },
-  }, REQUEST_OPTIONS);
+  }, ANALYZE_REQUEST_OPTIONS);
   checkResponse("analyze", response);
   return parseAnalysis(JSON.parse(response.output_text), books);
 }
@@ -123,7 +125,7 @@ ${formatCoachContext(params.ctx)}`;
       ...params.history.map((m) => ({ role: m.role, content: m.content })),
       { role: "user" as const, content: params.content },
     ],
-  }, REQUEST_OPTIONS);
+  }, REPLY_REQUEST_OPTIONS);
   checkResponse("reply", response);
   const reply = response.output_text.trim();
   if (!reply) throw new Error("reply_empty");

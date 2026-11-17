@@ -118,7 +118,7 @@ Deno.test("뒤집힌 범위는 바꾸고 틀린 수가 푼 수보다 크면 버�
   assertEquals(a.entries[0].questions_wrong, null);
 });
 
-Deno.test("총량을 넘는 단위 수와 목표 밖 회독은 버린다", () => {
+Deno.test("총량을 넘는 단위 수는 버리고 목표 밖 회독은 남긴다", () => {
   const a = parseAnalysis(
     raw({
       entries: [
@@ -134,7 +134,8 @@ Deno.test("총량을 넘는 단위 수와 목표 밖 회독은 버린다", () =>
     books,
   );
   assertEquals(a.entries[0].end_unit, null);
-  assertEquals(a.entries[0].round, null);
+  // 범위 판정은 resolvePosition이 한다
+  assertEquals(a.entries[0].round, 3);
 });
 
 Deno.test("기록할 내용이 없는 study_log는 question으로 바꾼다", () => {

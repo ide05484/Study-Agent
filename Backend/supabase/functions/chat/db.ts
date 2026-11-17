@@ -4,9 +4,8 @@ import { addDays, dayStartUtc } from "../_shared/date.ts";
 import type { Subject } from "../_shared/subjects.ts";
 import type { BookUnit } from "../_shared/units.ts";
 import type { BookRef, StudyEntry, StudyTimeReport } from "./analysis.ts";
-import type { CoachContext, TaskStatus } from "./context.ts";
-import type { HistoryMessage } from "./llm.ts";
-import { resolvePosition } from "./progress.ts";
+import type { CoachContext, HistoryMessage, TaskStatus } from "./context.ts";
+import { advance, resolvePosition } from "./progress.ts";
 import type { RecordedLog } from "./reply.ts";
 
 type Client = SupabaseClient;
@@ -140,18 +139,22 @@ export async function recordStudyLogs(
   );
   fail(error);
 
-  // 같은 교재 보고가 여러 개면 DB 함수가 max로 모으므로 순서대로 부른다
+  // 같은 교재 보고가 여러 개면 DB 함수가 max로 모으므로 순서대로 부른다.
+  // 반영할 때마다 교재 진도 복사본도 DB와 같은 식으로 옮겨 다음 보고를 판단한다
+  // ("59~60강 끝내고 1~2강도 했어"의 두 번째 보고는 다음 회독이다)
+  const current = new Map(books.map((b) => [b.id, b]));
   for (const entry of entries) {
-    const book = books.find((b) => b.id === entry.book_id);
+    const book = entry.book_id ? current.get(entry.book_id) : undefined;
     const position = book ? resolvePosition(book, entry) : null;
-    if (!position) continue;
+    if (!book || !position) continue;
     const { error: rpcError } = await sb.rpc("report_progress", {
-      p_book_id: entry.book_id,
+      p_book_id: book.id,
       p_round: position.round,
       p_end_unit: position.end_unit,
       p_date: today,
     });
     fail(rpcError);
+    current.set(book.id, advance(book, position));
   }
 
   return entries.map((e) => ({
@@ -214,6 +217,7 @@ export async function loadCoachContext(
   fail(logsResult.error);
   fail(examsResult.error);
 
+  // 조인 결과 타입이 추론되지 않아 행 모양을 적어 둔다
   const todayTasks = (tasksResult.data as unknown as TaskRow[]).flatMap((t) =>
     t.books
       ? [{
@@ -229,6 +233,7 @@ export async function loadCoachContext(
       : []
   );
 
+  // 조인 결과 타입이 추론되지 않아 행 모양을 적어 둔다
   const recentLogs = (logsResult.data as unknown as LogRow[]).map((l) => ({
     study_date: l.study_date,
     subject: l.subject,
@@ -240,6 +245,7 @@ export async function loadCoachContext(
     questions_wrong: l.questions_wrong,
   }));
 
+  // 조인 결과 타입이 추론되지 않아 행 모양을 적어 둔다
   const mockExams = (examsResult.data as unknown as MockExamRow[]).map((m) => ({
     name: m.name,
     taken_on: m.taken_on,

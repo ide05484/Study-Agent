@@ -14,8 +14,8 @@ import {
   USAGE_GUIDE,
 } from "../_shared/coach.ts";
 import { studyTimeDate, toDateKey } from "../_shared/date.ts";
-import { formatMinutes } from "../_shared/units.ts";
-import type { Analysis } from "./analysis.ts";
+import type { Analysis, BookRef } from "./analysis.ts";
+import type { CoachContext } from "./context.ts";
 import {
   countTodayUserMessages,
   insertMessage,
@@ -26,7 +26,12 @@ import {
   saveStudyTime,
 } from "./db.ts";
 import { analyzeMessage, generateReply } from "./llm.ts";
-import { fallbackReply, type RecordedLog, studyTimeReply } from "./reply.ts";
+import {
+  fallbackReply,
+  type RecordedLog,
+  savedStudyTimeLabel,
+  studyTimeReply,
+} from "./reply.ts";
 
 const MAX_CONTENT_LENGTH = 1000;
 
@@ -45,7 +50,9 @@ export default {
     try {
       return await handleMessage(ctx.supabase, userId, content);
     } catch (e) {
-      return errorResponse(e instanceof Error ? e.message : String(e));
+      // DB 오류 원문은 로그에만 남기고 응답에는 고정 코드만 보낸다
+      console.error(JSON.stringify({ call: "handle", error: String(e) }));
+      return errorResponse("server_error");
     }
   }),
 };
@@ -135,6 +142,7 @@ async function handleMessage(
     today,
     timezone,
     examDate: profile.exam_date,
+    books,
     userMessageId: user.id,
   });
   if (recorded.length > 0 && studyTimeInvalid) {
@@ -164,6 +172,7 @@ async function buildReply(p: {
   today: string;
   timezone: string;
   examDate: string | null;
+  books: BookRef[];
   userMessageId: string;
 }): Promise<string> {
   const { intent } = p.analysis;
@@ -177,22 +186,35 @@ async function buildReply(p: {
     return studyTimeReply(p.savedTime.total, p.savedTime.date, p.today);
   }
 
-  const [ctx, history] = await Promise.all([
-    loadCoachContext(p.sb, p.today, p.examDate),
-    loadTodayHistory(p.sb, p.today, p.timezone, p.userMessageId),
-  ]);
+  // 저장은 끝났으므로 현황 조회나 답변 호출이 실패해도 500 대신 대체 답변을 돌려준다.
+  // 조회가 실패하면 처음에 읽은 교재만으로 대체 답변을 만든다
+  let ctx: CoachContext = {
+    today: p.today,
+    examDate: p.examDate,
+    books: p.books,
+    todayTasks: [],
+    recentLogs: [],
+    mockExams: [],
+  };
   try {
+    const [loaded, history] = await Promise.all([
+      loadCoachContext(p.sb, p.today, p.examDate),
+      loadTodayHistory(p.sb, p.today, p.timezone, p.userMessageId),
+    ]);
+    ctx = loaded;
     return await generateReply({
       content: p.content,
       // 순공시간과 함께 보낸 학습 기록은 학습 기록 답변으로
       intent: hasLogs && intent === "study_time" ? "study_log" : intent,
       ctx,
       history,
-      savedStudyTime: p.savedTime ? formatMinutes(p.savedTime.total) : null,
+      savedStudyTime: p.savedTime
+        ? savedStudyTimeLabel(p.savedTime.total, p.savedTime.date, p.today)
+        : null,
     });
   } catch (e) {
     console.error(JSON.stringify({ call: "reply", error: String(e) }));
-    return fallbackReply(p.recorded, ctx);
+    return fallbackReply(p.recorded, ctx, p.savedTime);
   }
 }
 

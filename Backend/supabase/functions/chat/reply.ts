@@ -31,18 +31,42 @@ export function replyInstructions(
   const parts = [COACH_TONE_INSTRUCTIONS, INTENT_INSTRUCTIONS[intent]];
   if (savedStudyTime) {
     parts.push(
-      `이번 메시지의 순공시간 ${savedStudyTime}을 적어 뒀다고 한 문장으로 알려 준다. 다른 날과 비교하지 않는다.`,
+      `이번 메시지로 순공시간을 적어 뒀다(${savedStudyTime}). 한 문장으로 알려 준다. 다른 날과 비교하지 않는다.`,
     );
   }
   return parts.join("\n\n");
 }
 
-// 답변 호출이 실패했을 때 쓰는 문구
+// "2026-11-13" → "11월 13일"
+function monthDayLabel(date: string): string {
+  const [, month, day] = date.split("-").map(Number);
+  return `${month}월 ${day}일`;
+}
+
+// 답변 지침에 넘길 저장된 순공시간. 그날 합계라서 날짜를 함께 적는다("오늘 합계 4시간 20분")
+export function savedStudyTimeLabel(
+  totalMinutes: number,
+  date: string,
+  today: string,
+): string {
+  const day = date === today ? "오늘" : monthDayLabel(date);
+  return `${day} 합계 ${formatMinutes(totalMinutes)}`;
+}
+
+// 답변 호출이 실패했을 때 쓰는 문구. 저장한 순공시간이 있으면 알려서 다시 보내지 않게 한다
+// ("더"로 보낸 순공시간을 다시 보내면 두 번 더해진다)
 export function fallbackReply(
   recorded: RecordedLog[],
   ctx: CoachContext,
+  savedTime: { total: number; date: string } | null = null,
 ): string {
+  const timeReply = savedTime
+    ? studyTimeReply(savedTime.total, savedTime.date, ctx.today)
+    : null;
   if (recorded.length === 0) {
+    if (timeReply) {
+      return `${timeReply} 질문 답변은 지금 만들지 못했어요. 잠시 후 다시 물어봐 주세요.`;
+    }
     return "지금은 답변을 만들지 못했어요. 잠시 후 다시 보내주세요.";
   }
   const percents = subjectPercents(ctx.books);
@@ -53,7 +77,8 @@ export function fallbackReply(
       ? SUBJECT_LABELS[s]
       : `${SUBJECT_LABELS[s]} 진도 ${percent}%`;
   });
-  return `기록했어요. ${progress.join(", ")}. 오늘도 수고했어요.`;
+  const logged = `기록했어요. ${progress.join(", ")}. 오늘도 수고했어요.`;
+  return timeReply ? `${logged} ${timeReply}` : logged;
 }
 
 // 순공시간만 보낸 메시지에 대한 정해진 답
@@ -66,6 +91,6 @@ export function studyTimeReply(
   if (date === today) {
     return `오늘 순공 ${time}으로 적어 뒀어요. 오늘도 수고 많으셨어요.`;
   }
-  const [, month, day] = date.split("-").map(Number);
-  return `${month}월 ${day}일 순공 ${time}으로 적어 뒀어요. 수고 많으셨어요.`;
+  const day = monthDayLabel(date);
+  return `${day} 순공 ${time}으로 적어 뒀어요. 수고 많으셨어요.`;
 }

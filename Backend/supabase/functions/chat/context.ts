@@ -12,6 +12,12 @@ import {
 
 export type TaskStatus = "pending" | "done" | "partial" | "skipped";
 
+// 답변 호출에 넘길 오늘 대화 한 줄
+export interface HistoryMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
 export interface CoachContext {
   today: string;
   examDate: string | null;

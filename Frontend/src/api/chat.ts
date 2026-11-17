@@ -39,13 +39,14 @@ export class InvalidContentError extends Error {
 
 // 진도·학습 기록이 저장됐으면(logged) 오늘의 분량을 다시 불러오게 알린다
 // 401(로그인 만료)이면 로그아웃해서 세션 가드가 /login으로 보내게 한다
+// 로그아웃이 실패해도 원래 오류를 던진다
 export async function sendChatMessage(content: string): Promise<ChatResponse> {
   const body: ChatRequest = { content }
   const { data, error } = await supabase.functions.invoke<ChatResponse>('chat', { body })
   if (error) {
     if (error instanceof FunctionsHttpError) {
       const status = (error.context as Response).status
-      if (status === 401) await signOut()
+      if (status === 401) await signOut().catch(() => {})
       if (status === 400) throw new InvalidContentError()
     }
     throw error

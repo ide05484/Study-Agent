@@ -133,6 +133,7 @@ function parseEntry(v: unknown, books: BookRef[]): StudyEntry | null {
     if (end !== null && end > book.total_units) end = null;
   }
 
+  // 목표 밖 회독도 남긴다. 범위 판정은 resolvePosition이 한다(진도를 바꾸지 않음)
   const round = book ? intAtLeast(v.round, 1) : null;
 
   const solved = intAtLeast(v.questions_solved, 0);
@@ -145,7 +146,7 @@ function parseEntry(v: unknown, books: BookRef[]): StudyEntry | null {
   return {
     subject,
     book_id: book?.id ?? null,
-    round: book && round !== null && round <= book.target_rounds ? round : null,
+    round,
     start_unit: start,
     end_unit: end,
     questions_solved: solved,
