@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import StudyHeatmap from '../components/dashboard/StudyHeatmap.tsx'
 import SplashScreen from '../components/layout/SplashScreen.tsx'
 import Button from '../components/ui/Button.tsx'
 import ButtonLink from '../components/ui/ButtonLink.tsx'
@@ -17,6 +18,7 @@ import Section from '../components/ui/Section.tsx'
 import Tabs, { type TabItem } from '../components/ui/Tabs.tsx'
 import TextArea from '../components/ui/TextArea.tsx'
 import TextField from '../components/ui/TextField.tsx'
+import type { HeatDay } from '../hooks/useDashboard.ts'
 import { useAlert, useConfirm, useProgress } from '../hooks/useDialog.ts'
 import NotFoundPage from './NotFoundPage.tsx'
 
@@ -44,6 +46,24 @@ const COLOR_TOKENS: ColorToken[] = [
   { name: 'heat-2', swatchClass: 'bg-heat-2' },
   { name: 'heat-3', swatchClass: 'bg-heat-3' },
   { name: 'heat-4', swatchClass: 'bg-heat-4' },
+]
+
+// 잔디 예시: 순공시간 네 단계(119/120/240/360분 경계), 점 두 종류, 기록 없음, 아직 안 온 날
+const HEATMAP_EXAMPLE_DAYS: HeatDay[] = [
+  { date: '2026-10-19', kind: 'time', minutes: 40, level: 1 },
+  { date: '2026-10-20', kind: 'time', minutes: 119, level: 1 },
+  { date: '2026-10-21', kind: 'time', minutes: 120, level: 2 },
+  { date: '2026-10-22', kind: 'time', minutes: 200, level: 2 },
+  { date: '2026-10-23', kind: 'time', minutes: 240, level: 3 },
+  { date: '2026-10-24', kind: 'time', minutes: 359, level: 3 },
+  { date: '2026-10-25', kind: 'time', minutes: 360, level: 4 },
+  { date: '2026-10-26', kind: 'dot', percent: 75 },
+  { date: '2026-10-27', kind: 'dot', percent: null },
+  { date: '2026-10-28', kind: 'empty' },
+  { date: '2026-10-29', kind: 'time', minutes: 480, level: 4 },
+  { date: '2026-10-30', kind: 'dot', percent: 50 },
+  { date: '2026-10-31', kind: 'empty' },
+  { date: '2026-11-01', kind: 'future' },
 ]
 
 const MASCOT_MOODS: MascotMood[] = ['base', 'cheer', 'think', 'oops']
@@ -370,6 +390,10 @@ function CatalogColumn({ themeClass, idPrefix }: CatalogColumnProps) {
               <Chevron direction="up" />
               <Chevron direction="right" />
             </div>
+          </Section>
+
+          <Section title="StudyHeatmap">
+            <StudyHeatmap days={HEATMAP_EXAMPLE_DAYS} />
           </Section>
 
           <Section title="Mascot">

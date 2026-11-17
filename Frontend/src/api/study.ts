@@ -84,6 +84,17 @@ export async function setTaskDone(taskId: string, done: boolean): Promise<void> 
   if (error) throw error
 }
 
+// from ~ to (양 끝 포함) 기간의 날짜별 순공시간(분)
+export async function fetchStudyTime(from: string, to: string): Promise<{ study_date: string; minutes: number }[]> {
+  const { data, error } = await supabase
+    .from('study_time')
+    .select('study_date, minutes')
+    .gte('study_date', from)
+    .lte('study_date', to)
+  if (error) throw error
+  return data
+}
+
 // 학습 기록이 있는 날짜 목록
 export async function fetchStudyDates(): Promise<string[]> {
   const { data, error } = await supabase
