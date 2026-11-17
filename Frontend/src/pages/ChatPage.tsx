@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Navigate, useParams } from 'react-router'
 import TodayPlanButton from '../components/chat/TodayPlanButton.tsx'
 import TodayPlanSheet from '../components/chat/TodayPlanSheet.tsx'
-import { useChat } from '../hooks/useChat.ts'
+import { PENDING_REPLY, useChat } from '../hooks/useChat.ts'
 import { useTodayTasks } from '../hooks/useTodayTasks.ts'
 import type { ChatRole } from '../interfaces/chat.ts'
 import { isDateKey, todayKey } from '../libs/date.ts'
@@ -44,7 +44,10 @@ function ChatRoom({ date, readOnly }: ChatRoomProps) {
     const content = draft.trim()
     if (!content || sending) return
     setDraft('')
-    void send(content)
+    void send(content).then((ok) => {
+      if (ok) return
+      setDraft((current) => current || content)
+    })
   }
 
   return (
@@ -53,11 +56,15 @@ function ChatRoom({ date, readOnly }: ChatRoomProps) {
       <div className={`flex flex-1 flex-col gap-2 overflow-y-auto p-4 ${readOnly ? '' : 'pb-16'}`}>
         <Bubble role="assistant">{WELCOME_MESSAGE}</Bubble>
         {messages.map((m) => (
-          <Bubble key={m.id} role={m.role}>
+          <Bubble key={m.id} role={m.role} muted={m.id.startsWith('pending-') && m.content === PENDING_REPLY}>
             {m.content}
           </Bubble>
         ))}
-        {error && <p className="text-sm text-danger">{error}</p>}
+        {error && (
+          <p role="alert" className="text-sm text-danger">
+            {error}
+          </p>
+        )}
         <div ref={bottomRef} />
       </div>
       {readOnly ? (
@@ -134,11 +141,14 @@ function TodayPlanDock({ date }: TodayPlanDockProps) {
 interface BubbleProps {
   role: ChatRole
   children: string
+  muted?: boolean
 }
 
-function Bubble({ role, children }: BubbleProps) {
+function Bubble({ role, children, muted = false }: BubbleProps) {
   return (
-    <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 break-words whitespace-pre-wrap ${BUBBLE_CLASS[role]}`}>
+    <div
+      className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 break-words whitespace-pre-wrap ${BUBBLE_CLASS[role]} ${muted ? 'text-muted' : ''}`}
+    >
       {children}
     </div>
   )

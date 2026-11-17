@@ -4,11 +4,14 @@ import type { ChatMessage } from '../interfaces/chat.ts'
 import { todayKey } from '../libs/date.ts'
 import { toErrorMessage } from '../libs/errors.ts'
 
+export const PENDING_REPLY = '답변을 쓰고 있어요…'
+const SEND_ERROR = '메시지를 보내지 못했어요. 잠시 후 다시 보내주세요.'
+
 export interface ChatState {
   messages: ChatMessage[]
   sending: boolean
   error: string | null
-  send: (content: string) => Promise<void>
+  send: (content: string) => Promise<boolean>
 }
 
 // date 날짜의 채팅방 메시지. 날짜가 바뀌면 호출하는 쪽에서 key로 다시 마운트한다
@@ -31,14 +34,30 @@ export function useChat(date: string): ChatState {
     }
   }, [date])
 
-  const send = useCallback(async (content: string) => {
+  // 성공 여부를 돌려준다. 실패하면 임시 말풍선을 지우고 error를 보인다
+  const send = useCallback(async (content: string): Promise<boolean> => {
+    const now = Date.now()
+    const created_at = new Date(now).toISOString()
+    const pendingUser: ChatMessage = { id: `pending-${now}`, role: 'user', content, subject: null, created_at }
+    const pendingReply: ChatMessage = {
+      id: `pending-${now}-reply`,
+      role: 'assistant',
+      content: PENDING_REPLY,
+      subject: null,
+      created_at,
+    }
+    const isPending = (m: ChatMessage) => m.id === pendingUser.id || m.id === pendingReply.id
     setSending(true)
     setError(null)
+    setMessages((prev) => [...prev, pendingUser, pendingReply])
     try {
-      const saved = await sendChatMessage(content)
-      setMessages((prev) => [...prev, ...saved])
-    } catch (e) {
-      setError(toErrorMessage(e))
+      const response = await sendChatMessage(content)
+      setMessages((prev) => [...prev.filter((m) => !isPending(m)), ...response.messages])
+      return true
+    } catch {
+      setMessages((prev) => prev.filter((m) => !isPending(m)))
+      setError(SEND_ERROR)
+      return false
     } finally {
       setSending(false)
     }
