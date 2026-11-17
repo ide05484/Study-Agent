@@ -95,7 +95,8 @@ export async function fetchStudyTime(from: string, to: string): Promise<{ study_
   return data
 }
 
-// PostgREST가 한 번에 돌려주는 최대 행 수. 이보다 많으면 range로 나눠 다시 요청한다
+// PostgREST가 한 번에 돌려주는 최대 행 수. 이보다 많으면 range로 나눠 다시 요청한다.
+// Supabase 프로젝트 API 설정의 max rows(기본 1000)와 같아야 한다. 더 작으면 첫 페이지에서 끝난 것으로 본다
 const PAGE_SIZE = 1000
 
 // from ~ to (양 끝 포함) 기간에 학습 기록이 있는 날짜. 하루에 여러 줄이 쌓일 수 있어 1000줄씩 나눠 가져온다

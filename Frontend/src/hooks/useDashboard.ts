@@ -70,10 +70,10 @@ export function useDashboard(): { data: DashboardData | null; error: string | nu
         const weekTasks = tasks.filter((t) => t.task_date >= thisWeek)
         const studied = new Set(studyDates)
         const heat = buildHeat(heatStart, today, tasks, studied, studyTime)
-        const studiedBeforeHeat = new Set([...studyDates, ...studyTime.map((row) => row.study_date)])
+        const studiedDates = new Set([...studyDates, ...studyTime.map((row) => row.study_date)])
         setData({
           heat,
-          streak: countStreak(heat, today, studiedBeforeHeat, streakStart),
+          streak: countStreak(heat, today, studiedDates, streakStart),
           weekly: buildWeekly(weekTasks),
           weeklyDone: weekTasks.filter((t) => t.status === 'done').length,
           weeklyTotal: weekTasks.length,
@@ -133,7 +133,7 @@ function countStreak(heat: HeatDay[], today: string, studiedDates: Set<string>, 
   }
   let day = isStudied(today) ? today : addDays(today, -1)
   let count = 0
-  while (isStudied(day)) {
+  while (count < STREAK_MAX_DAYS && isStudied(day)) {
     count++
     day = addDays(day, -1)
   }
