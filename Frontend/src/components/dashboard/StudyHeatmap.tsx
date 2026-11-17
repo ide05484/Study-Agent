@@ -40,6 +40,7 @@ function HeatCell({ day }: HeatCellProps) {
     <span
       className={`flex aspect-square items-center justify-center rounded-[3px] ${colorClass}`}
       title={label}
+      role={label ? 'img' : undefined}
       aria-label={label}
     >
       {day.kind === 'dot' && <span className="size-[40%] rounded-full bg-accent" aria-hidden="true" />}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { fetchBooks, fetchDailyTasks, fetchStudyDates, fetchStudyTime } from '../api/study.ts'
+import { fetchBooks, fetchDailyTasks, fetchStudyDates, fetchStudyTime, fetchStudyTimeDates } from '../api/study.ts'
 import type { Subject } from '../interfaces/subject.ts'
 import type { Book, BookUnit, DailyTaskWithBook } from '../interfaces/study.ts'
 import { completedUnits, isBookFinished } from '../libs/books.ts'
@@ -58,14 +58,15 @@ export function useDashboard(): { data: DashboardData | null; error: string | nu
       fetchDailyTasks(heatStart, heatEnd),
       fetchStudyDates(),
       fetchStudyTime(heatStart, heatEnd),
+      fetchStudyTimeDates(),
     ])
-      .then(([books, tasks, studyDates, studyTime]) => {
+      .then(([books, tasks, studyDates, studyTime, studyTimeDates]) => {
         if (ignore) return
         const weekTasks = tasks.filter((t) => t.task_date >= thisWeek)
         const heat = buildHeat(heatStart, today, tasks, new Set(studyDates), studyTime)
         setData({
           heat,
-          streak: countStreak(heat, today),
+          streak: countStreak(heat, today, new Set([...studyDates, ...studyTimeDates])),
           weekly: buildWeekly(weekTasks),
           weeklyDone: weekTasks.filter((t) => t.status === 'done').length,
           weeklyTotal: weekTasks.length,
@@ -113,10 +114,12 @@ function heatDay(date: string, minutes: number | undefined, tasks: DailyTaskWith
 }
 
 // 순공시간이나 점이 있는 날을 센다. 오늘이 비어 있으면 어제까지 이어진 날을 센다.
-// 센 범위는 잔디 표시 기간(HEATMAP_WEEKS)까지다
-function countStreak(heat: HeatDay[], today: string): number {
+// 잔디 첫날까지 이어지면 그 앞은 공부한 날짜(study_logs ∪ study_time)로 계속 센다
+function countStreak(heat: HeatDay[], today: string, studiedDates: Set<string>): number {
   const byDate = new Map(heat.map((day) => [day.date, day]))
+  const heatStart = heat[0].date
   const isStudied = (date: string) => {
+    if (date < heatStart) return studiedDates.has(date)
     const kind = byDate.get(date)?.kind
     return kind === 'time' || kind === 'dot'
   }

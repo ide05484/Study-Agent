@@ -95,6 +95,16 @@ export async function fetchStudyTime(from: string, to: string): Promise<{ study_
   return data
 }
 
+// 순공시간이 있는 모든 날짜(연속 공부를 잔디 기간 밖까지 세는 데 쓴다)
+export async function fetchStudyTimeDates(): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('study_time')
+    .select('study_date')
+    .order('study_date', { ascending: false })
+  if (error) throw error
+  return data.map((row) => row.study_date)
+}
+
 // 학습 기록이 있는 날짜 목록
 export async function fetchStudyDates(): Promise<string[]> {
   const { data, error } = await supabase
