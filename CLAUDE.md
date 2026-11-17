@@ -14,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 3. **목표·코치**: 최종 목표(합격) + 단기 목표 설정, 과목별 진도·학습법에 대한 코치 QnA 채팅
 4. **학습 기록·대시보드**: 그날 공부한 분량을 채팅으로 보내면 진척률 정리, 모의고사 점수 등록 시 성적 변화 추이를 대시보드로 표시
 
-아직 골격 단계다. 화면 레이아웃(채팅·대시보드·공부 설정)은 잡혀 있지만 로그인이 없어 데이터가 비어 있고, Edge Function 본문은 대부분 TODO 상태다.
+카카오 로그인, 공부 설정(교재·시험일)과 계획 분배, 오늘의 분량 체크가 동작한다. `chat`은 학습 기록·순공시간·질문·사용법을 처리한다. 일정 조정과 채팅 교재 추가는 안내만 한다. 아침 알림(`daily-briefing`)과 새벽 재분배는 아직 없다.
 
 관련 문서:
 - [SERVICE_FLOW.md](SERVICE_FLOW.md) — 로그인부터 채팅 코칭·분량 조정·교재 추가까지의 서비스 흐름. 기능 작업 전에 확인한다.
@@ -65,7 +65,7 @@ Frontend 의존 방향은 `pages → hooks → api → libs`이고, 타입은 `i
 
 - 프론트엔드는 `@supabase/supabase-js`로 DB에 직접 접근하고, 모든 테이블은 `user_id = auth.uid()` RLS로 보호된다. LLM 호출과 알림 발송처럼 비밀 키가 필요한 작업만 Edge Function을 거친다.
 - Edge Functions:
-  - `chat` — 채팅 단일 엔드포인트. 학습 기록 보고면 `study_logs`로 구조화해 저장하고, 질문이면 과목별 코치 답변을 생성한다. 요청/응답 형식은 [interfaces/chat.ts](Frontend/src/interfaces/chat.ts)의 `ChatRequest`/`ChatResponse`를 따른다.
+  - `chat` — 채팅 단일 엔드포인트. LLM으로 메시지를 분석해(결과는 `chat/analysis.ts`가 검증) 학습 기록 보고면 `study_logs`에 저장하고 DB 함수 `report_progress`로 진도와 그날 분량 상태를 반영한다(계획은 다시 나누지 않는다). 순공시간은 `record_study_time`으로 `study_time`에 저장한다. 질문이면 DB에서 모은 공부 현황으로 코치 답변을 생성한다. GPT 호출은 메시지당 분석 1번 + 답변 1번까지이고, 사용법·교재 추가·순공시간만·하루 메시지 상한(100개)은 정해진 문구로 답한다. OpenAI 호출은 `chat/llm.ts`, DB는 `chat/db.ts`에만 있고 나머지는 테스트하는 순수 모듈이다. 요청/응답 형식은 [interfaces/chat.ts](Frontend/src/interfaces/chat.ts)의 `ChatRequest`/`ChatResponse`를 따른다.
   - `plan-generator` — `profiles.exam_date` 전날까지 교재별 남은 분량(목표 회독까지)을 나눠 `daily_tasks`를 다시 만든다. 나누는 규칙(회독별 목표일, 하루 최소 분량, 마지막 주 상한)은 `_shared/plan.ts`. 지우기·넣기는 DB 함수 `replace_daily_tasks`가 한 트랜잭션으로 하고 사용자별 잠금으로 겹친 호출을 순서대로 돌린다. 공부 설정에서 교재 추가·삭제, 진도 수정, 시험일 변경 뒤에는 반드시 호출한다. 체크·채팅 완료 보고로 진도가 바뀔 때는 부르지 않고, 다음 계획은 새벽 재분배(아침 알림 단계에서 구현)에서 맞춰지고, 그때까지는 앱을 열 때 이월(`useCarryOver`)이 대신한다. 응답은 [interfaces/plan.ts](Frontend/src/interfaces/plan.ts)의 `PlanResponse`.
   - `daily-briefing` — pg_cron이 `profiles.notify_time`에 호출하며, 오늘의 `daily_tasks`로 응원 메시지를 만들어 PWA 푸시(`push_subscriptions`) 또는 카카오톡으로 보낸다. 보낸 메시지는 채팅에도 남긴다. (cron 등록은 아직 안 됨)
 - LLM은 OpenAI Responses API(`client.responses.create`)를 사용하며 프롬프트는 한국어로 쓴다. Edge Function에서는 `_shared/openai.ts`의 클라이언트를 쓴다.

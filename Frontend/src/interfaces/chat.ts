@@ -18,4 +18,6 @@ export interface ChatRequest {
 export interface ChatResponse {
   // 저장된 사용자 메시지 + 코치 답변
   messages: ChatMessage[]
+  // 진도·학습 기록을 저장했으면 true (오늘의 분량을 다시 불러온다)
+  logged: boolean
 }

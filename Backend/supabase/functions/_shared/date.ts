@@ -26,6 +26,40 @@ export function diffDays(from: string, to: string): number {
   );
 }
 
+// date 순간에 timeZone이 UTC보다 앞선 밀리초(서울은 +9시간)
+function offsetMs(date: Date, timeZone: string): number {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+      hourCycle: "h23",
+    }).formatToParts(date).map((p) => [p.type, Number(p.value)]),
+  );
+  const local = Date.UTC(
+    parts.year,
+    parts.month - 1,
+    parts.day,
+    parts.hour,
+    parts.minute,
+    parts.second,
+  );
+  return local - Math.floor(date.getTime() / 1000) * 1000;
+}
+
+// 날짜 키의 timeZone 자정을 UTC ISO 문자열로. created_at으로 그날 메시지를 거를 때 쓴다
+export function dayStartUtc(key: string, timeZone: string): string {
+  const midnight = parseKey(key).getTime();
+  let start = midnight - offsetMs(new Date(midnight), timeZone);
+  // 서머타임 경계에서는 자정 무렵의 오프셋으로 한 번 더 맞춘다
+  start = midnight - offsetMs(new Date(start), timeZone);
+  return new Date(start).toISOString();
+}
+
 // timeZone 기준 시각(0~23)
 export function localHour(date: Date, timeZone: string): number {
   const hour = new Intl.DateTimeFormat("en-US", {

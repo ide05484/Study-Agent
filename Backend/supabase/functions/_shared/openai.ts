@@ -2,3 +2,6 @@
 import OpenAI from "npm:openai@^7";
 
 export const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY") });
+
+// 분석·답변 모두 이 모델 하나를 쓴다(2026-11-13 사용자 결정)
+export const MODEL = "gpt-5.6";

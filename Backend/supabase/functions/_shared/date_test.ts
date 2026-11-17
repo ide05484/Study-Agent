@@ -1,5 +1,13 @@
 import { assertEquals } from "jsr:@std/assert";
-import { studyTimeDate, toDateKey } from "./date.ts";
+import { dayStartUtc, studyTimeDate, toDateKey } from "./date.ts";
+
+Deno.test("하루 시작 시각은 그 시간대 자정", () => {
+  assertEquals(
+    dayStartUtc("2026-11-14", "Asia/Seoul"),
+    "2026-11-13T15:00:00.000Z",
+  );
+  assertEquals(dayStartUtc("2026-11-14", "UTC"), "2026-11-14T00:00:00.000Z");
+});
 
 Deno.test("한국 0~9시는 UTC 전날이어도 한국 날짜", () =>
   assertEquals(

@@ -55,6 +55,7 @@ export interface CoachContext {
 
 const SUBJECTS = Object.keys(SUBJECT_LABELS) as Subject[];
 const MAX_LOG_LINES = 10;
+const MAX_MOCK_EXAMS = 3;
 const NONE = "없음";
 
 const STATUS_LABELS: Record<TaskStatus, string> = {
@@ -106,9 +107,14 @@ function logLine(log: CoachContext["recentLogs"][number]): string {
 }
 
 export function formatCoachContext(ctx: CoachContext): string {
-  const exam = ctx.examDate
-    ? `시험까지 ${diffDays(ctx.today, ctx.examDate)}일`
-    : "시험일 미입력";
+  const examDays = ctx.examDate ? diffDays(ctx.today, ctx.examDate) : null;
+  const exam = examDays === null
+    ? "시험일 미입력"
+    : examDays > 0
+    ? `시험까지 ${examDays}일`
+    : examDays === 0
+    ? "시험 당일"
+    : "시험일 지남";
 
   const percents = subjectPercents(ctx.books);
   const progress = SUBJECTS.filter((s) => percents[s] !== undefined).map(
@@ -134,7 +140,7 @@ export function formatCoachContext(ctx: CoachContext): string {
 
   const logs = ctx.recentLogs.slice(0, MAX_LOG_LINES).map(logLine);
 
-  const exams = ctx.mockExams.map((m) => {
+  const exams = ctx.mockExams.slice(0, MAX_MOCK_EXAMS).map((m) => {
     const scores = SUBJECTS.filter((s) => m.scores[s] !== undefined).map(
       (s) => `${SUBJECT_LABELS[s]} ${m.scores[s]}`,
     );
