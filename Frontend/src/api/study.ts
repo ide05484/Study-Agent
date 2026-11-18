@@ -84,12 +84,35 @@ export async function setTaskDone(taskId: string, done: boolean): Promise<void> 
   if (error) throw error
 }
 
-// 학습 기록이 있는 날짜 목록
-export async function fetchStudyDates(): Promise<string[]> {
+// from ~ to (양 끝 포함) 기간의 날짜별 순공시간(분)
+export async function fetchStudyTime(from: string, to: string): Promise<{ study_date: string; minutes: number }[]> {
   const { data, error } = await supabase
-    .from('study_logs')
-    .select('study_date')
-    .order('study_date', { ascending: false })
+    .from('study_time')
+    .select('study_date, minutes')
+    .gte('study_date', from)
+    .lte('study_date', to)
   if (error) throw error
-  return [...new Set((data as { study_date: string }[]).map((row) => row.study_date))]
+  return data
+}
+
+// PostgREST가 한 번에 돌려주는 최대 행 수. 이보다 많으면 range로 나눠 다시 요청한다.
+// Supabase 프로젝트 API 설정의 max rows(기본 1000)와 같아야 한다. 더 작으면 첫 페이지에서 끝난 것으로 본다
+const PAGE_SIZE = 1000
+
+// from ~ to (양 끝 포함) 기간에 학습 기록이 있는 날짜. 하루에 여러 줄이 쌓일 수 있어 1000줄씩 나눠 가져온다
+export async function fetchStudyDates(from: string, to: string): Promise<string[]> {
+  const dates = new Set<string>()
+  for (let offset = 0; ; offset += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from('study_logs')
+      .select('study_date')
+      .gte('study_date', from)
+      .lte('study_date', to)
+      .order('study_date', { ascending: false })
+      .order('id') // 나눠 가져올 때 순서가 흔들리지 않게
+      .range(offset, offset + PAGE_SIZE - 1)
+    if (error) throw error
+    for (const row of data) dates.add(row.study_date)
+    if (data.length < PAGE_SIZE) return [...dates]
+  }
 }

@@ -110,8 +110,9 @@ export function planBook(book: PlanBook, options: PlanOptions): PlannedTask[] {
       };
     }
 
+    // 올림이라 구간 첫날(오늘)부터 분량이 있고, 하루 1단위가 안 되는 교재의 빈 날은 뒤로 간다
     const even = segment.p0 +
-      Math.floor(((day - segment.s + 1) * segment.a) / segment.l);
+      Math.ceil(((day - segment.s + 1) * segment.a) / segment.l);
     let amount = Math.max(even - pos, book.daily_amount ?? 0);
     if (
       options.lastWeekCap !== null && day >= options.days - LAST_WEEK_DAYS
