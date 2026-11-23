@@ -78,7 +78,8 @@ export function toUnit(v: unknown): BookUnit | null {
 
 export function toTitle(v: unknown): string | null {
   if (typeof v !== "string") return null;
-  const t = v.trim();
+  // 안의 공백·줄바꿈도 한 칸으로 줄여 분석 지침과 books.title에 줄바꿈이 들어가지 않게 한다
+  const t = v.replace(/\s+/g, " ").trim();
   return t.length >= 1 && t.length <= MAX_TITLE_LENGTH ? t : null;
 }
 

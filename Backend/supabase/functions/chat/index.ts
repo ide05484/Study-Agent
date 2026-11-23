@@ -2,29 +2,51 @@
 // LLM으로 메시지를 분석해(analysis.ts가 검증) 학습 기록은 study_logs와 report_progress로, 순공시간은 record_study_time으로,
 // 잘 맞은 방법은 study_tips로 저장하고 코치 말투로 답한다.
 // 질문 답변에는 필요한 공부법(study_methods)과 잘 맞은 방법을 넣는다.
-// 사용법·교재 추가·순공시간만·하루 상한은 답변 호출 없이 정해진 문구로 답한다. 계획은 다시 나누지 않는다.
+// 사용법·순공시간만·하루 상한은 답변 호출 없이 정해진 문구로 답한다. 학습 기록으로는 계획을 다시 나누지 않는다.
+// 교재 추가는 정해진 문구로 되묻고 확인 칩(응/아니)을 받은 뒤에만 books에 저장하며, 저장하면 바로 계획을 다시 나눈다(_shared/replan.ts).
 // 응답 형식은 Frontend/src/interfaces/chat.ts의 `ChatRequest`/`ChatResponse`를 따른다.
 
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { withSupabase } from "@supabase/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
-  BOOK_ADD_PENDING,
   DAILY_LIMIT_REPLY,
   DAILY_MESSAGE_LIMIT,
   STUDY_TIME_ASK,
   USAGE_GUIDE,
 } from "../_shared/coach.ts";
 import { studyTimeDate, toDateKey } from "../_shared/date.ts";
+import { replan, type ReplanResult } from "../_shared/replan.ts";
 import type { Analysis, BookRef, StudyTip } from "./analysis.ts";
+import {
+  askText,
+  type BookAddAction,
+  type ChatAction,
+  type ChatRequest,
+  CHOICE_EXPIRED_TEXT,
+  completeDraft,
+  confirmAnswer,
+  confirmText,
+  EDIT_TEXT,
+  EMPTY_DRAFT,
+  isDuplicateTitle,
+  mergeDraft,
+  missingFields,
+  parseChatRequest,
+  type SaveOutcome,
+  savedText,
+} from "./bookDraft.ts";
 import type { CoachContext } from "./context.ts";
 import {
+  type ChatMessageRow,
   countTodayUserMessages,
+  insertBook,
   insertMessage,
   insertStudyTip,
   loadCoachContext,
   loadKnowledge,
   loadProfileAndBooks,
+  loadRecentMessages,
   loadTodayHistory,
   recordStudyLogs,
   saveStudyTime,
@@ -46,11 +68,17 @@ import {
 
 const MAX_CONTENT_LENGTH = 1000;
 
+// 코치 답변과 붙일 동작(칩). action이 있으면 받아 둔 초안이 다음 요청으로 이어진다
+interface Reply {
+  text: string;
+  action: ChatAction | null;
+}
+
 export default {
   // 사용자 JWT 필수. ctx.supabase는 RLS가 적용되어 본인 데이터만 다룬다
   fetch: withSupabase({ auth: "user" }, async (req, ctx) => {
-    const content = await readContent(req);
-    if (content === null) {
+    const request = await readRequest(req);
+    if (request === null) {
       return Response.json({ error: "invalid_content" }, { status: 400 });
     }
     const userId = ctx.userClaims?.id;
@@ -59,7 +87,7 @@ export default {
     }
 
     try {
-      return await handleMessage(ctx.supabase, userId, content);
+      return await handleMessage(ctx.supabase, userId, request);
     } catch (e) {
       // DB 오류 원문은 로그에만 남기고 응답에는 고정 코드만 보낸다
       console.error(JSON.stringify({ call: "handle", error: String(e) }));
@@ -68,14 +96,9 @@ export default {
   }),
 };
 
-async function readContent(req: Request): Promise<string | null> {
+async function readRequest(req: Request): Promise<ChatRequest | null> {
   try {
-    const body = await req.json();
-    if (typeof body?.content !== "string") return null;
-    const content = body.content.trim();
-    return content.length > 0 && content.length <= MAX_CONTENT_LENGTH
-      ? content
-      : null;
+    return parseChatRequest(await req.json(), MAX_CONTENT_LENGTH);
   } catch {
     return null;
   }
@@ -84,12 +107,47 @@ async function readContent(req: Request): Promise<string | null> {
 async function handleMessage(
   sb: SupabaseClient,
   userId: string,
-  content: string,
+  request: ChatRequest,
 ): Promise<Response> {
   const { profile, books } = await loadProfileAndBooks(sb);
   const now = new Date();
   const timezone = profile.timezone;
   const today = toDateKey(now, timezone);
+
+  // 오늘 채팅방의 마지막 메시지가 action이 있는 코치 메시지이면 그 초안이 받아 둔 것이다
+  const [last = null] = await loadRecentMessages(sb, today, timezone, 1);
+  const pending: BookAddAction | null =
+    last?.role === "assistant" && last.action ? last.action : null;
+
+  // 확인 칩 요청, 또는 확인 단계에서 확답 목록의 말로 보낸 글은 분석 없이 처리한다(하루 상한도 보지 않는다)
+  let answer: "yes" | "no" | null = null;
+  let userText = "";
+  let chipValid = true;
+  if ("choice" in request) {
+    const { choice } = request;
+    answer = choice.answer;
+    userText = choice.answer === "yes" ? "응" : "아니";
+    chipValid = pending?.step === "confirm" && last?.id === choice.message_id;
+  } else if (pending?.step === "confirm") {
+    answer = confirmAnswer(request.content);
+    userText = request.content;
+  }
+  if (answer !== null) {
+    return await answerConfirm({
+      sb,
+      userId,
+      books,
+      today,
+      timezone,
+      last,
+      pending: chipValid ? pending : null,
+      answer,
+      userText,
+    });
+  }
+  // 칩 요청은 위에서 모두 처리했으므로 여기서는 글 요청이다
+  if (!("content" in request)) throw new Error("unreachable request");
+  const content = request.content;
 
   // 하루 상한을 넘으면 GPT를 부르지 않는다
   const sentToday = await countTodayUserMessages(sb, today, timezone);
@@ -102,13 +160,23 @@ async function handleMessage(
       DAILY_LIMIT_REPLY,
       null,
     );
-    return Response.json({ messages: [user, assistant], logged: false });
+    return Response.json({
+      messages: [user, assistant],
+      logged: false,
+      planChanged: false,
+      replanFailed: false,
+    });
   }
 
   // 분석이 실패하면 아무것도 저장하지 않는다
   let analysis: Analysis;
   try {
-    analysis = await analyzeMessage(content, books, today, null);
+    analysis = await analyzeMessage(
+      content,
+      books,
+      today,
+      pending?.draft ?? null,
+    );
   } catch (e) {
     console.error(JSON.stringify({ call: "analyze", error: String(e) }));
     return Response.json({ error: "analysis_failed" }, { status: 502 });
@@ -155,7 +223,7 @@ async function handleMessage(
     }
   }
 
-  let reply = await buildReply({
+  const reply = await buildReply({
     sb,
     content,
     analysis,
@@ -168,21 +236,110 @@ async function handleMessage(
     examDate: profile.exam_date,
     books,
     userMessageId: user.id,
+    pending,
   });
   if (recorded.length > 0 && studyTimeInvalid) {
-    reply = `${reply}\n${STUDY_TIME_ASK}`;
+    reply.text = `${reply.text}\n${STUDY_TIME_ASK}`;
   }
 
   const assistant = await insertMessage(
     sb,
     userId,
     "assistant",
-    reply,
+    reply.text,
     analysis.subject,
+    reply.action,
   );
   return Response.json({
     messages: [user, assistant],
     logged: recorded.length > 0,
+    planChanged: false,
+    replanFailed: false,
+  });
+}
+
+// 확인 칩(또는 같은 뜻의 글)을 처리한다. GPT를 부르지 않는다.
+// pending은 칩이 유효하고 확인 단계일 때만 값이 있다
+async function answerConfirm(p: {
+  sb: SupabaseClient;
+  userId: string;
+  books: BookRef[];
+  today: string;
+  timezone: string;
+  last: ChatMessageRow | null;
+  pending: BookAddAction | null;
+  answer: "yes" | "no";
+  userText: string;
+}): Promise<Response> {
+  const { sb, userId, pending } = p;
+  const user = await insertMessage(
+    sb,
+    userId,
+    "user",
+    p.userText,
+    pending?.draft.subject ?? null,
+  );
+
+  // 같은 칩을 거의 동시에 두 번 보내도 한쪽만 통하게, 방금 넣은 메시지 바로 앞이 확인 메시지인지 다시 본다
+  const complete = pending ? completeDraft(pending.draft) : null;
+  const [first, second] = await loadRecentMessages(sb, p.today, p.timezone, 2);
+  const fresh = pending !== null && p.last !== null && first?.id === user.id &&
+    second?.id === p.last.id;
+
+  let text = CHOICE_EXPIRED_TEXT;
+  let action: ChatAction | null = null;
+  let planChanged = false;
+  let replanFailed = false;
+
+  if (fresh && pending && complete) {
+    if (p.answer === "no") {
+      text = EDIT_TEXT;
+      action = { kind: "book_add", step: "edit", draft: pending.draft };
+    } else {
+      const book = await insertBook(sb, userId, complete);
+      // 교재는 남기고 재분배 실패는 화면이 다시 시도하게 알린다
+      let result: ReplanResult | null = null;
+      try {
+        result = await replan(sb);
+      } catch (e) {
+        console.error(JSON.stringify({ call: "replan", error: String(e) }));
+      }
+      let outcome: SaveOutcome;
+      if (!result) {
+        outcome = { kind: "failed" };
+        replanFailed = true;
+      } else if (result.skipped) {
+        outcome = { kind: "no_exam" };
+        planChanged = true;
+      } else {
+        const line = result.tasks.find((t) =>
+          t.book_id === book.id && t.task_date === p.today
+        );
+        outcome = {
+          kind: "planned",
+          today: line
+            ? { start_unit: line.start_unit, end_unit: line.end_unit }
+            : null,
+        };
+        planChanged = true;
+      }
+      text = savedText(complete, outcome);
+    }
+  }
+
+  const assistant = await insertMessage(
+    sb,
+    userId,
+    "assistant",
+    text,
+    null,
+    action,
+  );
+  return Response.json({
+    messages: [user, assistant],
+    logged: false,
+    planChanged,
+    replanFailed,
   });
 }
 
@@ -199,17 +356,37 @@ async function buildReply(p: {
   examDate: string | null;
   books: BookRef[];
   userMessageId: string;
-}): Promise<string> {
+  pending: BookAddAction | null;
+}): Promise<Reply> {
   const { intent, subject, knowledge } = p.analysis;
   const hasLogs = p.recorded.length > 0;
   // 정해진 문구로 답할 때도 이번에 저장한 잘 맞은 방법은 알린다
-  const fixed = (text: string) =>
-    p.savedTip ? `${text}\n${tipSavedReply(p.savedTip.subject)}` : text;
+  const fixed = (text: string, action: ChatAction | null = null): Reply => ({
+    text: p.savedTip ? `${text}\n${tipSavedReply(p.savedTip.subject)}` : text,
+    action,
+  });
 
   // 순공시간을 저장하지 못한 메시지는 의도보다 먼저 다시 묻는다(기록이 있으면 답 끝에 붙인다)
   if (!hasLogs && p.studyTimeInvalid) return fixed(STUDY_TIME_ASK);
   if (intent === "usage") return fixed(USAGE_GUIDE);
-  if (intent === "book_add") return fixed(BOOK_ADD_PENDING);
+  if (intent === "book_add") {
+    // 받아 둔 초안에 이번 말을 합치고, 빠진 게 있으면 묻고 다 있으면 확인 칩을 띄운다
+    const draft = mergeDraft(p.pending?.draft ?? EMPTY_DRAFT, p.analysis.book);
+    const missing = missingFields(draft);
+    const complete = missing.length === 0 ? completeDraft(draft) : null;
+    if (!complete) {
+      return fixed(askText(draft, missing), {
+        kind: "book_add",
+        step: "ask",
+        draft,
+      });
+    }
+    return fixed(confirmText(complete, isDuplicateTitle(complete, p.books)), {
+      kind: "book_add",
+      step: "confirm",
+      draft,
+    });
+  }
   if (!hasLogs && intent === "study_time" && p.savedTime) {
     return fixed(
       studyTimeReply(p.savedTime.total, p.savedTime.date, p.today),
@@ -245,7 +422,7 @@ async function buildReply(p: {
     ]);
     ctx = loaded;
     const tips = withoutSavedTip(known.tips, p.savedTip);
-    return await generateReply({
+    const text = await generateReply({
       content: p.content,
       intent: replyIntent,
       ctx,
@@ -261,9 +438,13 @@ async function buildReply(p: {
         savedTip: p.savedTip,
       },
     });
+    return { text, action: null };
   } catch (e) {
     console.error(JSON.stringify({ call: "reply", error: String(e) }));
-    return fallbackReply(p.recorded, ctx, p.savedTime, p.savedTip);
+    return {
+      text: fallbackReply(p.recorded, ctx, p.savedTime, p.savedTip),
+      action: null,
+    };
   }
 }
 
@@ -276,5 +457,7 @@ function errorResponse(message: string): Response {
   curl -i --location --request POST 'https://<project-ref>.supabase.co/functions/v1/chat' \
     --header 'Authorization: Bearer <access_token>' \
     --data '{"content":"보건행정 기본서 15~17강, 기출 20문제 중 5개 틀림"}'
+
+  확인 칩: --data '{"choice":{"message_id":"<확인 메시지 id>","answer":"yes"}}'
 
 */

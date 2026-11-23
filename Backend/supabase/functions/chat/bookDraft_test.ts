@@ -14,6 +14,7 @@ import {
   parseAction,
   parseChatRequest,
   savedText,
+  toTitle,
 } from "./bookDraft.ts";
 import type { BookRef } from "./analysis.ts";
 
@@ -232,4 +233,10 @@ Deno.test("missingFields: 범위 밖 값은 빠진 것, completeDraft와 어긋�
   const rounds = { ...complete, target_rounds: 11 };
   assertEquals(missingFields(rounds), []);
   assertEquals(completeDraft(rounds)?.target_rounds, 1);
+});
+
+Deno.test("toTitle: 안의 공백·줄바꿈은 한 칸으로", () => {
+  assertEquals(toTitle("봉투\n모의고사"), "봉투 모의고사");
+  assertEquals(toTitle("  봉투 \t\n  모의고사 "), "봉투 모의고사");
+  assertEquals(toTitle("  \n "), null);
 });
