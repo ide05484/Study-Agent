@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
-import { fetchChatDates, fetchChatMessages, InvalidContentError, sendChatMessage } from '../api/chat.ts'
-import type { ChatMessage } from '../interfaces/chat.ts'
+import { fetchChatDates, fetchChatMessages, InvalidContentError, sendChatChoice, sendChatMessage } from '../api/chat.ts'
+import { regeneratePlan } from '../api/plan.ts'
+import type { ChatMessage, ChatResponse } from '../interfaces/chat.ts'
 import { todayKey } from '../libs/date.ts'
 import { toErrorMessage } from '../libs/errors.ts'
 
@@ -13,6 +14,7 @@ export interface ChatState {
   sending: boolean
   error: string | null
   send: (content: string) => Promise<boolean>
+  choose: (messageId: string, answer: 'yes' | 'no') => Promise<boolean>
 }
 
 // date 날짜의 채팅방 메시지. 날짜가 바뀌면 호출하는 쪽에서 key로 다시 마운트한다
@@ -35,16 +37,24 @@ export function useChat(date: string): ChatState {
     }
   }, [date])
 
-  // 성공 여부를 돌려준다. 실패하면 임시 말풍선을 지우고 error를 보인다
-  const send = useCallback(async (content: string): Promise<boolean> => {
+  // 임시 말풍선을 보이고 request를 보낸다. 성공 여부를 돌려준다. 실패하면 임시 말풍선을 지우고 error를 보인다
+  const deliver = useCallback(async (content: string, request: () => Promise<ChatResponse>): Promise<boolean> => {
     const now = Date.now()
     const created_at = new Date(now).toISOString()
-    const pendingUser: ChatMessage = { id: `pending-${now}`, role: 'user', content, subject: null, created_at }
+    const pendingUser: ChatMessage = {
+      id: `pending-${now}`,
+      role: 'user',
+      content,
+      subject: null,
+      action: null,
+      created_at,
+    }
     const pendingReply: ChatMessage = {
       id: `pending-${now}-reply`,
       role: 'assistant',
       content: PENDING_REPLY,
       subject: null,
+      action: null,
       created_at,
     }
     const isPending = (m: ChatMessage) => m.id === pendingUser.id || m.id === pendingReply.id
@@ -52,8 +62,12 @@ export function useChat(date: string): ChatState {
     setError(null)
     setMessages((prev) => [...prev, pendingUser, pendingReply])
     try {
-      const response = await sendChatMessage(content)
+      const response = await request()
       setMessages((prev) => [...prev.filter((m) => !isPending(m)), ...response.messages])
+      if (response.replanFailed) {
+        // 교재는 저장됐으니 재분배만 한 번 다시 시도한다. 실패해도 대화는 그대로 둔다
+        await regeneratePlan().catch((e: unknown) => console.error('계획 다시 나누기 실패', e))
+      }
       return true
     } catch (e) {
       console.error('채팅 전송 실패', e) // 오류 객체만 남기고 메시지 내용은 남기지 않는다
@@ -65,7 +79,15 @@ export function useChat(date: string): ChatState {
     }
   }, [])
 
-  return { messages, sending, error, send }
+  const send = useCallback((content: string) => deliver(content, () => sendChatMessage(content)), [deliver])
+
+  const choose = useCallback(
+    (messageId: string, answer: 'yes' | 'no') =>
+      deliver(answer === 'yes' ? '응' : '아니', () => sendChatChoice(messageId, answer)),
+    [deliver],
+  )
+
+  return { messages, sending, error, send, choose }
 }
 
 // 사이드바 채팅방 목록. 열릴 때마다 다시 불러오며, 오늘 채팅방은 항상 맨 위에 둔다

@@ -7,13 +7,12 @@ import ExamScoreForm from '../components/settings/ExamScoreForm.tsx'
 import ExamScoreList from '../components/settings/ExamScoreList.tsx'
 import ScoreTabs, { type ScoreView } from '../components/settings/ScoreTabs.tsx'
 import ScoreTrendChart from '../components/settings/ScoreTrendChart.tsx'
+import StudyMethodsPanel from '../components/settings/StudyMethodsPanel.tsx'
 import Button from '../components/ui/Button.tsx'
-import Disclosure from '../components/ui/Disclosure.tsx'
 import IconButton from '../components/ui/IconButton.tsx'
 import Menu from '../components/ui/Menu.tsx'
 import Notice from '../components/ui/Notice.tsx'
 import Tabs, { type TabItem } from '../components/ui/Tabs.tsx'
-import TextArea from '../components/ui/TextArea.tsx'
 import { useBooks } from '../hooks/useBooks.ts'
 import { useConfirm } from '../hooks/useDialog.ts'
 import { useMockExams } from '../hooks/useMockExams.ts'
@@ -303,27 +302,7 @@ export default function SettingsPage() {
           </>
         )}
 
-        {/* 과목별 공부법은 준비 중. TODO: 기본 공부법 내용, 메모 저장(테이블 미정) */}
-        {tab === 'methods' && (
-          <div className="divide-y divide-line">
-            {SUBJECTS.map((subject) => (
-              <Disclosure key={subject} summary={SUBJECT_LABELS[subject]}>
-                <div className="grid gap-2 pb-3">
-                  <Notice>기본 공부법은 준비 중이에요.</Notice>
-                  <label className="text-sm font-semibold" htmlFor={`memo-${subject}`}>
-                    내 메모
-                  </label>
-                  <TextArea
-                    id={`memo-${subject}`}
-                    rows={3}
-                    placeholder="더 신경 쓰고 싶은 부분을 적어 두면 코치가 참고해요."
-                    disabled
-                  />
-                </div>
-              </Disclosure>
-            ))}
-          </div>
-        )}
+        {tab === 'methods' && <StudyMethodsPanel />}
       </div>
     </div>
   )

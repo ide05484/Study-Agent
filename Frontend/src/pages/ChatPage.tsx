@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { Fragment, useEffect, useRef, useState, type FormEvent } from 'react'
 import { Navigate, useParams } from 'react-router'
+import ConfirmChips from '../components/chat/ConfirmChips.tsx'
 import TodayPlanButton from '../components/chat/TodayPlanButton.tsx'
 import TodayPlanSheet from '../components/chat/TodayPlanSheet.tsx'
 import { PENDING_REPLY, useChat } from '../hooks/useChat.ts'
@@ -31,7 +32,7 @@ interface ChatRoomProps {
 }
 
 function ChatRoom({ date, readOnly }: ChatRoomProps) {
-  const { messages, sending, error, send } = useChat(date)
+  const { messages, sending, error, send, choose } = useChat(date)
   const [draft, setDraft] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -55,10 +56,16 @@ function ChatRoom({ date, readOnly }: ChatRoomProps) {
       {/* pb-16(64px): 오늘의 분량 버튼 44px + mb-2 8px = 52px보다 커야 한다. 버튼 크기를 바꾸면 함께 고친다 */}
       <div className={`flex flex-1 flex-col gap-2 overflow-y-auto p-4 ${readOnly ? '' : 'pb-16'}`}>
         <Bubble role="assistant">{WELCOME_MESSAGE}</Bubble>
-        {messages.map((m) => (
-          <Bubble key={m.id} role={m.role} muted={m.id.startsWith('pending-') && m.content === PENDING_REPLY}>
-            {m.content}
-          </Bubble>
+        {messages.map((m, i) => (
+          <Fragment key={m.id}>
+            <Bubble role={m.role} muted={m.id.startsWith('pending-') && m.content === PENDING_REPLY}>
+              {m.content}
+            </Bubble>
+            {/* 확인 칩은 오늘 채팅방의 마지막 코치 메시지에만 붙는다. 지난 확인은 다음 말풍선이 고른 답이다 */}
+            {!readOnly && i === messages.length - 1 && m.role === 'assistant' && m.action?.step === 'confirm' && (
+              <ConfirmChips disabled={sending} onChoose={(answer) => void choose(m.id, answer)} />
+            )}
+          </Fragment>
         ))}
         {error && (
           <p role="alert" className="text-sm text-danger">

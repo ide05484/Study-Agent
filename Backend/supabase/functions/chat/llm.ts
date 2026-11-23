@@ -1,7 +1,7 @@
 // chat에서 OpenAI를 부르는 유일한 파일. 메시지 분석 1번 + 답변 1번까지, 다시 시도하지 않는다.
 import { MODEL, openai } from "../_shared/openai.ts";
 import { SUBJECT_LABELS } from "../_shared/subjects.ts";
-import { progressLabel } from "../_shared/units.ts";
+import { type BookUnit, progressLabel } from "../_shared/units.ts";
 import {
   type Analysis,
   ANALYSIS_SCHEMA,
@@ -10,11 +10,16 @@ import {
   parseAnalysis,
 } from "./analysis.ts";
 import {
+  type BookDraft,
+  type MissingField,
+  missingFields,
+} from "./bookDraft.ts";
+import {
   type CoachContext,
   formatCoachContext,
   type HistoryMessage,
 } from "./context.ts";
-import { replyInstructions } from "./reply.ts";
+import { replyInstructions, type ReplyOptions } from "./reply.ts";
 
 const ANALYZE_MAX_OUTPUT_TOKENS = 1500;
 const REPLY_MAX_OUTPUT_TOKENS = 2000;
@@ -43,7 +48,38 @@ function bookLine(book: BookRef): string {
   }`;
 }
 
-function analysisInstructions(books: BookRef[], today: string): string {
+const UNIT_NAMES: Record<BookUnit, string> = {
+  day: "Day",
+  chapter: "챕터",
+  session: "회차",
+};
+
+const MISSING_NAMES: Record<MissingField, string> = {
+  subject: "과목",
+  title: "제목",
+  amount: "단위와 총량",
+};
+
+function pendingBlock(pending: BookDraft): string {
+  const missing = missingFields(pending).map((m) => MISSING_NAMES[m]);
+  const subject = pending.subject ? SUBJECT_LABELS[pending.subject] : "없음";
+  const unit = pending.unit ? UNIT_NAMES[pending.unit] : "없음";
+  return `
+
+받아 두는 교재(아직 저장 전): 과목 ${subject} | 제목 ${
+    pending.title ?? "없음"
+  } | 단위 ${unit} | 총량 ${
+    pending.total_units ?? "없음"
+  } | ${pending.target_rounds}회독
+빠진 항목: ${missing.length > 0 ? missing.join(", ") : "없음"}
+이 메시지가 받아 두는 교재를 채우거나 고치는 말이면 intent는 book_add이고, 바꾸는 항목만 book에 넣는다. 교재와 상관없는 말이면 원래 intent를 고르고 book은 null이다.`;
+}
+
+function analysisInstructions(
+  books: BookRef[],
+  today: string,
+  pending: BookDraft | null,
+): string {
   const bookList = books.length > 0
     ? books.map(bookLine).join("\n")
     : "등록된 교재 없음";
@@ -54,7 +90,7 @@ intent (하나만 고른다)
 - study_log: 공부한 분량이나 푼 문제를 보고한다
 - study_time: 순공시간만 알려 준다
 - schedule: 분량이나 일정을 바꾸고 싶어 한다(바빠서 줄이기, 시험일 변경 등)
-- book_add: 새 교재를 추가하려 한다
+- book_add: 새 교재를 추가하려 하거나, 받아 두는 교재에 답한다
 - usage: 이 앱(채팅)을 어떻게 쓰는지 묻는다
 - question: 공부법, 성적, 고민 질문과 그 밖의 모든 메시지
 
@@ -74,20 +110,37 @@ study_time: 순공시간(실제로 집중해 공부한 시간)을 말했을 때�
 - "더", "추가로"처럼 이미 적은 시간에 더하는 말이면 add true, 아니면 false.
 - 어제 순공시간이면 day "yesterday", 아니면 "today".
 
+study_tip: 수험생이 자기에게 잘 맞았던 공부 방식을 말했을 때만 채운다. 없으면 null.
+- content는 그 방식을 한 문장(200자 이내)으로 다듬는다. 예: "기출 풀고 바로 백지에 써 보니까 잘 외워졌어" → "기출을 풀고 바로 백지 복기하기"
+- "오늘 공부 잘 됐다"처럼 방식이 없는 말, 분량 보고만 있는 말, 안 맞았던 방식은 null.
+- subject는 그 방식이 해당하는 과목, 과목과 상관없으면 null.
+
+knowledge: 답변에 필요한 참고 지식. 해당하는 것만, 없으면 빈 배열.
+- mental: 점수 하락, 지침, 불안, 슬럼프, 비교, 시험 직전 긴장
+- time: 시간 배분, 하루·주간 루틴, 휴식, 직장 병행, 시험 당일 시간 운영
+
+book: 새 교재를 추가하려는 말이거나 아래 "받아 두는 교재"에 답하는 말일 때만 채운다. 아니면 null.
+- 말한 항목만 채우고 나머지는 null. 목표 회독은 "3회독"처럼 말했을 때만.
+- title은 20자 안으로 줄인다. 연도·출판사·강사 이름은 뺀다. 예: "2027 해커스 보건행정 기본서" → "보건행정 기본서"
+- unit: Day(단어장 등) → day, 챕터·단원 → chapter, 회차·강·회분(인강, 모의고사) → session. 기본서와 인강 세트는 인강 회차로 센다.
+- 새로 추가하는 교재의 총량이나 회차 수는 entries에 넣지 않는다. entries는 실제로 공부한 분량만이다.
+- total_units는 그 단위의 전체 개수. 쪽 수는 쓰지 않는다. "모의고사 몇 개"처럼 모호하면 null.
+
 교재 목록 (id | 과목 | 제목 | 지금 진도)
-${bookList}`;
+${bookList}${pending ? pendingBlock(pending) : ""}`;
 }
 
 export async function analyzeMessage(
   content: string,
   books: BookRef[],
   today: string,
+  pending: BookDraft | null,
 ): Promise<Analysis> {
   const response = await openai.responses.create({
     model: MODEL,
     reasoning: { effort: "low" },
     max_output_tokens: ANALYZE_MAX_OUTPUT_TOKENS,
-    instructions: analysisInstructions(books, today),
+    instructions: analysisInstructions(books, today, pending),
     input: content,
     text: {
       format: {
@@ -107,14 +160,17 @@ export async function generateReply(params: {
   intent: Intent;
   ctx: CoachContext;
   history: HistoryMessage[];
-  savedStudyTime: string | null;
+  // formatKnowledge 결과. 없으면 ""
+  knowledge: string;
+  options: ReplyOptions;
 }): Promise<string> {
-  const instructions = `${
-    replyInstructions(params.intent, params.savedStudyTime)
-  }
+  const knowledgeBlock = params.knowledge
+    ? `\n\n아래는 참고할 공부법이다.\n${params.knowledge}`
+    : "";
+  const instructions = `${replyInstructions(params.intent, params.options)}
 
 아래는 이 수험생의 공부 현황이다. 여기 있는 수치와 사실만 말한다.
-${formatCoachContext(params.ctx)}`;
+${formatCoachContext(params.ctx)}${knowledgeBlock}`;
 
   const response = await openai.responses.create({
     model: MODEL,

@@ -86,6 +86,7 @@ export type Database = {
       }
       chat_messages: {
         Row: {
+          action: Json | null
           content: string
           created_at: string
           id: string
@@ -94,6 +95,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          action?: Json | null
           content: string
           created_at?: string
           id?: string
@@ -102,6 +104,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          action?: Json | null
           content?: string
           created_at?: string
           id?: string
@@ -367,6 +370,30 @@ export type Database = {
           },
         ]
       }
+      study_methods: {
+        Row: {
+          heading: string
+          items: Json
+          kind: string
+          position: number
+          topic: string
+        }
+        Insert: {
+          heading: string
+          items: Json
+          kind: string
+          position: number
+          topic: string
+        }
+        Update: {
+          heading?: string
+          items?: Json
+          kind?: string
+          position?: number
+          topic?: string
+        }
+        Relationships: []
+      }
       study_time: {
         Row: {
           created_at: string
@@ -390,6 +417,41 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      study_tips: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          source_message_id: string | null
+          subject: Database["public"]["Enums"]["subject"] | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          source_message_id?: string | null
+          subject?: Database["public"]["Enums"]["subject"] | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          source_message_id?: string | null
+          subject?: Database["public"]["Enums"]["subject"] | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_tips_source_message_id_fkey"
+            columns: ["source_message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

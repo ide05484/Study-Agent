@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import StudyHeatmap from '../components/dashboard/StudyHeatmap.tsx'
 import SplashScreen from '../components/layout/SplashScreen.tsx'
+import MarkedText from '../components/settings/MarkedText.tsx'
+import MethodSectionView from '../components/settings/MethodSectionView.tsx'
+import StudyTipList from '../components/settings/StudyTipList.tsx'
 import Button from '../components/ui/Button.tsx'
 import ButtonLink from '../components/ui/ButtonLink.tsx'
 import Chevron from '../components/ui/Chevron.tsx'
@@ -20,7 +23,42 @@ import TextArea from '../components/ui/TextArea.tsx'
 import TextField from '../components/ui/TextField.tsx'
 import type { HeatDay } from '../hooks/useDashboard.ts'
 import { useAlert, useConfirm, useProgress } from '../hooks/useDialog.ts'
+import type { StudyMethodSection, StudyTip } from '../interfaces/studyMethod.ts'
 import NotFoundPage from './NotFoundPage.tsx'
+
+const METHOD_LIST_EXAMPLE: StudyMethodSection = {
+  topic: 'korean',
+  position: 1,
+  heading: '기본 방법',
+  kind: 'list',
+  items: ['**하루 한 지문**씩 꾸준히 풀어요.', '틀린 문제는 ==왜 틀렸는지== 한 줄로 적어요.'],
+}
+
+const METHOD_PAIRS_EXAMPLE: StudyMethodSection = {
+  topic: 'korean',
+  position: 2,
+  heading: '단계별 공부',
+  kind: 'pairs',
+  items: [
+    { label: '1단계', text: '개념을 한 번 훑어요.' },
+    { label: '**2단계**', text: '문제를 풀며 ==약한 곳==을 찾아요.' },
+  ],
+}
+
+// 팁은 사용자가 쓴 글 그대로 보여야 하므로 ==, **, <b>가 든 예를 둔다
+const TIP_EXAMPLES: StudyTip[] = [
+  {
+    id: 'tip-1',
+    subject: 'korean',
+    content: '==문법==은 **기출**부터 <b>풀어요</b>',
+    created_at: '2026-11-18T03:00:00Z',
+  },
+  { id: 'tip-2', subject: null, content: '자기 전에 오늘 한 것 한 줄 적기', created_at: '2026-11-10T03:00:00Z' },
+]
+
+async function noopRemove(): Promise<boolean> {
+  return true
+}
 
 interface ColorToken {
   name: string
@@ -381,6 +419,18 @@ function CatalogColumn({ themeClass, idPrefix }: CatalogColumnProps) {
             <div className="flex flex-col gap-2">
               <Notice>안내 문구</Notice>
               <Notice tone="error">오류 문구</Notice>
+            </div>
+          </Section>
+
+          <Section title="공부법 (MarkedText, MethodSectionView, StudyTipList)">
+            <div className="grid gap-5">
+              <p className="text-sm">
+                <MarkedText text="**굵게**, ==형광펜==, 짝 없는 ==표시는 글 그대로예요." />
+              </p>
+              <MethodSectionView section={METHOD_LIST_EXAMPLE} />
+              <MethodSectionView section={METHOD_PAIRS_EXAMPLE} />
+              <StudyTipList tips={TIP_EXAMPLES} onRemove={noopRemove} />
+              <StudyTipList tips={[]} onRemove={noopRemove} />
             </div>
           </Section>
 

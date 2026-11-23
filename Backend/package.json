@@ -16,7 +16,8 @@
     "llm-test": "tsx scripts/llm-test.ts",
     "test": "deno test --no-lock supabase/functions",
     "mock:sql": "tsx scripts/mock-sql.ts",
-    "plan:preview": "tsx scripts/plan-preview.ts"
+    "plan:preview": "tsx scripts/plan-preview.ts",
+    "methods:migration": "tsx scripts/study-methods-migration.ts"
   },
   "dependencies": {
     "@supabase/server": "^1.9.2",
