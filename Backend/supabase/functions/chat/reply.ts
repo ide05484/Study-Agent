@@ -35,6 +35,8 @@ export interface ReplyOptions {
   hasTips: boolean;
   hardTimes: boolean;
   savedTip: StudyTip | null;
+  // 참이면 마무리 질문이 따로 붙는다
+  closingQuestion: boolean;
 }
 
 export function replyInstructions(
@@ -64,6 +66,9 @@ export function replyInstructions(
         tipPlace(options.savedTip.subject)
       }'에 적어 뒀다. 한 문장으로 알려 준다.`,
     );
+  }
+  if (options.closingQuestion) {
+    parts.push("이번 답은 질문으로 끝내지 않는다. 마무리 질문은 따로 붙는다.");
   }
   return parts.join("\n\n");
 }

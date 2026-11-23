@@ -174,10 +174,11 @@ async function handleMessage(
   let analysis: Analysis;
   try {
     analysis = await analyzeMessage(
-      content,
+      [content],
       books,
       today,
       pending?.draft ?? null,
+      null,
     );
   } catch (e) {
     console.error(JSON.stringify({ call: "analyze", error: String(e) }));
@@ -439,6 +440,7 @@ async function buildReply(p: {
         hasTips: tips.length > 0,
         hardTimes: knowledge.includes("mental"),
         savedTip: p.savedTip,
+        closingQuestion: false,
       },
     });
     return { text, action: null };

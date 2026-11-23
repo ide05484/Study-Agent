@@ -65,6 +65,7 @@ export interface Analysis {
   studyTip: StudyTip | null;
   knowledge: Knowledge[];
   book: BookPatch | null;
+  wrapUp: boolean;
 }
 
 const SUBJECTS = Object.keys(SUBJECT_LABELS) as Subject[];
@@ -144,6 +145,7 @@ export const ANALYSIS_SCHEMA: Record<string, unknown> = {
     study_tip: STUDY_TIP_SCHEMA,
     knowledge: { type: "array", items: { type: "string", enum: KNOWLEDGE } },
     book: BOOK_SCHEMA,
+    wrap_up: { type: "boolean" },
   },
   required: [
     "intent",
@@ -153,6 +155,7 @@ export const ANALYSIS_SCHEMA: Record<string, unknown> = {
     "study_tip",
     "knowledge",
     "book",
+    "wrap_up",
   ],
   additionalProperties: false,
 };
@@ -298,5 +301,6 @@ export function parseAnalysis(raw: unknown, books: BookRef[]): Analysis {
     studyTip: parseStudyTip(r.study_tip, subject),
     knowledge: parseKnowledge(r.knowledge),
     book: parseBook(r.book),
+    wrapUp: r.wrap_up === true,
   };
 }
