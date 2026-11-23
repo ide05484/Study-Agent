@@ -29,7 +29,6 @@ import type { AskedAbout } from "./analysisPrompt.ts";
 import {
   askText,
   type BookAddAction,
-  CHOICE_EXPIRED_TEXT,
   completeDraft,
   confirmAnswer,
   confirmText,
@@ -55,6 +54,7 @@ import {
   loadCoachContext,
   loadKnowledge,
   loadLastCoachMessage,
+  loadMessageAction,
   loadProfileAndBooks,
   loadRecentMessages,
   loadStudyMinutes,
@@ -83,9 +83,9 @@ import {
 } from "./reply.ts";
 import {
   appendWrapUp,
+  expiredConfirmText,
   shouldAskWrapUp,
   WRAP_UP_ACTION,
-  WRAP_UP_EXPIRED_TEXT,
   WRAP_UP_NO_TEXT,
   wrapUpYesText,
 } from "./wrapUp.ts";
@@ -204,6 +204,7 @@ async function handleMessage(
     answer: "yes" | "no",
     userText: string,
     valid: boolean,
+    chipId: string | null,
   ) =>
     answerConfirm({
       sb,
@@ -213,6 +214,7 @@ async function handleMessage(
       timezone,
       last,
       pending: valid ? pending : null,
+      chipId,
       answer,
       userText,
     });
@@ -223,12 +225,15 @@ async function handleMessage(
       choice.answer,
       choice.answer === "yes" ? "응" : "아니",
       pending !== null && last?.id === choice.message_id,
+      choice.message_id,
     );
   }
   const content = request.content;
   if (pending !== null) {
     const answer = confirmAnswer(content);
-    if (answer !== null) return await answerPending(answer, content, true);
+    if (answer !== null) {
+      return await answerPending(answer, content, true, null);
+    }
   }
 
   // 하루 상한을 넘으면 GPT를 부르지 않는다. 이 메시지는 처리한 것으로 넣어 묶음에 섞이지 않게 한다
@@ -420,7 +425,8 @@ async function failBeforeClaim(
 
 // 확인 칩(또는 같은 뜻의 글)을 처리한다. GPT를 부르지 않는다.
 // 이 경로의 사용자 메시지는 처리한 것으로 넣어 묶음에 섞이지 않게 한다.
-// pending은 칩이 유효하고 확인 단계일 때만 값이 있고, kind(교재 확인·공부 마무리)로 처리를 나눈다
+// pending은 칩이 유효하고 확인 단계일 때만 값이 있고, kind(교재 확인·공부 마무리)로 처리를 나눈다.
+// chipId는 칩 요청이 누른 메시지 id(확답 글이면 null)로, 끝난 칩의 종류를 알 때만 쓴다
 async function answerConfirm(p: {
   sb: SupabaseClient;
   userId: string;
@@ -429,6 +435,7 @@ async function answerConfirm(p: {
   timezone: string;
   last: ChatMessageRow | null;
   pending: ConfirmAction | null;
+  chipId: string | null;
   answer: "yes" | "no";
   userText: string;
 }): Promise<Response> {
@@ -451,10 +458,8 @@ async function answerConfirm(p: {
   const fresh = pending !== null && p.last !== null && first?.id === user.id &&
     second?.id === p.last.id;
 
-  // 칩이 처음부터 유효하지 않으면 종류를 모르므로 교재 확인 문구로 답한다
-  let text = pending?.kind === "wrap_up"
-    ? WRAP_UP_EXPIRED_TEXT
-    : CHOICE_EXPIRED_TEXT;
+  // 아래에서 답을 정하지 못하면 끝난 확인 문구로 답한다
+  let text: string | null = null;
   let action: ChatAction | null = null;
   let planChanged = false;
   let replanFailed = false;
@@ -511,6 +516,7 @@ async function answerConfirm(p: {
       text = savedText(complete, outcome);
     }
   }
+  text ??= await expiredText(sb, pending, p.chipId);
 
   const assistant = await insertMessage(
     sb,
@@ -527,6 +533,25 @@ async function answerConfirm(p: {
     replanFailed,
     superseded: false,
   });
+}
+
+// 끝난 확인 문구. 칩이 도착 때 유효했으면(pending) 그 종류로 고르고,
+// 처음부터 유효하지 않은 칩만 누른 메시지를 읽어 종류를 안다(정상 경로에는 조회를 더하지 않는다).
+// 문구만 고르는 조회라 실패해도 요청을 실패시키지 않고 공통 문구로 답한다
+async function expiredText(
+  sb: SupabaseClient,
+  pending: ConfirmAction | null,
+  chipId: string | null,
+): Promise<string> {
+  if (pending) return expiredConfirmText(pending.kind);
+  if (chipId === null) return expiredConfirmText(null);
+  try {
+    const action = await loadMessageAction(sb, chipId);
+    return expiredConfirmText(action?.kind ?? null);
+  } catch (e) {
+    console.error(JSON.stringify({ call: "chip_kind", error: String(e) }));
+    return expiredConfirmText(null);
+  }
 }
 
 async function buildReply(p: {
@@ -579,11 +604,12 @@ async function buildReply(p: {
   }
   // 순공시간과 함께 보낸 학습 기록은 학습 기록 답변으로
   const replyIntent = hasLogs && intent === "study_time" ? "study_log" : intent;
-  // 공부를 마치려는 말이면 답(대체 답변 포함) 끝에 마무리 질문과 칩을 붙인다
+  // 공부를 마치려는 말이면 답(대체 답변 포함) 끝에 마무리 질문과 칩을 붙인다.
+  // 기록이 있어도 순공시간을 다시 묻는 답(handleMessage가 끝에 붙인다)에는 붙이지 않는다
   const askWrapUp = shouldAskWrapUp({
     wrapUp: p.analysis.wrapUp,
     intent: replyIntent,
-    studyTimeAsk: p.studyTimeInvalid && !hasLogs,
+    studyTimeAsk: p.studyTimeInvalid,
   });
   const closing = (text: string): Reply =>
     askWrapUp

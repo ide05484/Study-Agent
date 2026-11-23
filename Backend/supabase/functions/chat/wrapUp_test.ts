@@ -1,7 +1,9 @@
 import { assertEquals } from "jsr:@std/assert";
 import type { Intent } from "./analysis.ts";
+import { CHOICE_EXPIRED_TEXT } from "./bookDraft.ts";
 import {
   appendWrapUp,
+  expiredConfirmText,
   shouldAskWrapUp,
   WRAP_UP_EXPIRED_TEXT,
   wrapUpYesText,
@@ -9,6 +11,13 @@ import {
 
 Deno.test("끝난 마무리 확인 문구", () => {
   assertEquals(WRAP_UP_EXPIRED_TEXT, "이 확인은 끝났어요.");
+});
+
+Deno.test("expiredConfirmText는 교재 칩만 교재 문구, 나머지는 공통 문구", () => {
+  assertEquals(expiredConfirmText("book_add"), CHOICE_EXPIRED_TEXT);
+  assertEquals(expiredConfirmText("wrap_up"), WRAP_UP_EXPIRED_TEXT);
+  assertEquals(expiredConfirmText("study_time_ask"), WRAP_UP_EXPIRED_TEXT);
+  assertEquals(expiredConfirmText(null), WRAP_UP_EXPIRED_TEXT);
 });
 
 Deno.test("shouldAskWrapUp 진리표", () => {

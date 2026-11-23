@@ -240,6 +240,20 @@ export async function loadRecentMessages(
   return (data as unknown[]).map(toMessageRow);
 }
 
+// 한 메시지의 action(끝난 칩의 종류를 알 때 쓴다). 없거나 못 찾으면 null
+export async function loadMessageAction(
+  sb: Client,
+  id: string,
+): Promise<ChatAction | null> {
+  const { data, error } = await sb
+    .from("chat_messages")
+    .select("action")
+    .eq("id", id)
+    .maybeSingle();
+  fail(error);
+  return data === null ? null : parseAction(data.action);
+}
+
 // 오늘의 마지막 코치 메시지. 받아 둔 교재 초안과 직전 질문 종류를 읽는다
 export async function loadLastCoachMessage(
   sb: Client,
