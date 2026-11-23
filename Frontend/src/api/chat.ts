@@ -10,7 +10,7 @@ export async function fetchChatMessages(date: string): Promise<ChatMessage[]> {
   const [from, to] = dayRange(date)
   const { data, error } = await supabase
     .from('chat_messages')
-    .select('id, role, content, subject, created_at')
+    .select('id, role, content, subject, action, created_at')
     .gte('created_at', from)
     .lt('created_at', to)
     .order('created_at', { ascending: true })
@@ -37,11 +37,19 @@ export class InvalidContentError extends Error {
   }
 }
 
-// 진도·학습 기록이 저장됐으면(logged) 오늘의 분량을 다시 불러오게 알린다
+export async function sendChatMessage(content: string): Promise<ChatResponse> {
+  return invokeChat({ content })
+}
+
+// 확인 메시지의 응/아니 칩 답
+export async function sendChatChoice(messageId: string, answer: 'yes' | 'no'): Promise<ChatResponse> {
+  return invokeChat({ choice: { message_id: messageId, answer } })
+}
+
+// 진도·학습 기록이 저장됐거나(logged) 계획이 바뀌었으면(planChanged) 오늘의 분량을 다시 불러오게 알린다
 // 401(로그인 만료)이면 로그아웃해서 세션 가드가 /login으로 보내게 한다
 // 로그아웃이 실패해도 원래 오류를 던진다
-export async function sendChatMessage(content: string): Promise<ChatResponse> {
-  const body: ChatRequest = { content }
+async function invokeChat(body: ChatRequest): Promise<ChatResponse> {
   const { data, error } = await supabase.functions.invoke<ChatResponse>('chat', { body })
   if (error) {
     if (error instanceof FunctionsHttpError) {
@@ -52,6 +60,6 @@ export async function sendChatMessage(content: string): Promise<ChatResponse> {
     throw error
   }
   if (!data) throw new Error('답변을 받지 못했어요.')
-  if (data.logged) emitPlanChanged()
+  if (data.logged || data.planChanged) emitPlanChanged()
   return data
 }
