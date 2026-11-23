@@ -39,6 +39,22 @@
 - **오답 관리**: 틀린 문제는 이유(몰라서/헷갈려서/실수)를 나눠 기록하고 다시 푼다.
 - **매일 조금씩 모든 과목**: 한 과목에 몰리면 다른 과목 감각이 떨어진다. 이 앱의 계획(`plan-generator`)도 매일 모든 교재를 나눠 배정한다.
 
+## 앱 반영
+
+이 폴더의 내용 파일은 DB 테이블 `study_methods`로 옮겨진다. 옮기는 스크립트가 읽을 수 있도록 형식을 지킨다.
+
+- `topic` 값: `korean`, `english`, `public_health`, `health_admin`, `mental`, `time`. 과목 4개는 `public.subject` enum과 같은 문자열. 라벨: 과목은 `SUBJECT_LABELS`, `mental` → `멘탈관리`, `time` → `시간관리`.
+- 내용 파일: `korean.md`, `english.md`, `public-health.md`, `health-admin.md`, `mental.md`, `time.md`(모두 `docs/study-methods/`). 형식: `# 제목` 한 줄, `## 소제목` 섹션, 섹션 본문은 `- ` 목록 또는 두 칸 표 하나만, 꾸밈은 `**`·`==`만, 형광펜 파일당 최대 3곳.
+
+흐름:
+
+1. 내용 파일을 고친다.
+2. `Backend/`에서 `npm run methods:migration`을 돌린다. 형식이 틀리면 `파일:줄 이유`를 내고 파일을 만들지 않는다.
+3. 만들어진 `supabase/migrations/<시각>_study_methods_content.sql`을 확인하고 커밋한다.
+4. 개발 프로젝트 반영은 사용자가 요청할 때 `npm run db:push`로 한다. `main`에 병합하면 운영에 자동 반영된다.
+
+이미 배포된 내용 마이그레이션은 고치지 않는다. 내용을 바꾸면 새 마이그레이션을 만든다(파일 하나가 내용 전체를 지우고 다시 넣는다).
+
 ## 주의
 
 - 과목 파일 중 "초안"으로 표시된 내용은 일반적인 수험 공부법이다. 출제 비중, 출제 기조 변경, 법령 개정처럼 **확인되지 않은 시험 정보는 사실처럼 단정하지 않는다.**

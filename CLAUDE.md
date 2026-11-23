@@ -54,7 +54,7 @@ Backend/
   supabase/functions/<name>/  Edge Function (Deno), 함수마다 deno.json
   supabase/functions/_shared/ 함수 공용 모듈 (배포 대상 아님)
   supabase/seed.sql           db reset 시 로컬 시드
-  scripts/                    Node 기반 스크립트 (tsx): LLM 실험, Mock 공부 데이터 SQL, 계획 미리보기
+  scripts/                    Node 기반 스크립트 (tsx): LLM 실험, Mock 공부 데이터 SQL, 계획 미리보기, 공부법 내용 마이그레이션
 ```
 
 Frontend 의존 방향은 `pages → hooks → api → libs`이고, 타입은 `interfaces`에서 가져온다. 페이지에서 Supabase를 직접 호출하지 않는다.
@@ -96,6 +96,7 @@ npm run gen:types          # DB 타입 → Frontend/src/interfaces/database.ts
 npm run llm-test           # OpenAI 호출 실험
 npm test                   # Edge Function 순수 로직 테스트 (deno test)
 npm run plan:preview       # Mock JSON으로 계획 미리보기 (DB 없음, LOCAL_DEV.md "Mock 공부 데이터")
+npm run methods:migration  # docs/study-methods 문서 → 공부법 내용 마이그레이션 SQL (형식이 틀리면 오류, docs/study-methods/README.md "앱 반영")
 npm run mock:sql -- <USER_ID>  # Mock 데이터를 한 사용자에게 넣는 SQL (개발 프로젝트 전용)
 ```
 `db push`·`functions deploy`·`secrets set`은 클라우드를 바꾸므로 사용자가 요청할 때만 실행한다. Docker 로컬 Supabase용 `start`/`stop`/`db:reset`/`functions:serve`/`gen:types:local`도 남아 있다.
