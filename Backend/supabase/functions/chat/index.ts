@@ -115,7 +115,11 @@ async function handleMessage(
   const today = toDateKey(now, timezone);
 
   // 오늘 채팅방의 마지막 메시지가 action이 있는 코치 메시지이면 그 초안이 받아 둔 것이다
-  const [last = null] = await loadRecentMessages(sb, today, timezone, 1);
+  // 하루 상한 확인용 개수도 함께 읽는다(칩·확답 경로에서는 쓰지 않는다)
+  const [[last = null], sentToday] = await Promise.all([
+    loadRecentMessages(sb, today, timezone, 1),
+    countTodayUserMessages(sb, today, timezone),
+  ]);
   const pending: BookAddAction | null =
     last?.role === "assistant" && last.action ? last.action : null;
 
@@ -136,7 +140,6 @@ async function handleMessage(
     return await answerConfirm({
       sb,
       userId,
-      books,
       today,
       timezone,
       last,
@@ -150,7 +153,6 @@ async function handleMessage(
   const content = request.content;
 
   // 하루 상한을 넘으면 GPT를 부르지 않는다
-  const sentToday = await countTodayUserMessages(sb, today, timezone);
   if (sentToday >= DAILY_MESSAGE_LIMIT) {
     const user = await insertMessage(sb, userId, "user", content, null);
     const assistant = await insertMessage(
@@ -263,7 +265,6 @@ async function handleMessage(
 async function answerConfirm(p: {
   sb: SupabaseClient;
   userId: string;
-  books: BookRef[];
   today: string;
   timezone: string;
   last: ChatMessageRow | null;

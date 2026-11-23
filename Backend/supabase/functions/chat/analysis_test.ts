@@ -74,6 +74,29 @@ Deno.test("교재가 1권뿐인 과목은 book_id를 채운다", () => {
   assertEquals(a.entries[0].book_id, "b-admin");
 });
 
+Deno.test("book_add에서는 교재가 1권뿐인 과목이어도 book_id를 정하지 않는다", () => {
+  const a = parseAnalysis(
+    raw({
+      intent: "book_add",
+      entries: [entry({ end_unit: 20 })],
+    }),
+    books,
+  );
+  assertEquals(a.entries.length, 1);
+  assertEquals(a.entries[0].book_id, null);
+});
+
+Deno.test("book_add에서도 목록에 있는 book_id를 말하면 그 교재에 붙는다", () => {
+  const a = parseAnalysis(
+    raw({
+      intent: "book_add",
+      entries: [entry({ book_id: "b-admin", end_unit: 20 })],
+    }),
+    books,
+  );
+  assertEquals(a.entries[0].book_id, "b-admin");
+});
+
 Deno.test("같은 과목 교재가 여러 권이고 교재를 모르면 book_id는 null", () => {
   const a = parseAnalysis(
     raw({

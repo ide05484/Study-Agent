@@ -170,7 +170,12 @@ const isIntent = (v: unknown): v is Intent =>
 const intAtLeast = (v: unknown, min: number): number | null =>
   typeof v === "number" && Number.isInteger(v) && v >= min ? v : null;
 
-function parseEntry(v: unknown, books: BookRef[]): StudyEntry | null {
+// inferBook이 false면 book_id를 말하지 않은 entry에 교재를 짐작해 붙이지 않는다
+function parseEntry(
+  v: unknown,
+  books: BookRef[],
+  inferBook: boolean,
+): StudyEntry | null {
   if (!isRecord(v) || !isSubject(v.subject)) return null;
   const subject = v.subject;
 
@@ -178,7 +183,7 @@ function parseEntry(v: unknown, books: BookRef[]): StudyEntry | null {
   let book: BookRef | null = typeof v.book_id === "string"
     ? sameSubject.find((b) => b.id === v.book_id) ?? null
     : null;
-  if (!book && sameSubject.length === 1) book = sameSubject[0];
+  if (!book && inferBook && sameSubject.length === 1) book = sameSubject[0];
 
   let start = intAtLeast(v.start_unit, 1);
   let end = intAtLeast(v.end_unit, 1);
@@ -265,9 +270,11 @@ export function parseAnalysis(raw: unknown, books: BookRef[]): Analysis {
   let intent: Intent = isIntent(r.intent) ? r.intent : "question";
   const subject = isSubject(r.subject) ? r.subject : null;
 
+  // 교재 추가 메시지의 숫자는 새 교재의 양일 수 있어, 기존 교재 하나로 짐작하지 않는다
+  const inferBook = intent !== "book_add";
   const entries = Array.isArray(r.entries)
     ? r.entries
-      .map((e) => parseEntry(e, books))
+      .map((e) => parseEntry(e, books, inferBook))
       .filter((e): e is StudyEntry => e !== null)
     : [];
 
