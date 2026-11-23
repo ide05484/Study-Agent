@@ -1,7 +1,10 @@
-import { COACH_TONE_INSTRUCTIONS } from "../_shared/coach.ts";
+import {
+  COACH_TONE_INSTRUCTIONS,
+  HARD_TIMES_INSTRUCTIONS,
+} from "../_shared/coach.ts";
 import { type Subject, SUBJECT_LABELS } from "../_shared/subjects.ts";
 import { formatMinutes } from "../_shared/units.ts";
-import type { Intent } from "./analysis.ts";
+import type { Intent, StudyTip } from "./analysis.ts";
 import { type CoachContext, subjectPercents } from "./context.ts";
 
 // 답변 지침과 정해진 문구. OpenAI·Supabase를 import하지 않는 순수 모듈이다.
@@ -24,17 +27,53 @@ const INTENT_INSTRUCTIONS: Record<Intent, string> = {
   usage: "채팅 사용법을 짧게 안내한다.",
 };
 
+export interface ReplyOptions {
+  savedStudyTime: string | null;
+  hasKnowledge: boolean;
+  hasTips: boolean;
+  hardTimes: boolean;
+  savedTip: StudyTip | null;
+}
+
 export function replyInstructions(
   intent: Intent,
-  savedStudyTime: string | null,
+  options: ReplyOptions,
 ): string {
   const parts = [COACH_TONE_INSTRUCTIONS, INTENT_INSTRUCTIONS[intent]];
-  if (savedStudyTime) {
+  if (options.savedStudyTime) {
     parts.push(
-      `이번 메시지로 순공시간을 적어 뒀다(${savedStudyTime}). 한 문장으로 알려 준다. 다른 날과 비교하지 않는다.`,
+      `이번 메시지로 순공시간을 적어 뒀다(${options.savedStudyTime}). 한 문장으로 알려 준다. 다른 날과 비교하지 않는다.`,
+    );
+  }
+  if (options.hasKnowledge) {
+    parts.push(
+      "아래 공부법은 참고 자료다. 질문에 맞는 것 1~2개만 고르고, 통째로 옮기지 않는다. 출처나 강사 이름을 말하지 않는다.",
+    );
+  }
+  if (options.hasTips) {
+    parts.push(
+      "이 수험생에게 잘 맞았던 방법이다. 맞으면 먼저 이걸 살려서 제안한다.",
+    );
+  }
+  if (options.hardTimes) parts.push(HARD_TIMES_INSTRUCTIONS);
+  if (options.savedTip) {
+    parts.push(
+      `이번 메시지의 방법을 '${
+        tipPlace(options.savedTip.subject)
+      }'에 적어 뒀다. 한 문장으로 알려 준다.`,
     );
   }
   return parts.join("\n\n");
+}
+
+// 잘 맞은 방법이 저장된 곳 이름. 과목이 없으면 그냥 "공부법"
+function tipPlace(subject: Subject | null): string {
+  return subject ? `${SUBJECT_LABELS[subject]} 공부법` : "공부법";
+}
+
+// 잘 맞은 방법을 저장했다는 정해진 문구
+export function tipSavedReply(subject: Subject | null): string {
+  return `잘 맞은 방법은 ${tipPlace(subject)}에 적어 뒀어요.`;
 }
 
 // "2026-11-13" → "11월 13일"
@@ -59,11 +98,18 @@ export function fallbackReply(
   recorded: RecordedLog[],
   ctx: CoachContext,
   savedTime: { total: number; date: string } | null = null,
+  savedTip: StudyTip | null = null,
 ): string {
+  const tipNote = savedTip ? ` ${tipSavedReply(savedTip.subject)}` : "";
   if (recorded.length === 0) {
     if (savedTime) {
       return `${
         studyTimeReply(savedTime.total, savedTime.date, ctx.today)
+      }${tipNote} 질문 답변은 지금 만들지 못했어요. 잠시 후 다시 물어봐 주세요.`;
+    }
+    if (savedTip) {
+      return `${
+        tipSavedReply(savedTip.subject)
       } 질문 답변은 지금 만들지 못했어요. 잠시 후 다시 물어봐 주세요.`;
     }
     return "지금은 답변을 만들지 못했어요. 잠시 후 다시 보내주세요.";
@@ -85,7 +131,7 @@ export function fallbackReply(
       `${day} 순공 ${formatMinutes(savedTime.total)}도 적어 뒀어요`,
     );
   }
-  return `기록했어요. ${progress.join(", ")}. 오늘도 수고했어요.`;
+  return `기록했어요. ${progress.join(", ")}. 오늘도 수고했어요.${tipNote}`;
 }
 
 // 순공시간만 보낸 메시지에 대한 정해진 답

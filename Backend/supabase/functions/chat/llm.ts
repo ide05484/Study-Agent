@@ -119,7 +119,13 @@ export async function generateReply(params: {
   savedStudyTime: string | null;
 }): Promise<string> {
   const instructions = `${
-    replyInstructions(params.intent, params.savedStudyTime)
+    replyInstructions(params.intent, {
+      savedStudyTime: params.savedStudyTime,
+      hasKnowledge: false,
+      hasTips: false,
+      hardTimes: false,
+      savedTip: null,
+    })
   }
 
 아래는 이 수험생의 공부 현황이다. 여기 있는 수치와 사실만 말한다.
