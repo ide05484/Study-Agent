@@ -14,7 +14,7 @@ import {
   formatCoachContext,
   type HistoryMessage,
 } from "./context.ts";
-import { replyInstructions } from "./reply.ts";
+import { type ReplyOptions, replyInstructions } from "./reply.ts";
 
 const ANALYZE_MAX_OUTPUT_TOKENS = 1500;
 const REPLY_MAX_OUTPUT_TOKENS = 2000;
@@ -116,20 +116,17 @@ export async function generateReply(params: {
   intent: Intent;
   ctx: CoachContext;
   history: HistoryMessage[];
-  savedStudyTime: string | null;
+  // formatKnowledge 결과. 없으면 ""
+  knowledge: string;
+  options: ReplyOptions;
 }): Promise<string> {
-  const instructions = `${
-    replyInstructions(params.intent, {
-      savedStudyTime: params.savedStudyTime,
-      hasKnowledge: false,
-      hasTips: false,
-      hardTimes: false,
-      savedTip: null,
-    })
-  }
+  const knowledgeBlock = params.knowledge
+    ? `\n\n아래는 참고할 공부법이다.\n${params.knowledge}`
+    : "";
+  const instructions = `${replyInstructions(params.intent, params.options)}
 
 아래는 이 수험생의 공부 현황이다. 여기 있는 수치와 사실만 말한다.
-${formatCoachContext(params.ctx)}`;
+${formatCoachContext(params.ctx)}${knowledgeBlock}`;
 
   const response = await openai.responses.create({
     model: MODEL,
