@@ -70,7 +70,10 @@ Deno.test("missingFields: 순서와 amount", () => {
 Deno.test("completeDraft: 범위 밖이면 null", () => {
   assertEquals(completeDraft({ ...complete, title: "가".repeat(21) }), null);
   assertEquals(completeDraft({ ...complete, total_units: 1001 }), null);
-  assertEquals(completeDraft({ ...complete, target_rounds: 11 }), null);
+  assertEquals(completeDraft({ ...complete, target_rounds: 11 }), {
+    ...complete,
+    target_rounds: 1,
+  });
   assertEquals(completeDraft({ ...complete, subject: null } as never), null);
   assertEquals(completeDraft(complete), complete);
 });
@@ -219,4 +222,14 @@ Deno.test("isDuplicateTitle", () => {
     isDuplicateTitle({ ...complete, subject: "english" }, books),
     false,
   );
+});
+
+Deno.test("missingFields: 범위 밖 값은 빠진 것, completeDraft와 어긋나지 않는다", () => {
+  const long = { ...complete, title: "가".repeat(21) };
+  assertEquals(missingFields(long), ["title"]);
+  const many = { ...complete, total_units: 1500 };
+  assertEquals(missingFields(many), ["amount"]);
+  const rounds = { ...complete, target_rounds: 11 };
+  assertEquals(missingFields(rounds), []);
+  assertEquals(completeDraft(rounds)?.target_rounds, 1);
 });

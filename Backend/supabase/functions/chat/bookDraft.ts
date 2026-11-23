@@ -112,22 +112,23 @@ export function mergeDraft(
 
 export function missingFields(d: BookDraft): MissingField[] {
   const missing: MissingField[] = [];
-  if (!d.subject) missing.push("subject");
-  if (!d.title) missing.push("title");
-  if (!d.unit || d.total_units === null) missing.push("amount");
+  // completeDraft와 같은 검증기를 쓴다. 범위 밖 값은 빠진 것으로 보고 다시 묻는다
+  if (!toSubject(d.subject)) missing.push("subject");
+  if (!toTitle(d.title)) missing.push("title");
+  if (!toUnit(d.unit) || toTotalUnits(d.total_units) === null) {
+    missing.push("amount");
+  }
   return missing;
 }
 
 export function completeDraft(d: BookDraft): CompleteDraft | null {
   const title = toTitle(d.title);
   const total_units = toTotalUnits(d.total_units);
-  const target_rounds = toRounds(d.target_rounds);
+  // 회독은 묻지 않는 항목이라 범위 밖이면 1로 본다
+  const target_rounds = toRounds(d.target_rounds) ?? 1;
   const subject = toSubject(d.subject);
   const unit = toUnit(d.unit);
-  if (
-    !subject || !title || !unit || total_units === null ||
-    target_rounds === null
-  ) return null;
+  if (!subject || !title || !unit || total_units === null) return null;
   return { subject, title, unit, total_units, target_rounds };
 }
 
@@ -207,7 +208,8 @@ export function isDuplicateTitle(d: CompleteDraft, books: BookRef[]): boolean {
 
 const ASK_LINES: Record<MissingField, string> = {
   subject: "어느 과목 교재인가요?",
-  title: "교재 이름을 20자 안으로 알려 주세요. 예) 보건행정 기본서",
+  title:
+    `교재 이름을 ${MAX_TITLE_LENGTH}자 안으로 알려 주세요. 예) 보건행정 기본서`,
   amount: "어떤 단위로 모두 몇 개인지 알려 주세요. 예) 20회분, 12챕터, Day 30",
 };
 
