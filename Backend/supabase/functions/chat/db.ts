@@ -10,11 +10,8 @@ import type {
   StudyTimeReport,
   StudyTip,
 } from "./analysis.ts";
-import {
-  type ChatAction,
-  type CompleteDraft,
-  parseAction,
-} from "./bookDraft.ts";
+import { type ChatAction, parseAction } from "./actions.ts";
+import type { CompleteDraft } from "./bookDraft.ts";
 import type { CoachContext, HistoryMessage, TaskStatus } from "./context.ts";
 import { type KnowledgeSection, TIP_LIMIT } from "./knowledge.ts";
 import { advance, resolvePosition } from "./progress.ts";

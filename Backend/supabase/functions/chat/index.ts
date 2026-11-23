@@ -17,12 +17,11 @@ import {
 } from "../_shared/coach.ts";
 import { studyTimeDate, toDateKey } from "../_shared/date.ts";
 import { replan, type ReplanResult } from "../_shared/replan.ts";
+import type { ChatAction } from "./actions.ts";
 import type { Analysis, BookRef, StudyTip } from "./analysis.ts";
 import {
   askText,
   type BookAddAction,
-  type ChatAction,
-  type ChatRequest,
   CHOICE_EXPIRED_TEXT,
   completeDraft,
   confirmAnswer,
@@ -32,9 +31,8 @@ import {
   isDuplicateTitle,
   mergeDraft,
   missingFields,
-  parseChatRequest,
-  type SaveOutcome,
   savedText,
+  type SaveOutcome,
 } from "./bookDraft.ts";
 import type { CoachContext } from "./context.ts";
 import {
@@ -58,6 +56,7 @@ import {
   withoutSavedTip,
 } from "./knowledge.ts";
 import { analyzeMessage, generateReply } from "./llm.ts";
+import { type ChatRequest, parseChatRequest } from "./request.ts";
 import {
   fallbackReply,
   type RecordedLog,
@@ -78,7 +77,8 @@ export default {
   // 사용자 JWT 필수. ctx.supabase는 RLS가 적용되어 본인 데이터만 다룬다
   fetch: withSupabase({ auth: "user" }, async (req, ctx) => {
     const request = await readRequest(req);
-    if (request === null) {
+    // open 요청의 처리는 아직 없어 잘못된 요청과 같게 거절한다
+    if (request === null || "open" in request) {
       return Response.json({ error: "invalid_content" }, { status: 400 });
     }
     const userId = ctx.userClaims?.id;
@@ -107,7 +107,7 @@ async function readRequest(req: Request): Promise<ChatRequest | null> {
 async function handleMessage(
   sb: SupabaseClient,
   userId: string,
-  request: ChatRequest,
+  request: Exclude<ChatRequest, { open: true }>,
 ): Promise<Response> {
   const { profile, books } = await loadProfileAndBooks(sb);
   const now = new Date();
@@ -121,36 +121,36 @@ async function handleMessage(
     countTodayUserMessages(sb, today, timezone),
   ]);
   const pending: BookAddAction | null =
-    last?.role === "assistant" && last.action ? last.action : null;
+    last?.role === "assistant" && last.action?.kind === "book_add"
+      ? last.action
+      : null;
 
   // 확인 칩 요청, 또는 확인 단계에서 확답 목록의 말로 보낸 글은 분석 없이 처리한다(하루 상한도 보지 않는다)
-  let answer: "yes" | "no" | null = null;
-  let userText = "";
-  let chipValid = true;
-  if ("choice" in request) {
-    const { choice } = request;
-    answer = choice.answer;
-    userText = choice.answer === "yes" ? "응" : "아니";
-    chipValid = pending?.step === "confirm" && last?.id === choice.message_id;
-  } else if (pending?.step === "confirm") {
-    answer = confirmAnswer(request.content);
-    userText = request.content;
-  }
-  if (answer !== null) {
-    return await answerConfirm({
+  const confirm = (answer: "yes" | "no", userText: string, valid: boolean) =>
+    answerConfirm({
       sb,
       userId,
       today,
       timezone,
       last,
-      pending: chipValid ? pending : null,
+      pending: valid ? pending : null,
       answer,
       userText,
     });
+
+  if ("choice" in request) {
+    const { choice } = request;
+    return await confirm(
+      choice.answer,
+      choice.answer === "yes" ? "응" : "아니",
+      pending?.step === "confirm" && last?.id === choice.message_id,
+    );
   }
-  // 칩 요청은 위에서 모두 처리했으므로 여기서는 글 요청이다
-  if (!("content" in request)) throw new Error("unreachable request");
   const content = request.content;
+  if (pending?.step === "confirm") {
+    const answer = confirmAnswer(content);
+    if (answer !== null) return await confirm(answer, content, true);
+  }
 
   // 하루 상한을 넘으면 GPT를 부르지 않는다
   if (sentToday >= DAILY_MESSAGE_LIMIT) {

@@ -11,8 +11,6 @@ import {
   isDuplicateTitle,
   mergeDraft,
   missingFields,
-  parseAction,
-  parseChatRequest,
   savedText,
   toTitle,
 } from "./bookDraft.ts";
@@ -77,74 +75,6 @@ Deno.test("completeDraft: 범위 밖이면 null", () => {
   });
   assertEquals(completeDraft({ ...complete, subject: null } as never), null);
   assertEquals(completeDraft(complete), complete);
-});
-
-Deno.test("parseAction: 정상 값은 그대로", () => {
-  const action = {
-    kind: "book_add",
-    step: "confirm",
-    draft: {
-      subject: "korean",
-      title: "봉투모의고사",
-      unit: "session",
-      total_units: 20,
-      target_rounds: 3,
-    },
-  } as const;
-  assertEquals(parseAction(action), action);
-});
-
-Deno.test("parseAction: 틀린 모양은 null", () => {
-  assertEquals(
-    parseAction({ kind: "book_add", step: "done", draft: {} }),
-    null,
-  );
-  assertEquals(parseAction({ kind: "x", step: "ask", draft: {} }), null);
-  assertEquals(parseAction("x"), null);
-  assertEquals(parseAction(null), null);
-});
-
-Deno.test("parseAction: 틀린 항목만 null, 회독은 1", () => {
-  const parsed = parseAction({
-    kind: "book_add",
-    step: "ask",
-    draft: {
-      subject: "math",
-      title: "a",
-      unit: "session",
-      total_units: 5000,
-      target_rounds: 99,
-    },
-  });
-  assertEquals(parsed?.draft, {
-    subject: null,
-    title: "a",
-    unit: "session",
-    total_units: null,
-    target_rounds: 1,
-  });
-});
-
-Deno.test("parseChatRequest", () => {
-  assertEquals(parseChatRequest({ content: " 안녕 " }, 1000), {
-    content: "안녕",
-  });
-  const choice = { choice: { message_id: "m1", answer: "yes" } } as const;
-  assertEquals(parseChatRequest(choice, 1000), choice);
-  assertEquals(
-    parseChatRequest({ content: "a", choice: choice.choice }, 1000),
-    null,
-  );
-  assertEquals(
-    parseChatRequest({ choice: { message_id: "", answer: "yes" } }, 1000),
-    null,
-  );
-  assertEquals(
-    parseChatRequest({ choice: { message_id: "m1", answer: "maybe" } }, 1000),
-    null,
-  );
-  assertEquals(parseChatRequest({ content: "a".repeat(1001) }, 1000), null);
-  assertEquals(parseChatRequest({}, 1000), null);
 });
 
 Deno.test("confirmAnswer", () => {

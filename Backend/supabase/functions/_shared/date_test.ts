@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert";
-import { dayStartUtc, studyTimeDate, toDateKey } from "./date.ts";
+import { dayLabel, dayStartUtc, studyTimeDate, toDateKey } from "./date.ts";
 
 Deno.test("하루 시작 시각은 그 시간대 자정", () => {
   assertEquals(
@@ -29,3 +29,8 @@ Deno.test("어제는 하루 전", () =>
     studyTimeDate(new Date("2026-11-14T03:00:00Z"), "Asia/Seoul", "yesterday"),
     "2026-11-13",
   ));
+
+Deno.test("날짜 표기: 오늘이면 오늘, 아니면 월 일", () => {
+  assertEquals(dayLabel("2026-11-23", "2026-11-23"), "오늘");
+  assertEquals(dayLabel("2026-11-13", "2026-11-23"), "11월 13일");
+});

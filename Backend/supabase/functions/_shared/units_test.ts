@@ -1,5 +1,6 @@
 import { assertEquals } from "jsr:@std/assert";
 import {
+  BOOK_UNITS,
   formatMinutes,
   progressLabel,
   rangeLabel,
@@ -48,3 +49,6 @@ Deno.test("분 표기", () =>
     [formatMinutes(200), formatMinutes(180), formatMinutes(40)],
     ["3시간 20분", "3시간", "40분"],
   ));
+
+Deno.test("단위 목록", () =>
+  assertEquals([...BOOK_UNITS], ["day", "chapter", "session"]));
