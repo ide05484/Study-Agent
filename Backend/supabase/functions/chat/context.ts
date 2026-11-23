@@ -18,6 +18,18 @@ export interface HistoryMessage {
   content: string;
 }
 
+// 오늘 분량 한 줄
+export interface TodayTaskLine {
+  subject: Subject;
+  title: string;
+  unit: BookUnit;
+  target_rounds: number;
+  round: number;
+  start_unit: number;
+  end_unit: number;
+  status: TaskStatus;
+}
+
 export interface CoachContext {
   today: string;
   examDate: string | null;
@@ -30,16 +42,7 @@ export interface CoachContext {
     current_unit: number;
     target_rounds: number;
   }[];
-  todayTasks: {
-    subject: Subject;
-    title: string;
-    unit: BookUnit;
-    target_rounds: number;
-    round: number;
-    start_unit: number;
-    end_unit: number;
-    status: TaskStatus;
-  }[];
+  todayTasks: TodayTaskLine[];
   // 최근 7일
   recentLogs: {
     study_date: string;
