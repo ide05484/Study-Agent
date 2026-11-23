@@ -465,6 +465,10 @@ export type Database = {
         Args: { p_from: string; p_message_id: string; p_to: string }
         Returns: boolean
       }
+      discard_user_message: {
+        Args: { p_from: string; p_message_id: string; p_to: string }
+        Returns: boolean
+      }
       insert_first_message: {
         Args: {
           p_action: Json
