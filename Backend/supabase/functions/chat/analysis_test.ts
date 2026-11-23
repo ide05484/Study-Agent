@@ -60,6 +60,8 @@ const raw = (o: Record<string, unknown>) => ({
   subject: null,
   entries: [],
   study_time: null,
+  study_tip: null,
+  knowledge: [],
   ...o,
 });
 
@@ -182,4 +184,86 @@ Deno.test("알 수 없는 intent와 과목은 기본값으로", () => {
     books,
   );
   assertEquals([a.intent, a.subject, a.entries.length], ["question", null, 0]);
+});
+
+Deno.test("study_tip: 과목과 내용", () => {
+  const a = parseAnalysis(
+    raw({
+      study_tip: {
+        subject: "public_health",
+        content: " 기출 풀고 바로 백지 복기하기 ",
+      },
+    }),
+    books,
+  );
+  assertEquals(a.studyTip, {
+    subject: "public_health",
+    content: "기출 풀고 바로 백지 복기하기",
+  });
+});
+
+Deno.test("study_tip: 과목이 없으면 메시지 과목", () => {
+  const tip = { subject: null, content: "소리 내어 읽기" };
+  assertEquals(
+    parseAnalysis(raw({ subject: "english", study_tip: tip }), books).studyTip
+      ?.subject,
+    "english",
+  );
+  assertEquals(
+    parseAnalysis(raw({ study_tip: tip }), books).studyTip?.subject,
+    null,
+  );
+});
+
+Deno.test("study_tip: 잘못된 과목은 메시지 과목", () => {
+  const a = parseAnalysis(
+    raw({
+      subject: "korean",
+      study_tip: { subject: "math", content: "소리 내어 읽기" },
+    }),
+    books,
+  );
+  assertEquals(a.studyTip?.subject, "korean");
+});
+
+Deno.test("study_tip: 빈 내용·201자·객체 아님은 null", () => {
+  const tipOf = (content: unknown) =>
+    parseAnalysis(raw({ study_tip: { subject: null, content } }), books)
+      .studyTip;
+  assertEquals(tipOf("   "), null);
+  assertEquals(tipOf("가".repeat(201)), null);
+  assertEquals(
+    parseAnalysis(raw({ study_tip: "문자열" }), books).studyTip,
+    null,
+  );
+  assertEquals(tipOf("가".repeat(200))?.content, "가".repeat(200));
+});
+
+Deno.test("knowledge: 모르는 값 빼고 중복 없이 정해진 순서", () => {
+  assertEquals(
+    parseAnalysis(raw({ knowledge: ["time", "mental", "mental", "x"] }), books)
+      .knowledge,
+    ["mental", "time"],
+  );
+  assertEquals(
+    parseAnalysis(raw({ knowledge: "mental" }), books).knowledge,
+    [],
+  );
+  const noKnowledge = raw({});
+  delete (noKnowledge as Record<string, unknown>).knowledge;
+  assertEquals(parseAnalysis(noKnowledge, books).knowledge, []);
+});
+
+Deno.test("study_tip은 intent를 바꾸지 않는다", () => {
+  const a = parseAnalysis(
+    raw({
+      intent: "study_log",
+      entries: [entry({ start_unit: 1, end_unit: 2 })],
+      study_tip: { subject: null, content: "소리 내어 읽기" },
+    }),
+    books,
+  );
+  assertEquals(a.intent, "study_log");
+  assertEquals(a.entries.length, 1);
+  assertEquals(a.studyTip?.content, "소리 내어 읽기");
 });

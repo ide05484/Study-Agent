@@ -40,17 +40,28 @@ export interface StudyTimeReport {
   day: "today" | "yesterday";
 }
 
+export const KNOWLEDGE = ["mental", "time"] as const;
+export type Knowledge = typeof KNOWLEDGE[number];
+
+export interface StudyTip {
+  subject: Subject | null;
+  content: string;
+}
+
 export interface Analysis {
   intent: Intent;
   subject: Subject | null;
   entries: StudyEntry[];
   studyTime: StudyTimeReport | null;
   studyTimeInvalid: boolean;
+  studyTip: StudyTip | null;
+  knowledge: Knowledge[];
 }
 
 const SUBJECTS = Object.keys(SUBJECT_LABELS) as Subject[];
 const MIN_STUDY_MINUTES = 1;
 const MAX_STUDY_MINUTES = 1080;
+export const MAX_TIP_LENGTH = 200;
 
 const nullable = (type: string) => ({ type: [type, "null"] });
 
@@ -88,6 +99,16 @@ const STUDY_TIME_SCHEMA = {
   additionalProperties: false,
 };
 
+const STUDY_TIP_SCHEMA = {
+  type: ["object", "null"],
+  properties: {
+    subject: { type: ["string", "null"], enum: [...SUBJECTS, null] },
+    content: { type: "string" },
+  },
+  required: ["subject", "content"],
+  additionalProperties: false,
+};
+
 export const ANALYSIS_SCHEMA: Record<string, unknown> = {
   type: "object",
   properties: {
@@ -95,8 +116,17 @@ export const ANALYSIS_SCHEMA: Record<string, unknown> = {
     subject: { type: ["string", "null"], enum: [...SUBJECTS, null] },
     entries: { type: "array", items: ENTRY_SCHEMA },
     study_time: STUDY_TIME_SCHEMA,
+    study_tip: STUDY_TIP_SCHEMA,
+    knowledge: { type: "array", items: { type: "string", enum: KNOWLEDGE } },
   },
-  required: ["intent", "subject", "entries", "study_time"],
+  required: [
+    "intent",
+    "subject",
+    "entries",
+    "study_time",
+    "study_tip",
+    "knowledge",
+  ],
   additionalProperties: false,
 };
 
@@ -170,6 +200,26 @@ function parseStudyTime(v: unknown): StudyTimeReport | null | undefined {
   };
 }
 
+// 내용이 없거나 길이가 맞지 않으면 null. 팁 과목이 없거나 틀리면 메시지 과목을 쓴다
+function parseStudyTip(
+  v: unknown,
+  messageSubject: Subject | null,
+): StudyTip | null {
+  if (!isRecord(v) || typeof v.content !== "string") return null;
+  const content = v.content.trim();
+  if (content.length < 1 || content.length > MAX_TIP_LENGTH) return null;
+  return {
+    subject: isSubject(v.subject) ? v.subject : messageSubject,
+    content,
+  };
+}
+
+// 모르는 값과 중복을 빼고 KNOWLEDGE 순서로
+function parseKnowledge(v: unknown): Knowledge[] {
+  if (!Array.isArray(v)) return [];
+  return KNOWLEDGE.filter((k) => v.includes(k));
+}
+
 export function parseAnalysis(raw: unknown, books: BookRef[]): Analysis {
   const r = isRecord(raw) ? raw : {};
   let intent: Intent = isIntent(r.intent) ? r.intent : "question";
@@ -192,5 +242,13 @@ export function parseAnalysis(raw: unknown, books: BookRef[]): Analysis {
     studyTimeInvalid = true;
   }
 
-  return { intent, subject, entries, studyTime, studyTimeInvalid };
+  return {
+    intent,
+    subject,
+    entries,
+    studyTime,
+    studyTimeInvalid,
+    studyTip: parseStudyTip(r.study_tip, subject),
+    knowledge: parseKnowledge(r.knowledge),
+  };
 }
