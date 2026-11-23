@@ -102,15 +102,13 @@ export function fallbackReply(
 ): string {
   const tipNote = savedTip ? ` ${tipSavedReply(savedTip.subject)}` : "";
   if (recorded.length === 0) {
-    if (savedTime) {
-      return `${
-        studyTimeReply(savedTime.total, savedTime.date, ctx.today)
-      }${tipNote} 질문 답변은 지금 만들지 못했어요. 잠시 후 다시 물어봐 주세요.`;
-    }
-    if (savedTip) {
-      return `${
-        tipSavedReply(savedTip.subject)
-      } 질문 답변은 지금 만들지 못했어요. 잠시 후 다시 물어봐 주세요.`;
+    if (savedTime || savedTip) {
+      const saved = savedTime
+        ? `${
+          studyTimeReply(savedTime.total, savedTime.date, ctx.today)
+        }${tipNote}`
+        : tipSavedReply(savedTip!.subject);
+      return `${saved} 질문 답변은 지금 만들지 못했어요. 잠시 후 다시 물어봐 주세요.`;
     }
     return "지금은 답변을 만들지 못했어요. 잠시 후 다시 보내주세요.";
   }

@@ -88,7 +88,8 @@ export function parseMethodDoc(
   function fail(line: number, reason: string): never {
     throw new MethodDocError(file, line, reason);
   }
-  const lines = markdown.split(/\r?\n/);
+  // 편집기가 붙이는 UTF-8 BOM은 첫 줄 검사에 걸리지 않게 걷는다
+  const lines = markdown.replace(/^﻿/, "").split(/\r?\n/);
 
   const sections: MethodSection[] = [];
   let titleSeen = false;
@@ -156,6 +157,9 @@ export function parseMethodDoc(
       const heading = raw.slice(3).trim();
       if (heading === "" || heading.length > MAX_HEADING_LENGTH) {
         fail(no, `소제목은 1~${MAX_HEADING_LENGTH}자여야 해요`);
+      }
+      if (heading.includes("**") || heading.includes("==")) {
+        fail(no, "소제목에는 꾸밈을 쓰지 않아요");
       }
       current = { heading, line: no, kind: null };
       continue;

@@ -1,6 +1,8 @@
 // [chat] 프론트엔드 채팅 화면이 메시지를 보낼 때 부르는 단일 엔드포인트.
 // LLM으로 메시지를 분석해(analysis.ts가 검증) 학습 기록은 study_logs와 report_progress로, 순공시간은 record_study_time으로,
-// 잘 맞은 방법은 study_tips로 저장하고 코치 말투로 답한다. 질문 답변에는 필요한 공부법(study_methods)과 잘 맞은 방법을 넣는다. 사용법·교재 추가·순공시간만·하루 상한은 답변 호출 없이 정해진 문구로 답한다. 계획은 다시 나누지 않는다.
+// 잘 맞은 방법은 study_tips로 저장하고 코치 말투로 답한다.
+// 질문 답변에는 필요한 공부법(study_methods)과 잘 맞은 방법을 넣는다.
+// 사용법·교재 추가·순공시간만·하루 상한은 답변 호출 없이 정해진 문구로 답한다. 계획은 다시 나누지 않는다.
 // 응답 형식은 Frontend/src/interfaces/chat.ts의 `ChatRequest`/`ChatResponse`를 따른다.
 
 import "@supabase/functions-js/edge-runtime.d.ts";
@@ -27,7 +29,12 @@ import {
   recordStudyLogs,
   saveStudyTime,
 } from "./db.ts";
-import { formatKnowledge, knowledgeTopics, loadsTips } from "./knowledge.ts";
+import {
+  formatKnowledge,
+  knowledgeTopics,
+  loadsTips,
+  withoutSavedTip,
+} from "./knowledge.ts";
 import { analyzeMessage, generateReply } from "./llm.ts";
 import {
   fallbackReply,
@@ -237,18 +244,19 @@ async function buildReply(p: {
       }),
     ]);
     ctx = loaded;
+    const tips = withoutSavedTip(known.tips, p.savedTip);
     return await generateReply({
       content: p.content,
       intent: replyIntent,
       ctx,
       history,
-      knowledge: formatKnowledge(known.sections, known.tips),
+      knowledge: formatKnowledge(known.sections, tips),
       options: {
         savedStudyTime: p.savedTime
           ? savedStudyTimeLabel(p.savedTime.total, p.savedTime.date, p.today)
           : null,
         hasKnowledge: known.sections.length > 0,
-        hasTips: known.tips.length > 0,
+        hasTips: tips.length > 0,
         hardTimes: knowledge.includes("mental"),
         savedTip: p.savedTip,
       },

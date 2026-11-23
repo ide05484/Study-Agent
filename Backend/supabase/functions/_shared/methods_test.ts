@@ -213,3 +213,20 @@ Deno.test("METHOD_FILES: topic마다 파일이 있다", () => {
   assertEquals(METHOD_FILES.health_admin, "health-admin.md");
   assertEquals(METHOD_FILES.mental, "mental.md");
 });
+
+Deno.test("parseMethodDoc: UTF-8 BOM이 붙어도 같은 결과", () => {
+  assertEquals(parse("﻿" + DOC), parse(DOC));
+});
+
+Deno.test("parseMethodDoc: 소제목에 꾸밈이 있으면 오류", () => {
+  assertThrows(
+    () => parse("# 제목\n\n## **특징**\n- a\n"),
+    MethodDocError,
+    `${FILE}:3 `,
+  );
+  assertThrows(
+    () => parse("# 제목\n\n## ==특징==\n- a\n"),
+    MethodDocError,
+    `${FILE}:3 `,
+  );
+});

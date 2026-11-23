@@ -169,3 +169,20 @@ Deno.test("fallbackReply: 잘 맞은 방법을 저장했을 때", () => {
     "잘 맞은 방법은 공중보건 공부법에 적어 뒀어요. 질문 답변은 지금 만들지 못했어요. 잠시 후 다시 물어봐 주세요.",
   );
 });
+
+Deno.test("fallbackReply: 순공시간과 잘 맞은 방법을 함께 저장했을 때", () => {
+  const tip = { subject: "public_health" as const, content: "백지 복기" };
+  assertEquals(
+    fallbackReply([], ctx, { total: 200, date: ctx.today }, tip),
+    "오늘 순공 3시간 20분으로 적어 뒀어요. 오늘도 수고 많으셨어요. 잘 맞은 방법은 공중보건 공부법에 적어 뒀어요. 질문 답변은 지금 만들지 못했어요. 잠시 후 다시 물어봐 주세요.",
+  );
+  assertEquals(
+    fallbackReply(
+      [{ subject: "health_admin", title: "기본서" }],
+      ctx,
+      { total: 240, date: ctx.today },
+      tip,
+    ),
+    "기록했어요. 보건행정 진도 13%, 오늘 순공 4시간도 적어 뒀어요. 오늘도 수고했어요. 잘 맞은 방법은 공중보건 공부법에 적어 뒀어요.",
+  );
+});

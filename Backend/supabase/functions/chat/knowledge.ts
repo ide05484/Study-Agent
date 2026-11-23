@@ -5,7 +5,7 @@ import {
   stripMarks,
 } from "../_shared/methods.ts";
 import type { Subject } from "../_shared/subjects.ts";
-import type { Intent, Knowledge } from "./analysis.ts";
+import type { Intent, Knowledge, StudyTip } from "./analysis.ts";
 
 // 코치 답변 프롬프트에 넣을 공부법 지식 글. OpenAI·Supabase를 import하지 않는 순수 모듈이다.
 
@@ -26,6 +26,21 @@ export function knowledgeTopics(
 
 export function loadsTips(intent: Intent): boolean {
   return intent === "question";
+}
+
+function squash(text: string): string {
+  return text.replace(/\s+/g, " ").trim();
+}
+
+// 방금 저장한 팁은 "이번 메시지의 방법" 지침으로 따로 알리므로 잘 맞았던 방법 목록에서 뺀다.
+// 목록의 팁은 loadKnowledge가 공백을 한 칸으로 줄여 둔 값이라 같은 방식으로 비교한다
+export function withoutSavedTip(
+  tips: string[],
+  saved: StudyTip | null,
+): string[] {
+  if (!saved) return tips;
+  const savedContent = squash(saved.content);
+  return tips.filter((tip) => squash(tip) !== savedContent);
 }
 
 function sectionLines(section: KnowledgeSection): string[] {

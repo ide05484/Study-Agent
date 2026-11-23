@@ -5,6 +5,7 @@ import {
   knowledgeTopics,
   loadsTips,
   TIP_LIMIT,
+  withoutSavedTip,
 } from "./knowledge.ts";
 
 Deno.test("knowledgeTopics: 질문이면 과목과 지식, 그 밖에는 지식만", () => {
@@ -75,4 +76,23 @@ Deno.test("formatKnowledge: topic이 바뀔 때마다 제목, list 섹션", () =
 
 Deno.test("formatKnowledge: 둘 다 비면 빈 문자열", () => {
   assertEquals(formatKnowledge([], []), "");
+});
+
+Deno.test("withoutSavedTip: 저장한 팁은 빠지고 공백 차이는 무시", () => {
+  const tips = ["백지 복기 10분", "기출 먼저 풀기"];
+  assertEquals(
+    withoutSavedTip(tips, {
+      subject: "public_health",
+      content: "백지 복기 10분",
+    }),
+    ["기출 먼저 풀기"],
+  );
+  assertEquals(
+    withoutSavedTip(tips, {
+      subject: null,
+      content: "  백지  복기\n10분 ",
+    }),
+    ["기출 먼저 풀기"],
+  );
+  assertEquals(withoutSavedTip(tips, null), tips);
 });
