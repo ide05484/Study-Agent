@@ -310,7 +310,9 @@ async function answerConfirm(p: {
         outcome = { kind: "failed" };
         replanFailed = true;
       } else if (result.skipped) {
-        outcome = { kind: "no_exam" };
+        outcome = result.skipped === "exam_passed"
+          ? { kind: "exam_passed" }
+          : { kind: "no_exam" };
         planChanged = true;
       } else {
         const line = result.tasks.find((t) =>

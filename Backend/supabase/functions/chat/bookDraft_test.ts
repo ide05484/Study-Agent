@@ -1,7 +1,8 @@
-import { assertEquals } from "jsr:@std/assert";
+import { assertEquals, assertNotEquals } from "jsr:@std/assert";
 import {
   askText,
   type BookDraft,
+  CHOICE_EXPIRED_TEXT,
   type CompleteDraft,
   completeDraft,
   confirmAnswer,
@@ -45,6 +46,59 @@ Deno.test("mergeDraft: patch의 null 아닌 값만 덮어쓴다", () => {
     target_rounds: 1,
   });
   assertEquals(mergeDraft(base, null), base);
+});
+
+const other: BookDraft = {
+  subject: "korean",
+  title: "기출",
+  unit: "session",
+  total_units: 20,
+  target_rounds: 3,
+};
+
+Deno.test("mergeDraft: 다른 교재를 통째로 말하면 초안을 비우고 시작", () => {
+  assertEquals(
+    mergeDraft(other, {
+      subject: "english",
+      title: "단어장",
+      unit: "day",
+      total_units: 60,
+      target_rounds: null,
+    }),
+    {
+      subject: "english",
+      title: "단어장",
+      unit: "day",
+      total_units: 60,
+      target_rounds: 1,
+    },
+  );
+});
+
+Deno.test("mergeDraft: 제목만 바꾸면 나머지는 유지", () => {
+  assertEquals(
+    mergeDraft(other, {
+      subject: null,
+      title: "기출 모의",
+      unit: null,
+      total_units: null,
+      target_rounds: null,
+    }),
+    { ...other, title: "기출 모의" },
+  );
+});
+
+Deno.test("mergeDraft: 회독만 말하면 회독만 바뀜", () => {
+  assertEquals(
+    mergeDraft(other, {
+      subject: null,
+      title: null,
+      unit: null,
+      total_units: null,
+      target_rounds: 4,
+    }),
+    { ...other, target_rounds: 4 },
+  );
 });
 
 Deno.test("missingFields: 순서와 amount", () => {
@@ -139,6 +193,44 @@ Deno.test("savedText", () => {
       "\n\n시험일을 정하면 분량을 나눠 드려요. 메뉴의 '공부 설정 변경'에서 정할 수 있어요.",
   );
   assertEquals(savedText(d, { kind: "failed" }), first);
+  const passed = savedText(d, { kind: "exam_passed" });
+  assertEquals(
+    passed,
+    first +
+      "\n\n시험일이 이미 지나서 분량은 나누지 않았어요. 시험일을 바꾸면 나눠 드려요. 메뉴의 '공부 설정 변경'에서 바꿀 수 있어요.",
+  );
+  assertNotEquals(passed, savedText(d, { kind: "no_exam" }));
+});
+
+Deno.test("CHOICE_EXPIRED_TEXT", () => {
+  assertEquals(
+    CHOICE_EXPIRED_TEXT,
+    "이 확인은 끝났어요. 추가할 교재를 다시 말해 주세요.",
+  );
+});
+
+Deno.test("completeDraft: 경계값", () => {
+  for (const total_units of [1, 1000]) {
+    assertEquals(
+      completeDraft({ ...complete, total_units })?.total_units,
+      total_units,
+    );
+  }
+  for (const total_units of [0, 1001]) {
+    assertEquals(completeDraft({ ...complete, total_units }), null);
+  }
+  for (const target_rounds of [1, 10]) {
+    assertEquals(
+      completeDraft({ ...complete, target_rounds })?.target_rounds,
+      target_rounds,
+    );
+  }
+  for (const target_rounds of [0, 11]) {
+    assertEquals(
+      completeDraft({ ...complete, target_rounds })?.target_rounds,
+      1,
+    );
+  }
 });
 
 Deno.test("isDuplicateTitle", () => {

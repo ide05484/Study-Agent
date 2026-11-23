@@ -48,6 +48,7 @@ export type SaveOutcome =
     today: { start_unit: number; end_unit: number } | null;
   }
   | { kind: "no_exam" }
+  | { kind: "exam_passed" }
   | { kind: "failed" };
 
 export const EMPTY_DRAFT: BookDraft = {
@@ -100,6 +101,13 @@ export function mergeDraft(
   patch: BookPatch | null,
 ): BookDraft {
   if (!patch) return { ...base };
+  // 새 제목에 과목·단위·총량까지 함께 말하면 다른 교재를 통째로 말한 것이라 이전 값을 넘기지 않는다.
+  // 제목만 말하면 제목 고치기로 본다
+  const newBook = patch.title !== null && base.title !== null &&
+    patch.title !== base.title &&
+    (patch.subject !== null || patch.unit !== null ||
+      patch.total_units !== null);
+  if (newBook) base = EMPTY_DRAFT;
   return {
     subject: patch.subject ?? base.subject,
     title: patch.title ?? base.title,
@@ -177,8 +185,9 @@ export function confirmAnswer(text: string): "yes" | "no" | null {
 }
 
 export function isDuplicateTitle(d: CompleteDraft, books: BookRef[]): boolean {
-  const title = d.title.trim();
-  return books.some((b) => b.subject === d.subject && b.title.trim() === title);
+  return books.some((b) =>
+    b.subject === d.subject && b.title.trim() === d.title.trim()
+  );
 }
 
 const ASK_LINES: Record<MissingField, string> = {
@@ -225,6 +234,10 @@ export function savedText(d: CompleteDraft, outcome: SaveOutcome): string {
     }
     case "no_exam":
       return `${first}\n\n시험일을 정하면 분량을 나눠 드려요. 메뉴의 '공부 설정 변경'에서 정할 수 있어요.`;
+    case "exam_passed":
+      return `${first}
+
+시험일이 이미 지나서 분량은 나누지 않았어요. 시험일을 바꾸면 나눠 드려요. 메뉴의 '공부 설정 변경'에서 바꿀 수 있어요.`;
     case "failed":
       return first;
   }
