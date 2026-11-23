@@ -417,6 +417,20 @@ export async function saveStudyTime(
   return data as number;
 }
 
+// 그날 순공시간 합계(분). 아직 없으면 null
+export async function loadStudyMinutes(
+  sb: Client,
+  date: string,
+): Promise<number | null> {
+  const { data, error } = await sb
+    .from("study_time")
+    .select("minutes")
+    .eq("study_date", date)
+    .maybeSingle();
+  fail(error);
+  return data === null ? null : (data as { minutes: number }).minutes;
+}
+
 // 잘 맞은 방법 저장. 같은 사용자·과목·내용이 이미 있으면 넣지 않고 false
 export async function insertStudyTip(
   sb: Client,

@@ -5,6 +5,8 @@ import type { Intent } from "./analysis.ts";
 
 export const WRAP_UP_QUESTION = "오늘은 여기서 마무리할까요?";
 export const WRAP_UP_NO_TEXT = "좋아요, 조금만 더 해 봐요. 화이팅!";
+// 이미 답했거나 뒤에 다른 메시지가 온 마무리 칩
+export const WRAP_UP_EXPIRED_TEXT = "이 확인은 끝났어요.";
 export const WRAP_UP_ACTION: WrapUpAction = {
   kind: "wrap_up",
   step: "confirm",

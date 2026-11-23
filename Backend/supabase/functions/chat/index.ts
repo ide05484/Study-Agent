@@ -4,6 +4,7 @@
 // 질문 답변에는 필요한 공부법(study_methods)과 잘 맞은 방법을 넣는다.
 // 사용법·순공시간만·하루 상한은 답변 호출 없이 정해진 문구로 답한다. 학습 기록으로는 계획을 다시 나누지 않는다.
 // 교재 추가는 정해진 문구로 되묻고 확인 칩(응/아니)을 받은 뒤에만 books에 저장하며, 저장하면 바로 계획을 다시 나눈다(_shared/replan.ts).
+// 공부를 마치려는 말에는 답 끝에 마무리 질문과 칩을 붙이고, 그 칩은 정해진 문구로 답한다(wrapUp.ts).
 // 답을 기다리는 동안 연달아 보낸 글은 처리 안 한 메시지로 묶어 한 번에 분석하고, 더 새 글이 온 요청은 저장·답변 없이 끝낸다(superseded).
 // 응답 형식은 Frontend/src/interfaces/chat.ts의 `ChatRequest`/`ChatResponse`를 따른다.
 
@@ -18,7 +19,11 @@ import {
 } from "../_shared/coach.ts";
 import { addDays, studyTimeDate, toDateKey } from "../_shared/date.ts";
 import { replan, type ReplanResult } from "../_shared/replan.ts";
-import type { ChatAction } from "./actions.ts";
+import {
+  type ChatAction,
+  type ConfirmAction,
+  isConfirmAction,
+} from "./actions.ts";
 import type { Analysis, BookRef, StudyTip } from "./analysis.ts";
 import type { AskedAbout } from "./analysisPrompt.ts";
 import {
@@ -52,6 +57,7 @@ import {
   loadLastCoachMessage,
   loadProfileAndBooks,
   loadRecentMessages,
+  loadStudyMinutes,
   loadTodayHistory,
   loadTodayTasks,
   loadUnhandledUserMessages,
@@ -75,6 +81,14 @@ import {
   studyTimeReply,
   tipSavedReply,
 } from "./reply.ts";
+import {
+  appendWrapUp,
+  shouldAskWrapUp,
+  WRAP_UP_ACTION,
+  WRAP_UP_EXPIRED_TEXT,
+  WRAP_UP_NO_TEXT,
+  wrapUpYesText,
+} from "./wrapUp.ts";
 
 const MAX_CONTENT_LENGTH = 1000;
 
@@ -179,16 +193,22 @@ async function handleMessage(
     countTodayUserMessages(sb, today, timezone),
     loadLastCoachMessage(sb, today, timezone),
   ]);
-  const pending: BookAddAction | null =
-    last?.role === "assistant" && last.action?.kind === "book_add"
+  // 칩으로 답하는 확인 메시지(교재 확인·공부 마무리)
+  const pending: ConfirmAction | null =
+    last?.role === "assistant" && isConfirmAction(last.action)
       ? last.action
       : null;
 
   // 확인 칩 요청, 또는 확인 단계에서 확답 목록의 말로 보낸 글은 분석 없이 처리한다(하루 상한도 보지 않는다)
-  const confirm = (answer: "yes" | "no", userText: string, valid: boolean) =>
+  const answerPending = (
+    answer: "yes" | "no",
+    userText: string,
+    valid: boolean,
+  ) =>
     answerConfirm({
       sb,
       userId,
+      now,
       today,
       timezone,
       last,
@@ -199,16 +219,16 @@ async function handleMessage(
 
   if ("choice" in request) {
     const { choice } = request;
-    return await confirm(
+    return await answerPending(
       choice.answer,
       choice.answer === "yes" ? "응" : "아니",
-      pending?.step === "confirm" && last?.id === choice.message_id,
+      pending !== null && last?.id === choice.message_id,
     );
   }
   const content = request.content;
-  if (pending?.step === "confirm") {
+  if (pending !== null) {
     const answer = confirmAnswer(content);
-    if (answer !== null) return await confirm(answer, content, true);
+    if (answer !== null) return await answerPending(answer, content, true);
   }
 
   // 하루 상한을 넘으면 GPT를 부르지 않는다. 이 메시지는 처리한 것으로 넣어 묶음에 섞이지 않게 한다
@@ -400,14 +420,15 @@ async function failBeforeClaim(
 
 // 확인 칩(또는 같은 뜻의 글)을 처리한다. GPT를 부르지 않는다.
 // 이 경로의 사용자 메시지는 처리한 것으로 넣어 묶음에 섞이지 않게 한다.
-// pending은 칩이 유효하고 확인 단계일 때만 값이 있다
+// pending은 칩이 유효하고 확인 단계일 때만 값이 있고, kind(교재 확인·공부 마무리)로 처리를 나눈다
 async function answerConfirm(p: {
   sb: SupabaseClient;
   userId: string;
+  now: Date;
   today: string;
   timezone: string;
   last: ChatMessageRow | null;
-  pending: BookAddAction | null;
+  pending: ConfirmAction | null;
   answer: "yes" | "no";
   userText: string;
 }): Promise<Response> {
@@ -417,23 +438,43 @@ async function answerConfirm(p: {
     userId,
     "user",
     p.userText,
-    pending?.draft.subject ?? null,
+    pending?.kind === "book_add" ? pending.draft.subject : null,
     null,
     true,
   );
 
   // 같은 칩을 거의 동시에 두 번 보내도 한쪽만 통하게, 방금 넣은 메시지 바로 앞이 확인 메시지인지 다시 본다
-  const complete = pending ? completeDraft(pending.draft) : null;
+  const complete = pending?.kind === "book_add"
+    ? completeDraft(pending.draft)
+    : null;
   const [first, second] = await loadRecentMessages(sb, p.today, p.timezone, 2);
   const fresh = pending !== null && p.last !== null && first?.id === user.id &&
     second?.id === p.last.id;
 
-  let text = CHOICE_EXPIRED_TEXT;
+  // 칩이 처음부터 유효하지 않으면 종류를 모르므로 교재 확인 문구로 답한다
+  let text = pending?.kind === "wrap_up"
+    ? WRAP_UP_EXPIRED_TEXT
+    : CHOICE_EXPIRED_TEXT;
   let action: ChatAction | null = null;
   let planChanged = false;
   let replanFailed = false;
 
-  if (fresh && pending && complete) {
+  if (fresh && pending?.kind === "wrap_up") {
+    if (p.answer === "no") {
+      text = WRAP_UP_NO_TEXT;
+    } else {
+      // 순공시간은 새벽 0~4시면 전날 것을, 분량은 오늘 채팅방 날짜 것을 본다
+      const [minutes, tasks] = await Promise.all([
+        loadStudyMinutes(sb, studyTimeDate(p.now, p.timezone, "today")),
+        loadTodayTasks(sb, p.today),
+      ]);
+      ({ text, action } = wrapUpYesText({
+        minutes,
+        done: tasks.filter((t) => t.status === "done").length,
+        total: tasks.length,
+      }));
+    }
+  } else if (fresh && pending?.kind === "book_add" && complete) {
     if (p.answer === "no") {
       text = EDIT_TEXT;
       action = { kind: "book_add", step: "edit", draft: pending.draft };
@@ -507,13 +548,16 @@ async function buildReply(p: {
   const { intent, subject, knowledge } = p.analysis;
   const hasLogs = p.recorded.length > 0;
   // 정해진 문구로 답할 때도 이번에 저장한 잘 맞은 방법은 알린다
+  const withTip = (text: string): string =>
+    p.savedTip ? `${text}\n${tipSavedReply(p.savedTip.subject)}` : text;
   const fixed = (text: string, action: ChatAction | null = null): Reply => ({
-    text: p.savedTip ? `${text}\n${tipSavedReply(p.savedTip.subject)}` : text,
+    text: withTip(text),
     action,
   });
 
-  // 순공시간을 저장하지 못한 메시지는 의도보다 먼저 다시 묻는다(기록이 있으면 답 끝에 붙인다)
-  if (!hasLogs && p.studyTimeInvalid) return fixed(STUDY_TIME_ASK);
+  // 순공시간을 저장하지 못한 메시지는 의도보다 먼저 다시 묻는다(기록이 있으면 답 끝에 붙인다).
+  // 받아 둔 교재 초안이 있으면 그대로 붙여 다음 말에서 이어 간다
+  if (!hasLogs && p.studyTimeInvalid) return fixed(STUDY_TIME_ASK, p.pending);
   if (intent === "usage") return fixed(USAGE_GUIDE);
   if (intent === "book_add") {
     // 받아 둔 초안에 이번 말을 합치고, 빠진 게 있으면 묻고 다 있으면 확인 칩을 띄운다
@@ -533,13 +577,24 @@ async function buildReply(p: {
       draft,
     });
   }
-  if (!hasLogs && intent === "study_time" && p.savedTime) {
-    return fixed(
-      studyTimeReply(p.savedTime.total, p.savedTime.date, p.today),
-    );
-  }
   // 순공시간과 함께 보낸 학습 기록은 학습 기록 답변으로
   const replyIntent = hasLogs && intent === "study_time" ? "study_log" : intent;
+  // 공부를 마치려는 말이면 답(대체 답변 포함) 끝에 마무리 질문과 칩을 붙인다
+  const askWrapUp = shouldAskWrapUp({
+    wrapUp: p.analysis.wrapUp,
+    intent: replyIntent,
+    studyTimeAsk: p.studyTimeInvalid && !hasLogs,
+  });
+  const closing = (text: string): Reply =>
+    askWrapUp
+      ? { text: appendWrapUp(text), action: WRAP_UP_ACTION }
+      : { text, action: null };
+
+  if (!hasLogs && intent === "study_time" && p.savedTime) {
+    return closing(
+      withTip(studyTimeReply(p.savedTime.total, p.savedTime.date, p.today)),
+    );
+  }
 
   // 저장은 끝났으므로 현황 조회나 답변 호출이 실패해도 500 대신 대체 답변을 돌려준다.
   // 조회가 실패하면 처음에 읽은 교재만으로 대체 답변을 만든다
@@ -582,16 +637,13 @@ async function buildReply(p: {
         hasTips: tips.length > 0,
         hardTimes: knowledge.includes("mental"),
         savedTip: p.savedTip,
-        closingQuestion: false,
+        closingQuestion: askWrapUp,
       },
     });
-    return { text, action: null };
+    return closing(text);
   } catch (e) {
     console.error(JSON.stringify({ call: "reply", error: String(e) }));
-    return {
-      text: fallbackReply(p.recorded, ctx, p.savedTime, p.savedTip),
-      action: null,
-    };
+    return closing(fallbackReply(p.recorded, ctx, p.savedTime, p.savedTip));
   }
 }
 

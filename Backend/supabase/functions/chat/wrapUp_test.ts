@@ -1,6 +1,15 @@
 import { assertEquals } from "jsr:@std/assert";
 import type { Intent } from "./analysis.ts";
-import { appendWrapUp, shouldAskWrapUp, wrapUpYesText } from "./wrapUp.ts";
+import {
+  appendWrapUp,
+  shouldAskWrapUp,
+  WRAP_UP_EXPIRED_TEXT,
+  wrapUpYesText,
+} from "./wrapUp.ts";
+
+Deno.test("끝난 마무리 확인 문구", () => {
+  assertEquals(WRAP_UP_EXPIRED_TEXT, "이 확인은 끝났어요.");
+});
 
 Deno.test("shouldAskWrapUp 진리표", () => {
   const ask = (wrapUp: boolean, intent: Intent, studyTimeAsk = false) =>
