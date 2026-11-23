@@ -1,7 +1,7 @@
 # 채팅 다듬기 설계
 
 - 날짜: 2026-11-23
-- 상태: 빌더 검토 반영 완료, 사용자 승인 전
+- 상태: 사용자 승인(2026-11-23), 구현 계획 [2026-11-23-chat-polish.md](../plans/2026-11-23-chat-polish.md)
 - 브랜치: `fix/chat` (로드맵 2.3)
 - 관련: [로드맵 2.3](../plans/2026-10-27-roadmap.md), [범위·Minor 처리 History](../../../History/2026-11-23-채팅-다듬기.md), [채팅 교재 추가 설계](2026-11-23-chat-book-add-design.md)(확인 칩·`action` 칸의 원래 설계), [SERVICE_FLOW](../../../SERVICE_FLOW.md), [코치 톤](../../coach/coach-tone.md), [묶음 C 설계 C1(새벽 재분배)](2026-11-13-study-time-heatmap-design.md)
 
