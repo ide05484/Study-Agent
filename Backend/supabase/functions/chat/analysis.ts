@@ -1,5 +1,13 @@
 import { type Subject, SUBJECT_LABELS } from "../_shared/subjects.ts";
 import type { BookUnit } from "../_shared/units.ts";
+import {
+  type BookPatch,
+  toRounds,
+  toSubject,
+  toTitle,
+  toTotalUnits,
+  toUnit,
+} from "./bookDraft.ts";
 
 // LLM 분석 결과를 믿지 않고 검증하는 순수 모듈. OpenAI·Supabase를 import하지 않는다.
 
@@ -56,6 +64,7 @@ export interface Analysis {
   studyTimeInvalid: boolean;
   studyTip: StudyTip | null;
   knowledge: Knowledge[];
+  book: BookPatch | null;
 }
 
 const SUBJECTS = Object.keys(SUBJECT_LABELS) as Subject[];
@@ -109,6 +118,22 @@ const STUDY_TIP_SCHEMA = {
   additionalProperties: false,
 };
 
+const BOOK_SCHEMA = {
+  type: ["object", "null"],
+  properties: {
+    subject: { type: ["string", "null"], enum: [...SUBJECTS, null] },
+    title: nullable("string"),
+    unit: {
+      type: ["string", "null"],
+      enum: ["day", "chapter", "session", null],
+    },
+    total_units: nullable("integer"),
+    target_rounds: nullable("integer"),
+  },
+  required: ["subject", "title", "unit", "total_units", "target_rounds"],
+  additionalProperties: false,
+};
+
 export const ANALYSIS_SCHEMA: Record<string, unknown> = {
   type: "object",
   properties: {
@@ -118,6 +143,7 @@ export const ANALYSIS_SCHEMA: Record<string, unknown> = {
     study_time: STUDY_TIME_SCHEMA,
     study_tip: STUDY_TIP_SCHEMA,
     knowledge: { type: "array", items: { type: "string", enum: KNOWLEDGE } },
+    book: BOOK_SCHEMA,
   },
   required: [
     "intent",
@@ -126,6 +152,7 @@ export const ANALYSIS_SCHEMA: Record<string, unknown> = {
     "study_time",
     "study_tip",
     "knowledge",
+    "book",
   ],
   additionalProperties: false,
 };
@@ -220,6 +247,19 @@ function parseKnowledge(v: unknown): Knowledge[] {
   return KNOWLEDGE.filter((k) => v.includes(k));
 }
 
+// 틀린 항목은 null로 돌리고, 남은 항목이 없으면 null
+function parseBook(v: unknown): BookPatch | null {
+  if (!isRecord(v)) return null;
+  const book: BookPatch = {
+    subject: toSubject(v.subject),
+    title: toTitle(v.title),
+    unit: toUnit(v.unit),
+    total_units: toTotalUnits(v.total_units),
+    target_rounds: toRounds(v.target_rounds),
+  };
+  return Object.values(book).every((x) => x === null) ? null : book;
+}
+
 export function parseAnalysis(raw: unknown, books: BookRef[]): Analysis {
   const r = isRecord(raw) ? raw : {};
   let intent: Intent = isIntent(r.intent) ? r.intent : "question";
@@ -250,5 +290,6 @@ export function parseAnalysis(raw: unknown, books: BookRef[]): Analysis {
     studyTimeInvalid,
     studyTip: parseStudyTip(r.study_tip, subject),
     knowledge: parseKnowledge(r.knowledge),
+    book: parseBook(r.book),
   };
 }

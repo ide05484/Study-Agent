@@ -267,3 +267,72 @@ Deno.test("study_tip은 intent를 바꾸지 않는다", () => {
   assertEquals(a.entries.length, 1);
   assertEquals(a.studyTip?.content, "소리 내어 읽기");
 });
+
+const bookRaw = (o: Record<string, unknown>) => ({
+  subject: "korean",
+  title: "봉투모의고사",
+  unit: "session",
+  total_units: 20,
+  target_rounds: null,
+  ...o,
+});
+
+Deno.test("book: 제목을 다듬고 말한 항목을 그대로 받는다", () => {
+  const a = parseAnalysis(
+    raw({
+      intent: "book_add",
+      book: bookRaw({ title: " 봉투모의고사 " }),
+    }),
+    books,
+  );
+  assertEquals(a.book, {
+    subject: "korean",
+    title: "봉투모의고사",
+    unit: "session",
+    total_units: 20,
+    target_rounds: null,
+  });
+});
+
+Deno.test("book: 틀린 값은 그 항목만 null", () => {
+  const book = (o: Record<string, unknown>) =>
+    parseAnalysis(raw({ book: bookRaw(o) }), books).book;
+  assertEquals(book({ title: "가".repeat(21) })?.title, null);
+  assertEquals(book({ title: "가".repeat(20) })?.title, "가".repeat(20));
+  for (const total of [0, 1001, 1.5]) {
+    assertEquals(book({ total_units: total })?.total_units, null);
+  }
+  for (const rounds of [0, 11]) {
+    assertEquals(book({ target_rounds: rounds })?.target_rounds, null);
+  }
+  assertEquals(book({ unit: "page" })?.unit, null);
+  assertEquals(book({ subject: "math" })?.subject, null);
+});
+
+Deno.test("book: 모든 항목이 null이거나 없거나 객체가 아니면 null", () => {
+  const allNull = {
+    subject: null,
+    title: null,
+    unit: null,
+    total_units: null,
+    target_rounds: null,
+  };
+  assertEquals(parseAnalysis(raw({ book: allNull }), books).book, null);
+  assertEquals(parseAnalysis(raw({ book: null }), books).book, null);
+  assertEquals(parseAnalysis(raw({}), books).book, null);
+  assertEquals(parseAnalysis(raw({ book: "x" }), books).book, null);
+  assertEquals(
+    parseAnalysis(
+      raw({
+        book: bookRaw({
+          title: "가".repeat(21),
+          subject: null,
+          unit: null,
+          total_units: null,
+        }),
+      }),
+      books,
+    ).book,
+    null,
+  );
+});

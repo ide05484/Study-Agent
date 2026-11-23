@@ -108,7 +108,7 @@ async function handleMessage(
   // 분석이 실패하면 아무것도 저장하지 않는다
   let analysis: Analysis;
   try {
-    analysis = await analyzeMessage(content, books, today);
+    analysis = await analyzeMessage(content, books, today, null);
   } catch (e) {
     console.error(JSON.stringify({ call: "analyze", error: String(e) }));
     return Response.json({ error: "analysis_failed" }, { status: 502 });

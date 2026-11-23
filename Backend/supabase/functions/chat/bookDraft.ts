@@ -66,30 +66,30 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
-function toSubject(v: unknown): Subject | null {
+export function toSubject(v: unknown): Subject | null {
   return typeof v === "string" && Object.hasOwn(SUBJECT_LABELS, v)
     ? (v as Subject)
     : null;
 }
 
-function toUnit(v: unknown): BookUnit | null {
+export function toUnit(v: unknown): BookUnit | null {
   return UNITS.find((u) => u === v) ?? null;
 }
 
-function toTitle(v: unknown): string | null {
+export function toTitle(v: unknown): string | null {
   if (typeof v !== "string") return null;
   const t = v.trim();
   return t.length >= 1 && t.length <= MAX_TITLE_LENGTH ? t : null;
 }
 
-function toTotalUnits(v: unknown): number | null {
+export function toTotalUnits(v: unknown): number | null {
   return typeof v === "number" && Number.isInteger(v) && v >= 1 &&
       v <= MAX_CHAT_TOTAL_UNITS
     ? v
     : null;
 }
 
-function toRounds(v: unknown): number | null {
+export function toRounds(v: unknown): number | null {
   return typeof v === "number" && Number.isInteger(v) && v >= 1 &&
       v <= MAX_TARGET_ROUNDS
     ? v
