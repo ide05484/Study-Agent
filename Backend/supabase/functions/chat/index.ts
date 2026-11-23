@@ -15,7 +15,7 @@ import {
   STUDY_TIME_ASK,
   USAGE_GUIDE,
 } from "../_shared/coach.ts";
-import { studyTimeDate, toDateKey } from "../_shared/date.ts";
+import { addDays, studyTimeDate, toDateKey } from "../_shared/date.ts";
 import { replan, type ReplanResult } from "../_shared/replan.ts";
 import type { ChatAction } from "./actions.ts";
 import type { Analysis, BookRef, StudyTip } from "./analysis.ts";
@@ -38,7 +38,9 @@ import type { CoachContext } from "./context.ts";
 import {
   type ChatMessageRow,
   countTodayUserMessages,
+  hasMissedTasks,
   insertBook,
+  insertFirstMessage,
   insertMessage,
   insertStudyTip,
   loadCoachContext,
@@ -46,6 +48,7 @@ import {
   loadProfileAndBooks,
   loadRecentMessages,
   loadTodayHistory,
+  loadTodayTasks,
   recordStudyLogs,
   saveStudyTime,
 } from "./db.ts";
@@ -57,6 +60,7 @@ import {
 } from "./knowledge.ts";
 import { analyzeMessage, generateReply } from "./llm.ts";
 import { type ChatRequest, parseChatRequest } from "./request.ts";
+import { welcomeText } from "./welcome.ts";
 import {
   fallbackReply,
   type RecordedLog,
@@ -77,8 +81,7 @@ export default {
   // 사용자 JWT 필수. ctx.supabase는 RLS가 적용되어 본인 데이터만 다룬다
   fetch: withSupabase({ auth: "user" }, async (req, ctx) => {
     const request = await readRequest(req);
-    // open 요청의 처리는 아직 없어 잘못된 요청과 같게 거절한다
-    if (request === null || "open" in request) {
+    if (request === null) {
       return Response.json({ error: "invalid_content" }, { status: 400 });
     }
     const userId = ctx.userClaims?.id;
@@ -87,6 +90,7 @@ export default {
     }
 
     try {
+      if ("open" in request) return await handleOpen(ctx.supabase);
       return await handleMessage(ctx.supabase, userId, request);
     } catch (e) {
       // DB 오류 원문은 로그에만 남기고 응답에는 고정 코드만 보낸다
@@ -102,6 +106,52 @@ async function readRequest(req: Request): Promise<ChatRequest | null> {
   } catch {
     return null;
   }
+}
+
+// 채팅 화면을 열 때 하루 첫 메시지를 넣는다. 하루 상한을 보지 않고 GPT를 부르지 않는다
+async function handleOpen(sb: SupabaseClient): Promise<Response> {
+  const { profile } = await loadProfileAndBooks(sb);
+  const timezone = profile.timezone;
+  const today = toDateKey(new Date(), timezone);
+
+  // 오늘 메시지가 이미 있으면 아무것도 하지 않는다
+  const [existing] = await loadRecentMessages(sb, today, timezone, 1);
+  if (existing) return Response.json(openResult([]));
+
+  // 화면 useCarryOver와 같은 이월 조건. 실패해도 지금 계획으로 첫 메시지를 저장한다
+  let planChanged = false;
+  let replanFailed = false;
+  const examDate = profile.exam_date;
+  if (
+    examDate !== null && addDays(examDate, -1) >= today &&
+    await hasMissedTasks(sb, today)
+  ) {
+    try {
+      await replan(sb);
+      planChanged = true;
+    } catch (e) {
+      console.error(JSON.stringify({ call: "open_replan", error: String(e) }));
+      replanFailed = true;
+    }
+  }
+
+  const tasks = await loadTodayTasks(sb, today);
+  const { text, action } = welcomeText({ today, examDate, tasks });
+  // 그사이 다른 요청이 먼저 넣었으면 null이다
+  const row = await insertFirstMessage(sb, today, timezone, text, action);
+  return Response.json(
+    openResult(row ? [row] : [], { planChanged, replanFailed }),
+  );
+}
+
+function openResult(
+  messages: ChatMessageRow[],
+  flags: { planChanged: boolean; replanFailed: boolean } = {
+    planChanged: false,
+    replanFailed: false,
+  },
+) {
+  return { messages, logged: false, ...flags, superseded: false };
 }
 
 async function handleMessage(
@@ -167,6 +217,7 @@ async function handleMessage(
       logged: false,
       planChanged: false,
       replanFailed: false,
+      superseded: false,
     });
   }
 
@@ -258,6 +309,7 @@ async function handleMessage(
     logged: recorded.length > 0,
     planChanged: false,
     replanFailed: false,
+    superseded: false,
   });
 }
 
@@ -344,6 +396,7 @@ async function answerConfirm(p: {
     logged: false,
     planChanged,
     replanFailed,
+    superseded: false,
   });
 }
 

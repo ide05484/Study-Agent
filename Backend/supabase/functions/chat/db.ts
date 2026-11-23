@@ -12,7 +12,12 @@ import type {
 } from "./analysis.ts";
 import { type ChatAction, parseAction } from "./actions.ts";
 import type { CompleteDraft } from "./bookDraft.ts";
-import type { CoachContext, HistoryMessage, TaskStatus } from "./context.ts";
+import type {
+  CoachContext,
+  HistoryMessage,
+  TaskStatus,
+  TodayTaskLine,
+} from "./context.ts";
 import { type KnowledgeSection, TIP_LIMIT } from "./knowledge.ts";
 import { advance, resolvePosition } from "./progress.ts";
 import type { RecordedLog } from "./reply.ts";
@@ -117,14 +122,97 @@ export async function insertMessage(
   content: string,
   subject: Subject | null,
   action: ChatAction | null = null,
+  handled = false,
 ): Promise<ChatMessageRow> {
   const { data, error } = await sb
     .from("chat_messages")
-    .insert({ user_id: userId, role, content, subject, action })
+    .insert({
+      user_id: userId,
+      role,
+      content,
+      subject,
+      action,
+      ...(handled && role === "user"
+        ? { handled_at: new Date().toISOString() }
+        : {}),
+    })
     .select(MESSAGE_COLUMNS)
     .single();
   fail(error);
   return toMessageRow(data);
+}
+
+// 하루 첫 메시지. 그날 메시지가 이미 있으면 DB 함수가 넣지 않고 null을 돌려준다
+export async function insertFirstMessage(
+  sb: Client,
+  today: string,
+  timezone: string,
+  text: string,
+  action: ChatAction | null,
+): Promise<ChatMessageRow | null> {
+  const { data, error } = await sb.rpc("insert_first_message", {
+    p_from: dayStartUtc(today, timezone),
+    p_to: dayStartUtc(addDays(today, 1), timezone),
+    p_content: text,
+    p_action: action,
+  });
+  fail(error);
+  if (data === null) return null;
+  const { data: row, error: readError } = await sb
+    .from("chat_messages")
+    .select(MESSAGE_COLUMNS)
+    .eq("id", data as string)
+    .single();
+  fail(readError);
+  return toMessageRow(row);
+}
+
+// 오늘 이전 날짜에 못 끝낸(pending) 분량이 있는지
+export async function hasMissedTasks(
+  sb: Client,
+  today: string,
+): Promise<boolean> {
+  const { count, error } = await sb
+    .from("daily_tasks")
+    .select("id", { count: "exact", head: true })
+    .lt("task_date", today)
+    .eq("status", "pending");
+  fail(error);
+  return (count ?? 0) > 0;
+}
+
+// 오늘 분량 줄(교재 조인). 교재가 없는 행은 뺀다
+export async function loadTodayTasks(
+  sb: Client,
+  today: string,
+): Promise<TodayTaskLine[]> {
+  const { data, error } = await sb
+    .from("daily_tasks")
+    .select(
+      "round, start_unit, end_unit, status, books(subject, title, unit, target_rounds)",
+    )
+    .eq("task_date", today)
+    .order("created_at");
+  fail(error);
+  return toTodayTasks(data as unknown as TaskRow[]);
+}
+
+function toTodayTasks(rows: TaskRow[]): TodayTaskLine[] {
+  // 조인 결과 타입이 추론되지 않아 행 모양을 적어 둔다
+  return rows.flatMap((t) =>
+    t.books
+      ? [{
+        subject: t.books.subject,
+        title: t.books.title,
+        unit: t.books.unit,
+        target_rounds: t.books.target_rounds,
+        round: t.round,
+        start_unit: t.start_unit,
+        end_unit: t.end_unit,
+        status: t.status,
+      }]
+      : []
+  );
 }
 
 // DB jsonb는 믿지 않고 action을 다시 검증해 읽는다
@@ -146,6 +234,7 @@ export async function loadRecentMessages(
     .gte("created_at", dayStartUtc(today, timezone))
     .lt("created_at", dayStartUtc(addDays(today, 1), timezone))
     .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
     .limit(limit);
   fail(error);
   return (data as unknown[]).map(toMessageRow);
@@ -306,16 +395,10 @@ export async function loadCoachContext(
   today: string,
   examDate: string | null,
 ): Promise<CoachContext> {
-  const [booksResult, tasksResult, logsResult, examsResult] = await Promise.all(
+  const [booksResult, todayTasks, logsResult, examsResult] = await Promise.all(
     [
       sb.from("books").select(BOOK_COLUMNS).order("created_at"),
-      sb
-        .from("daily_tasks")
-        .select(
-          "round, start_unit, end_unit, status, books(subject, title, unit, target_rounds)",
-        )
-        .eq("task_date", today)
-        .order("created_at"),
+      loadTodayTasks(sb, today),
       sb
         .from("study_logs")
         .select(
@@ -334,25 +417,8 @@ export async function loadCoachContext(
     ],
   );
   fail(booksResult.error);
-  fail(tasksResult.error);
   fail(logsResult.error);
   fail(examsResult.error);
-
-  // 조인 결과 타입이 추론되지 않아 행 모양을 적어 둔다
-  const todayTasks = (tasksResult.data as unknown as TaskRow[]).flatMap((t) =>
-    t.books
-      ? [{
-        subject: t.books.subject,
-        title: t.books.title,
-        unit: t.books.unit,
-        target_rounds: t.books.target_rounds,
-        round: t.round,
-        start_unit: t.start_unit,
-        end_unit: t.end_unit,
-        status: t.status,
-      }]
-      : []
-  );
 
   // 조인 결과 타입이 추론되지 않아 행 모양을 적어 둔다
   const recentLogs = (logsResult.data as unknown as LogRow[]).map((l) => ({
@@ -400,6 +466,7 @@ export async function loadTodayHistory(
     .lt("created_at", dayStartUtc(addDays(today, 1), timezone))
     .neq("id", excludeId)
     .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
     .limit(limit);
   fail(error);
   return (data as HistoryMessage[]).reverse();
