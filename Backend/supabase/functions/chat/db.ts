@@ -240,6 +240,89 @@ export async function loadRecentMessages(
   return (data as unknown[]).map(toMessageRow);
 }
 
+// 오늘의 마지막 코치 메시지. 받아 둔 교재 초안과 직전 질문 종류를 읽는다
+export async function loadLastCoachMessage(
+  sb: Client,
+  today: string,
+  timezone: string,
+): Promise<ChatMessageRow | null> {
+  const { data, error } = await sb
+    .from("chat_messages")
+    .select(MESSAGE_COLUMNS)
+    .eq("role", "assistant")
+    .gte("created_at", dayStartUtc(today, timezone))
+    .lt("created_at", dayStartUtc(addDays(today, 1), timezone))
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  fail(error);
+  return data === null ? null : toMessageRow(data);
+}
+
+// 오늘 아직 처리하지 않은 사용자 메시지(오래된 것부터). 연달아 보낸 글을 묶어 분석한다
+export async function loadUnhandledUserMessages(
+  sb: Client,
+  today: string,
+  timezone: string,
+): Promise<{ id: string; content: string }[]> {
+  const { data, error } = await sb
+    .from("chat_messages")
+    .select("id, content")
+    .eq("role", "user")
+    .is("handled_at", null)
+    .gte("created_at", dayStartUtc(today, timezone))
+    .lt("created_at", dayStartUtc(addDays(today, 1), timezone))
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true });
+  fail(error);
+  return data as { id: string; content: string }[];
+}
+
+// 묶음 확인(claim_user_messages). 이 메시지보다 새 처리 안 한 사용자 메시지가 있으면 false(아무것도 바꾸지 않음),
+// 없으면 이 메시지까지의 처리 안 한 사용자 메시지를 처리 표시하고 true
+export async function claimUserMessages(
+  sb: Client,
+  messageId: string,
+  today: string,
+  timezone: string,
+): Promise<boolean> {
+  const { data, error } = await sb.rpc("claim_user_messages", {
+    p_message_id: messageId,
+    p_from: dayStartUtc(today, timezone),
+    p_to: dayStartUtc(addDays(today, 1), timezone),
+  });
+  fail(error);
+  return data === true;
+}
+
+// 분석에 실패한 요청의 사용자 메시지를 지운다. 이미 응답을 실패로 보내는 중이라 실패해도 던지지 않는다
+export async function deleteMessage(sb: Client, id: string): Promise<void> {
+  try {
+    const { error } = await sb.from("chat_messages").delete().eq("id", id);
+    if (error) {
+      console.error(
+        JSON.stringify({ call: "delete_message", error: error.message }),
+      );
+    }
+  } catch (e) {
+    console.error(JSON.stringify({ call: "delete_message", error: String(e) }));
+  }
+}
+
+// 먼저 저장한 사용자 메시지의 과목을 분석 결과로 고친다
+export async function setMessageSubject(
+  sb: Client,
+  id: string,
+  subject: Subject | null,
+): Promise<void> {
+  const { error } = await sb
+    .from("chat_messages")
+    .update({ subject })
+    .eq("id", id);
+  fail(error);
+}
+
 // 채팅으로 추가하는 교재. 나머지는 처음부터 시작하는 기본값이다
 export async function insertBook(
   sb: Client,
@@ -451,20 +534,24 @@ export async function loadCoachContext(
   };
 }
 
-// 오늘 대화의 최근 메시지(오래된 것부터). 방금 저장한 메시지는 excludeId로 뺀다
+// 오늘 대화의 최근 메시지(오래된 것부터). 이번에 답하는 묶음의 메시지는 excludeIds로 뺀다
 export async function loadTodayHistory(
   sb: Client,
   today: string,
   timezone: string,
-  excludeId: string,
+  excludeIds: string[],
   limit = 6,
 ): Promise<HistoryMessage[]> {
-  const { data, error } = await sb
+  let query = sb
     .from("chat_messages")
     .select("role, content")
     .gte("created_at", dayStartUtc(today, timezone))
-    .lt("created_at", dayStartUtc(addDays(today, 1), timezone))
-    .neq("id", excludeId)
+    .lt("created_at", dayStartUtc(addDays(today, 1), timezone));
+  // id는 DB가 만든 uuid라 목록 문자열에 그대로 넣어도 된다
+  if (excludeIds.length > 0) {
+    query = query.not("id", "in", `(${excludeIds.join(",")})`);
+  }
+  const { data, error } = await query
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
     .limit(limit);

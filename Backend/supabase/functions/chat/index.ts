@@ -4,6 +4,7 @@
 // 질문 답변에는 필요한 공부법(study_methods)과 잘 맞은 방법을 넣는다.
 // 사용법·순공시간만·하루 상한은 답변 호출 없이 정해진 문구로 답한다. 학습 기록으로는 계획을 다시 나누지 않는다.
 // 교재 추가는 정해진 문구로 되묻고 확인 칩(응/아니)을 받은 뒤에만 books에 저장하며, 저장하면 바로 계획을 다시 나눈다(_shared/replan.ts).
+// 답을 기다리는 동안 연달아 보낸 글은 처리 안 한 메시지로 묶어 한 번에 분석하고, 더 새 글이 온 요청은 저장·답변 없이 끝낸다(superseded).
 // 응답 형식은 Frontend/src/interfaces/chat.ts의 `ChatRequest`/`ChatResponse`를 따른다.
 
 import "@supabase/functions-js/edge-runtime.d.ts";
@@ -19,6 +20,7 @@ import { addDays, studyTimeDate, toDateKey } from "../_shared/date.ts";
 import { replan, type ReplanResult } from "../_shared/replan.ts";
 import type { ChatAction } from "./actions.ts";
 import type { Analysis, BookRef, StudyTip } from "./analysis.ts";
+import type { AskedAbout } from "./analysisPrompt.ts";
 import {
   askText,
   type BookAddAction,
@@ -37,7 +39,9 @@ import {
 import type { CoachContext } from "./context.ts";
 import {
   type ChatMessageRow,
+  claimUserMessages,
   countTodayUserMessages,
+  deleteMessage,
   hasMissedTasks,
   insertBook,
   insertFirstMessage,
@@ -45,12 +49,15 @@ import {
   insertStudyTip,
   loadCoachContext,
   loadKnowledge,
+  loadLastCoachMessage,
   loadProfileAndBooks,
   loadRecentMessages,
   loadTodayHistory,
   loadTodayTasks,
+  loadUnhandledUserMessages,
   recordStudyLogs,
   saveStudyTime,
+  setMessageSubject,
 } from "./db.ts";
 import {
   formatKnowledge,
@@ -164,11 +171,13 @@ async function handleMessage(
   const timezone = profile.timezone;
   const today = toDateKey(now, timezone);
 
-  // 오늘 채팅방의 마지막 메시지가 action이 있는 코치 메시지이면 그 초안이 받아 둔 것이다
+  // 칩·확답 글은 오늘의 마지막 메시지(사용자·코치 무관)가 확인 메시지일 때만 처리한다.
+  // 글 분석에 넘길 받아 둔 초안과 직전 질문은 마지막 코치 메시지에서 읽는다(그 뒤에 처리 안 한 사용자 메시지가 있어도 이어진다).
   // 하루 상한 확인용 개수도 함께 읽는다(칩·확답 경로에서는 쓰지 않는다)
-  const [[last = null], sentToday] = await Promise.all([
+  const [[last = null], sentToday, lastCoach] = await Promise.all([
     loadRecentMessages(sb, today, timezone, 1),
     countTodayUserMessages(sb, today, timezone),
+    loadLastCoachMessage(sb, today, timezone),
   ]);
   const pending: BookAddAction | null =
     last?.role === "assistant" && last.action?.kind === "book_add"
@@ -202,9 +211,17 @@ async function handleMessage(
     if (answer !== null) return await confirm(answer, content, true);
   }
 
-  // 하루 상한을 넘으면 GPT를 부르지 않는다
+  // 하루 상한을 넘으면 GPT를 부르지 않는다. 이 메시지는 처리한 것으로 넣어 묶음에 섞이지 않게 한다
   if (sentToday >= DAILY_MESSAGE_LIMIT) {
-    const user = await insertMessage(sb, userId, "user", content, null);
+    const user = await insertMessage(
+      sb,
+      userId,
+      "user",
+      content,
+      null,
+      null,
+      true,
+    );
     const assistant = await insertMessage(
       sb,
       userId,
@@ -221,30 +238,51 @@ async function handleMessage(
     });
   }
 
-  // 분석이 실패하면 아무것도 저장하지 않는다
+  // 사용자 메시지를 먼저 저장하고(과목은 분석 뒤에 채운다), 앞서 보내 아직 처리 안 한 메시지와 묶어 분석한다
+  const inserted = await insertMessage(sb, userId, "user", content, null);
+  const unhandled = await loadUnhandledUserMessages(sb, today, timezone);
+  // 이 메시지 뒤에 온 글은 그 요청이 묶는다. 자정을 넘겨 저장돼 오늘 범위에 없으면 이 메시지만 분석한다
+  const end = unhandled.findIndex((m) => m.id === inserted.id);
+  const bundle = end < 0
+    ? [{ id: inserted.id, content }]
+    : unhandled.slice(0, end + 1);
+
+  const coachAction = lastCoach?.action ?? null;
+  const held: BookAddAction | null = coachAction?.kind === "book_add"
+    ? coachAction
+    : null;
+  const asked: AskedAbout = coachAction?.kind === "study_time_ask"
+    ? "study_time"
+    : coachAction?.kind === "time_available_ask"
+    ? "time_available"
+    : null;
+
   let analysis: Analysis;
   try {
     analysis = await analyzeMessage(
-      [content],
+      bundle.map((m) => m.content),
       books,
       today,
-      pending?.draft ?? null,
-      null,
+      held?.draft ?? null,
+      asked,
     );
   } catch (e) {
     console.error(JSON.stringify({ call: "analyze", error: String(e) }));
+    // 화면이 입력 글을 되돌려 다시 보내므로 이 요청의 메시지는 지운다. 앞 요청이 남긴 메시지는 다음 묶음에 들어간다
+    await deleteMessage(sb, inserted.id);
     return Response.json({ error: "analysis_failed" }, { status: 502 });
   }
 
-  const user = await insertMessage(
-    sb,
-    userId,
-    "user",
-    content,
-    analysis.subject,
-  );
+  // 분석하는 동안 더 새 글이 왔으면 그 요청이 이 메시지까지 묶어 답한다. 여기서는 아무것도 저장하지 않는다
+  if (!await claimUserMessages(sb, inserted.id, today, timezone)) {
+    return Response.json(supersededResult(inserted));
+  }
 
-  // 분석이 남긴 entry는 의도와 상관없이 학습 기록이다
+  // 처리 표시를 했으면 답변까지 끝까지 간다(다시 확인하지 않는다)
+  await setMessageSubject(sb, inserted.id, analysis.subject);
+  const user: ChatMessageRow = { ...inserted, subject: analysis.subject };
+
+  // 분석이 남긴 entry는 의도와 상관없이 학습 기록이다. 출처는 묶음의 마지막(이 메시지)이다
   const recorded = analysis.entries.length > 0
     ? await recordStudyLogs(
       sb,
@@ -279,7 +317,7 @@ async function handleMessage(
 
   const reply = await buildReply({
     sb,
-    content,
+    content: bundle.map((m) => m.content).join("\n"),
     analysis,
     recorded,
     savedTime,
@@ -289,8 +327,8 @@ async function handleMessage(
     timezone,
     examDate: profile.exam_date,
     books,
-    userMessageId: user.id,
-    pending,
+    bundleIds: bundle.map((m) => m.id),
+    pending: held,
   });
   if (recorded.length > 0 && studyTimeInvalid) {
     reply.text = `${reply.text}\n${STUDY_TIME_ASK}`;
@@ -313,7 +351,19 @@ async function handleMessage(
   });
 }
 
+// 더 새 요청이 묶어 답하는 요청. 저장한 사용자 메시지만 돌려준다
+function supersededResult(user: ChatMessageRow) {
+  return {
+    messages: [user],
+    logged: false,
+    planChanged: false,
+    replanFailed: false,
+    superseded: true,
+  };
+}
+
 // 확인 칩(또는 같은 뜻의 글)을 처리한다. GPT를 부르지 않는다.
+// 이 경로의 사용자 메시지는 처리한 것으로 넣어 묶음에 섞이지 않게 한다.
 // pending은 칩이 유효하고 확인 단계일 때만 값이 있다
 async function answerConfirm(p: {
   sb: SupabaseClient;
@@ -332,6 +382,8 @@ async function answerConfirm(p: {
     "user",
     p.userText,
     pending?.draft.subject ?? null,
+    null,
+    true,
   );
 
   // 같은 칩을 거의 동시에 두 번 보내도 한쪽만 통하게, 방금 넣은 메시지 바로 앞이 확인 메시지인지 다시 본다
@@ -412,7 +464,8 @@ async function buildReply(p: {
   timezone: string;
   examDate: string | null;
   books: BookRef[];
-  userMessageId: string;
+  // 이번에 답하는 묶음의 메시지 id. 대화 이력에서 뺀다(content에 이미 들어 있다)
+  bundleIds: string[];
   pending: BookAddAction | null;
 }): Promise<Reply> {
   const { intent, subject, knowledge } = p.analysis;
@@ -465,7 +518,7 @@ async function buildReply(p: {
   try {
     const [loaded, history, known] = await Promise.all([
       loadCoachContext(p.sb, p.today, p.examDate),
-      loadTodayHistory(p.sb, p.today, p.timezone, p.userMessageId),
+      loadTodayHistory(p.sb, p.today, p.timezone, p.bundleIds),
       // 공부법을 읽지 못하면 지식 없이 답한다(대체 답변으로 가지 않는다)
       loadKnowledge(
         p.sb,
