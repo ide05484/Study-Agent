@@ -296,18 +296,21 @@ export async function claimUserMessages(
   return data === true;
 }
 
-// 분석에 실패한 요청의 사용자 메시지를 지운다. 이미 응답을 실패로 보내는 중이라 실패해도 던지지 않는다
-export async function deleteMessage(sb: Client, id: string): Promise<void> {
-  try {
-    const { error } = await sb.from("chat_messages").delete().eq("id", id);
-    if (error) {
-      console.error(
-        JSON.stringify({ call: "delete_message", error: error.message }),
-      );
-    }
-  } catch (e) {
-    console.error(JSON.stringify({ call: "delete_message", error: String(e) }));
-  }
+// 실패한 요청의 사용자 메시지 정리(discard_user_message). 이 메시지보다 새 처리 안 한 사용자 메시지가 있거나
+// 이미 처리됐으면 지우지 않고 false(더 새 요청이 묶어 처리한다), 없으면 지우고 true
+export async function discardUserMessage(
+  sb: Client,
+  messageId: string,
+  today: string,
+  timezone: string,
+): Promise<boolean> {
+  const { data, error } = await sb.rpc("discard_user_message", {
+    p_message_id: messageId,
+    p_from: dayStartUtc(today, timezone),
+    p_to: dayStartUtc(addDays(today, 1), timezone),
+  });
+  fail(error);
+  return data === true;
 }
 
 // 먼저 저장한 사용자 메시지의 과목을 분석 결과로 고친다

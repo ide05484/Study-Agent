@@ -41,7 +41,7 @@ import {
   type ChatMessageRow,
   claimUserMessages,
   countTodayUserMessages,
-  deleteMessage,
+  discardUserMessage,
   hasMissedTasks,
   insertBook,
   insertFirstMessage,
@@ -240,12 +240,22 @@ async function handleMessage(
 
   // 사용자 메시지를 먼저 저장하고(과목은 분석 뒤에 채운다), 앞서 보내 아직 처리 안 한 메시지와 묶어 분석한다
   const inserted = await insertMessage(sb, userId, "user", content, null);
-  const unhandled = await loadUnhandledUserMessages(sb, today, timezone);
-  // 이 메시지 뒤에 온 글은 그 요청이 묶는다. 자정을 넘겨 저장돼 오늘 범위에 없으면 이 메시지만 분석한다
-  const end = unhandled.findIndex((m) => m.id === inserted.id);
-  const bundle = end < 0
-    ? [{ id: inserted.id, content }]
-    : unhandled.slice(0, end + 1);
+  // 여기부터 claim 결과가 나오기 전까지 실패하면 failBeforeClaim이 이 메시지를 지울지 남길지 정한다
+  const failBefore = (failure: Response) =>
+    failBeforeClaim(sb, inserted, today, timezone, failure);
+
+  let bundle: { id: string; content: string }[];
+  try {
+    const unhandled = await loadUnhandledUserMessages(sb, today, timezone);
+    // 이 메시지 뒤에 온 글은 그 요청이 묶는다. 자정을 넘겨 저장돼 오늘 범위에 없으면 이 메시지만 분석한다
+    const end = unhandled.findIndex((m) => m.id === inserted.id);
+    bundle = end < 0
+      ? [{ id: inserted.id, content }]
+      : unhandled.slice(0, end + 1);
+  } catch (e) {
+    console.error(JSON.stringify({ call: "load_bundle", error: String(e) }));
+    return await failBefore(errorResponse("server_error"));
+  }
 
   const coachAction = lastCoach?.action ?? null;
   const held: BookAddAction | null = coachAction?.kind === "book_add"
@@ -268,15 +278,20 @@ async function handleMessage(
     );
   } catch (e) {
     console.error(JSON.stringify({ call: "analyze", error: String(e) }));
-    // 화면이 입력 글을 되돌려 다시 보내므로 이 요청의 메시지는 지운다. 앞 요청이 남긴 메시지는 다음 묶음에 들어간다
-    await deleteMessage(sb, inserted.id);
-    return Response.json({ error: "analysis_failed" }, { status: 502 });
+    return await failBefore(
+      Response.json({ error: "analysis_failed" }, { status: 502 }),
+    );
   }
 
-  // 분석하는 동안 더 새 글이 왔으면 그 요청이 이 메시지까지 묶어 답한다. 여기서는 아무것도 저장하지 않는다
-  if (!await claimUserMessages(sb, inserted.id, today, timezone)) {
-    return Response.json(supersededResult(inserted));
+  let claimed: boolean;
+  try {
+    claimed = await claimUserMessages(sb, inserted.id, today, timezone);
+  } catch (e) {
+    console.error(JSON.stringify({ call: "claim", error: String(e) }));
+    return await failBefore(errorResponse("server_error"));
   }
+  // 분석하는 동안 더 새 글이 왔으면 그 요청이 이 메시지까지 묶어 답한다. 여기서는 아무것도 저장하지 않는다
+  if (!claimed) return Response.json(supersededResult(inserted));
 
   // 처리 표시를 했으면 답변까지 끝까지 간다(다시 확인하지 않는다)
   await setMessageSubject(sb, inserted.id, analysis.subject);
@@ -360,6 +375,27 @@ function supersededResult(user: ChatMessageRow) {
     replanFailed: false,
     superseded: true,
   };
+}
+
+// 사용자 메시지를 저장한 뒤 claim 결과가 나오기 전에 실패했을 때.
+// 더 새 처리 안 한 글이 없으면 이 메시지를 지우고 원래 오류를 돌려준다(화면이 입력 글을 되돌려 다시 보낸다).
+// 더 새 글이 있거나 이미 처리됐으면 그 요청이 이 메시지까지 묶어 처리하므로 남기고 밀림으로 끝낸다
+// (지우고 다시 보내게 하면 같은 기록이 두 번 저장된다). 정리 자체가 실패하면 로그만 남기고 원래 오류를 돌려준다
+async function failBeforeClaim(
+  sb: SupabaseClient,
+  inserted: ChatMessageRow,
+  today: string,
+  timezone: string,
+  failure: Response,
+): Promise<Response> {
+  try {
+    if (!await discardUserMessage(sb, inserted.id, today, timezone)) {
+      return Response.json(supersededResult(inserted));
+    }
+  } catch (e) {
+    console.error(JSON.stringify({ call: "discard", error: String(e) }));
+  }
+  return failure;
 }
 
 // 확인 칩(또는 같은 뜻의 글)을 처리한다. GPT를 부르지 않는다.
