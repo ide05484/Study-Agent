@@ -244,19 +244,36 @@ async function handleMessage(
   const { bundle, analysis } = outcome;
 
   // 처리 표시를 했으면 답변까지 끝까지 간다(다시 확인하지 않는다).
-  // 여기서 500을 내면 처리 표시한 묶음이 답 없이 사라지므로 과목 저장 실패는 로그만 남긴다.
-  // 아래 저장은 서로 결과를 쓰지 않으므로 함께 돌린다(진도 반영은 recordStudyLogs 안에서 기록 뒤에 한다)
+  // 과목 표시는 아래 저장과 나란히 돌리고, 던질 수 있는 저장은 예전 순서대로 잇는다
+  // (학습 기록이 실패했는데 순공시간이 먼저 저장되면 다시 보낼 때 "1시간 더"가 두 번 더해진다)
   const user: ChatMessageRow = { ...inserted, subject: analysis.subject };
-  const [, recorded, savedTime, savedTip] = await Promise.all([
+  // 첫 자리는 과목 표시(돌려주는 값 없음)
+  const [, { recorded, savedTime, savedTip }] = await Promise.all([
+    // 여기서 500을 내면 처리 표시한 묶음이 답 없이 사라지므로 과목 저장 실패는 로그만 남긴다
     setMessageSubject(sb, inserted.id, analysis.subject).catch((e) => {
       console.error(JSON.stringify({ call: "set_subject", error: String(e) }));
     }),
-    // 분석이 남긴 entry는 의도와 상관없이 학습 기록이다. 출처는 묶음의 마지막(이 메시지)이다
-    analysis.entries.length > 0
-      ? recordStudyLogs(sb, userId, day, user.id, analysis.entries, books)
-      : [],
-    saveReportedTime(sb, now, timezone, analysis.studyTime),
-    saveTip(sb, userId, analysis.studyTip, user.id),
+    (async () => {
+      // 분석이 남긴 entry는 의도와 상관없이 학습 기록이다. 출처는 묶음의 마지막(이 메시지)이다
+      const recorded = analysis.entries.length > 0
+        ? await recordStudyLogs(
+          sb,
+          userId,
+          day,
+          user.id,
+          analysis.entries,
+          books,
+        )
+        : [];
+      const savedTime = await saveReportedTime(
+        sb,
+        now,
+        timezone,
+        analysis.studyTime,
+      );
+      const savedTip = await saveTip(sb, userId, analysis.studyTip, user.id);
+      return { recorded, savedTime, savedTip };
+    })(),
   ]);
   // 순공시간을 말했는데 저장하지 못했으면(범위 밖) 다시 묻는다
   const studyTimeInvalid = analysis.studyTimeInvalid ||
