@@ -1,0 +1,486 @@
+import { useState } from 'react'
+import StudyHeatmap from '../components/dashboard/StudyHeatmap.tsx'
+import SplashScreen from '../components/layout/SplashScreen.tsx'
+import MarkedText from '../components/settings/MarkedText.tsx'
+import MethodSectionView from '../components/settings/MethodSectionView.tsx'
+import StudyTipList from '../components/settings/StudyTipList.tsx'
+import Button from '../components/ui/Button.tsx'
+import ButtonLink from '../components/ui/ButtonLink.tsx'
+import Chevron from '../components/ui/Chevron.tsx'
+import ChipGroup from '../components/ui/ChipGroup.tsx'
+import DatePicker from '../components/ui/DatePicker.tsx'
+import DialogProvider from '../components/ui/DialogProvider.tsx'
+import Disclosure from '../components/ui/Disclosure.tsx'
+import FormField from '../components/ui/FormField.tsx'
+import IconButton from '../components/ui/IconButton.tsx'
+import Mascot, { type MascotMood } from '../components/ui/Mascot.tsx'
+import Menu from '../components/ui/Menu.tsx'
+import Modal from '../components/ui/Modal.tsx'
+import Notice from '../components/ui/Notice.tsx'
+import Section from '../components/ui/Section.tsx'
+import Tabs, { type TabItem } from '../components/ui/Tabs.tsx'
+import TextArea from '../components/ui/TextArea.tsx'
+import TextField from '../components/ui/TextField.tsx'
+import type { HeatDay } from '../hooks/useDashboard.ts'
+import { useAlert, useConfirm, useProgress } from '../hooks/useDialog.ts'
+import type { StudyMethodSection, StudyTip } from '../interfaces/studyMethod.ts'
+import NotFoundPage from './NotFoundPage.tsx'
+
+const METHOD_LIST_EXAMPLE: StudyMethodSection = {
+  topic: 'korean',
+  position: 1,
+  heading: '기본 방법',
+  kind: 'list',
+  items: ['**하루 한 지문**씩 꾸준히 풀어요.', '틀린 문제는 ==왜 틀렸는지== 한 줄로 적어요.'],
+}
+
+const METHOD_PAIRS_EXAMPLE: StudyMethodSection = {
+  topic: 'korean',
+  position: 2,
+  heading: '단계별 공부',
+  kind: 'pairs',
+  items: [
+    { label: '1단계', text: '개념을 한 번 훑어요.' },
+    { label: '**2단계**', text: '문제를 풀며 ==약한 곳==을 찾아요.' },
+  ],
+}
+
+// 팁은 사용자가 쓴 글 그대로 보여야 하므로 ==, **, <b>가 든 예를 둔다
+const TIP_EXAMPLES: StudyTip[] = [
+  {
+    id: 'tip-1',
+    subject: 'korean',
+    content: '==문법==은 **기출**부터 <b>풀어요</b>',
+    created_at: '2026-11-18T03:00:00Z',
+  },
+  { id: 'tip-2', subject: null, content: '자기 전에 오늘 한 것 한 줄 적기', created_at: '2026-11-10T03:00:00Z' },
+]
+
+async function noopRemove(): Promise<boolean> {
+  return true
+}
+
+interface ColorToken {
+  name: string
+  swatchClass: string
+}
+
+// 개발 모드 전용 카탈로그. 색상 토큰 이름과 칸 클래스를 전체 이름으로 적는다
+const COLOR_TOKENS: ColorToken[] = [
+  { name: 'bg', swatchClass: 'bg-bg' },
+  { name: 'surface', swatchClass: 'bg-surface' },
+  { name: 'fg', swatchClass: 'bg-fg' },
+  { name: 'muted', swatchClass: 'bg-muted' },
+  { name: 'line', swatchClass: 'bg-line' },
+  { name: 'accent', swatchClass: 'bg-accent' },
+  { name: 'on-accent', swatchClass: 'bg-on-accent' },
+  { name: 'accent-soft', swatchClass: 'bg-accent-soft' },
+  { name: 'danger', swatchClass: 'bg-danger' },
+  { name: 'kakao', swatchClass: 'bg-kakao' },
+  { name: 'on-kakao', swatchClass: 'bg-on-kakao' },
+  { name: 'scrim', swatchClass: 'bg-scrim' },
+  { name: 'heat-0', swatchClass: 'bg-heat-0' },
+  { name: 'heat-1', swatchClass: 'bg-heat-1' },
+  { name: 'heat-2', swatchClass: 'bg-heat-2' },
+  { name: 'heat-3', swatchClass: 'bg-heat-3' },
+  { name: 'heat-4', swatchClass: 'bg-heat-4' },
+]
+
+// 잔디 예시: 순공시간 네 단계(119/120/240/360분 경계), 점 두 종류, 기록 없음, 아직 안 온 날
+const HEATMAP_EXAMPLE_DAYS: HeatDay[] = [
+  { date: '2026-10-19', kind: 'time', minutes: 40, level: 1 },
+  { date: '2026-10-20', kind: 'time', minutes: 119, level: 1 },
+  { date: '2026-10-21', kind: 'time', minutes: 120, level: 2 },
+  { date: '2026-10-22', kind: 'time', minutes: 200, level: 2 },
+  { date: '2026-10-23', kind: 'time', minutes: 240, level: 3 },
+  { date: '2026-10-24', kind: 'time', minutes: 359, level: 3 },
+  { date: '2026-10-25', kind: 'time', minutes: 360, level: 4 },
+  { date: '2026-10-26', kind: 'dot', percent: 75 },
+  { date: '2026-10-27', kind: 'dot', percent: null },
+  { date: '2026-10-28', kind: 'empty' },
+  { date: '2026-10-29', kind: 'time', minutes: 480, level: 4 },
+  { date: '2026-10-30', kind: 'dot', percent: 50 },
+  { date: '2026-10-31', kind: 'empty' },
+  { date: '2026-11-01', kind: 'future' },
+]
+
+const MASCOT_MOODS: MascotMood[] = ['base', 'cheer', 'think', 'oops']
+
+const UNIT_OPTIONS = [
+  { value: 'day', label: 'Day' },
+  { value: 'chapter', label: '챕터' },
+  { value: 'session', label: '회차' },
+]
+
+// DialogProvider 안에서만 쓸 수 있는 확인·알림 예시
+function DialogExamples() {
+  const confirm = useConfirm()
+  const alert = useAlert()
+  const progress = useProgress()
+  const [result, setResult] = useState('')
+
+  async function handleConfirm() {
+    const ok = await confirm({
+      title: '교재 삭제',
+      message: "'기본서'을(를) 삭제할까요?",
+      confirmLabel: '삭제',
+      tone: 'danger',
+    })
+    setResult(ok ? '삭제를 골랐어요' : '취소했어요')
+  }
+
+  async function handleAlert() {
+    await alert({ title: '알려 드려요', message: '저장했어요.' })
+    setResult('알림을 닫았어요')
+  }
+
+  // 2초 동안 진행 창을 띄운 뒤 결과 창으로 바꾼다
+  async function handleProgress() {
+    const message = await progress(
+      { title: '계획을 나누는 중이에요', message: '잠시만 기다려 주세요.' },
+      () =>
+        new Promise<string>((resolve) => setTimeout(() => resolve('시험 전날까지 219일 계획을 다시 나눴어요.'), 2000)),
+    )
+    await alert({ title: '계획을 세웠어요', message })
+    setResult('진행 → 결과 창을 닫았어요')
+  }
+
+  return (
+    <>
+      <div className="flex flex-wrap gap-3">
+        <Button type="button" variant="ghost" onClick={() => void handleConfirm()}>
+          확인 창
+        </Button>
+        <Button type="button" variant="ghost" onClick={() => void handleAlert()}>
+          알림 창
+        </Button>
+        <Button type="button" variant="ghost" onClick={() => void handleProgress()}>
+          진행 → 결과 창
+        </Button>
+      </div>
+      <p className="mt-2 text-sm text-muted" aria-live="polite">
+        {result}
+      </p>
+    </>
+  )
+}
+
+const TAB_ITEMS: TabItem<'a' | 'b' | 'c'>[] = [
+  { value: 'a', label: '남은 공부 분량' },
+  { value: 'b', label: '시험 점수' },
+  { value: 'c', label: '과목별 공부법' },
+]
+const SUB_TAB_ITEMS: TabItem<'all' | 'ko' | 'en'>[] = [
+  { value: 'all', label: '시험별' },
+  { value: 'ko', label: '국어' },
+  { value: 'en', label: '영어' },
+]
+
+interface TabsExampleProps {
+  idPrefix: string
+}
+
+// md: 화면을 나누는 탭(공부 설정), sm: 영역 안의 보기 탭(시험 점수)
+function TabsExample({ idPrefix }: TabsExampleProps) {
+  const [tab, setTab] = useState<'a' | 'b' | 'c'>('a')
+  const [subTab, setSubTab] = useState<'all' | 'ko' | 'en'>('all')
+  return (
+    <div className="flex flex-col gap-6">
+      <Tabs label="예시 화면 탭" items={TAB_ITEMS} value={tab} onChange={setTab} idPrefix={`${idPrefix}-tabs`} />
+      <Tabs
+        label="예시 보기 탭"
+        items={SUB_TAB_ITEMS}
+        value={subTab}
+        onChange={setSubTab}
+        idPrefix={`${idPrefix}-subtabs`}
+        size="sm"
+      />
+    </div>
+  )
+}
+
+interface FormFieldExampleProps {
+  idPrefix: string
+}
+
+// 비워 두고 확인을 누르면 라벨 옆 오류 문구와 흔들림을 본다
+function FormFieldExample({ idPrefix }: FormFieldExampleProps) {
+  const [value, setValue] = useState('')
+  const [shake, setShake] = useState(0)
+  const error = value.trim() === '' ? '필수 항목이에요.' : null
+  const shown = shake > 0 ? error : null
+
+  return (
+    <div className="grid gap-3">
+      <FormField label="교재명" htmlFor={`${idPrefix}-form-field`} required error={shown} shake={shake}>
+        <TextField
+          id={`${idPrefix}-form-field`}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="예: 봉투모의고사"
+          invalid={!!shown}
+        />
+      </FormField>
+      <div>
+        <Button type="button" variant="ghost" onClick={() => setShake((n) => n + 1)}>
+          확인
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+interface CatalogColumnProps {
+  themeClass: 'theme-light' | 'theme-dark'
+  idPrefix: string
+}
+
+function CatalogColumn({ themeClass, idPrefix }: CatalogColumnProps) {
+  const [date, setDate] = useState('')
+  const [unit, setUnit] = useState('session')
+  const [modalOpen, setModalOpen] = useState(false)
+  const [sheetOpen, setSheetOpen] = useState(false)
+
+  return (
+    <div className={`${themeClass} min-w-0 flex-1 bg-bg px-4 py-6 text-fg`}>
+      {/* /ui는 AppLayout 밖이라 확인·알림 예시가 동작하도록 따로 감싼다 */}
+      <DialogProvider>
+        <div className="mx-auto max-w-[480px]">
+          <Section title="색상 토큰">
+            <ul className="grid grid-cols-3 gap-3">
+              {COLOR_TOKENS.map((token) => (
+                <li key={token.name} className="text-xs">
+                  <div className={`h-10 rounded-lg border border-line ${token.swatchClass}`} />
+                  <p className="mt-1">{token.name}</p>
+                </li>
+              ))}
+              <li className="text-xs">
+                <p className="marker h-10 text-[15px] font-bold">형광펜</p>
+                <p className="mt-1">marker</p>
+              </li>
+            </ul>
+          </Section>
+
+          <Section title="Button">
+            <div className="flex flex-wrap gap-3">
+              <Button type="button">주요</Button>
+              <Button type="button" variant="ghost">
+                보조
+              </Button>
+              <Button type="button" disabled>
+                비활성
+              </Button>
+              <Button type="button" variant="ghost" disabled>
+                보조 비활성
+              </Button>
+            </div>
+            <div className="mt-3">
+              <Button type="button" block>
+                가로 가득
+              </Button>
+            </div>
+          </Section>
+
+          <Section title="ButtonLink">
+            <div className="flex flex-wrap gap-3">
+              <ButtonLink to="/ui">주요</ButtonLink>
+              <ButtonLink to="/ui" variant="ghost">
+                보조
+              </ButtonLink>
+            </div>
+          </Section>
+
+          <Section title="TextField">
+            <div className="flex flex-col gap-3">
+              <TextField aria-label="일반" placeholder="일반" />
+              <TextField aria-label="비활성" placeholder="비활성" disabled />
+              <TextField aria-label="단위" placeholder="예: 60" suffix="회차" />
+              <TextField aria-label="오류" placeholder="오류" invalid />
+            </div>
+          </Section>
+
+          <Section title="FormField">
+            <FormFieldExample idPrefix={idPrefix} />
+          </Section>
+
+          <Section title="TextArea">
+            <div className="flex flex-col gap-3">
+              <TextArea aria-label="일반" placeholder="일반" rows={2} />
+              <TextArea aria-label="비활성" placeholder="비활성" rows={2} disabled />
+            </div>
+          </Section>
+
+          <Section title="Section">
+            <div className="rounded-xl border border-line px-4">
+              <Section title="예시 제목">
+                <p>제목이 있는 영역</p>
+              </Section>
+              <Section>
+                <p>제목이 없는 영역</p>
+              </Section>
+              <Section
+                title="오른쪽 끝 버튼(action)"
+                action={
+                  <div className="flex">
+                    <IconButton icon="plus" label="예시 추가" />
+                    <Menu label="예시 영역 메뉴" items={[{ label: '삭제', tone: 'danger', onSelect: () => {} }]} />
+                  </div>
+                }
+              >
+                <p>제목 줄 오른쪽에 + 와 Menu</p>
+              </Section>
+            </div>
+          </Section>
+
+          <Section title="IconButton">
+            <div className="flex gap-2">
+              <IconButton icon="plus" label="예시 추가" />
+              <IconButton icon="kebab" label="예시 더보기" />
+              <IconButton icon="close" label="예시 닫기" />
+              <IconButton icon="plus" label="예시 비활성" disabled />
+            </div>
+          </Section>
+
+          <Section title="Menu">
+            <div className="flex items-center justify-between">
+              <span>교재 행 예시</span>
+              <Menu
+                label="예시 메뉴"
+                items={[
+                  { label: '수정', onSelect: () => {} },
+                  { label: '삭제', tone: 'danger', onSelect: () => {} },
+                ]}
+              />
+            </div>
+          </Section>
+
+          <Section title="DatePicker">
+            <DatePicker id={`${idPrefix}-date`} label="예시 날짜" value={date} onChange={setDate} />
+          </Section>
+
+          <Section title="ChipGroup">
+            <div className="flex flex-col gap-3">
+              <ChipGroup label="예시 단위" options={UNIT_OPTIONS} value={unit} onChange={setUnit} />
+              <ChipGroup label="예시 단위 비활성" options={UNIT_OPTIONS} value="day" onChange={() => {}} disabled />
+            </div>
+          </Section>
+
+          <Section title="Tabs">
+            <TabsExample idPrefix={idPrefix} />
+          </Section>
+
+          <Section title="Modal">
+            <Button type="button" variant="ghost" onClick={() => setModalOpen(true)}>
+              모달 열기
+            </Button>
+            <Modal
+              open={modalOpen}
+              title="예시 모달"
+              onClose={() => setModalOpen(false)}
+              actions={
+                <Button type="button" onClick={() => setModalOpen(false)}>
+                  닫기
+                </Button>
+              }
+            >
+              <p className="text-muted">Esc를 누르거나 닫기를 누르면 닫혀요. 바깥을 눌러서는 닫히지 않아요.</p>
+            </Modal>
+            <Button type="button" variant="ghost" onClick={() => setSheetOpen(true)}>
+              시트 열기
+            </Button>
+            <Modal
+              variant="sheet"
+              open={sheetOpen}
+              title="예시 시트"
+              titleAside="1/4"
+              onClose={() => setSheetOpen(false)}
+            >
+              <ul>
+                {[1, 2, 3, 4, 5, 6].map((n) => (
+                  <li key={n} className="border-b border-line py-6 text-muted last:border-b-0">
+                    긴 목록 예시 줄 {n}
+                  </li>
+                ))}
+              </ul>
+            </Modal>
+          </Section>
+
+          <Section title="확인·알림 (useConfirm, useAlert)">
+            <DialogExamples />
+          </Section>
+
+          <Section title="Disclosure">
+            <Disclosure summary="펼침 행">
+              <p className="ml-1 border-l border-line pl-3 text-sm text-muted">펼친 내용</p>
+            </Disclosure>
+          </Section>
+
+          <Section title="Notice">
+            <div className="flex flex-col gap-2">
+              <Notice>안내 문구</Notice>
+              <Notice tone="error">오류 문구</Notice>
+            </div>
+          </Section>
+
+          <Section title="공부법 (MarkedText, MethodSectionView, StudyTipList)">
+            <div className="grid gap-5">
+              <p className="text-sm">
+                <MarkedText text="**굵게**, ==형광펜==, 짝 없는 ==표시는 글 그대로예요." />
+              </p>
+              <MethodSectionView section={METHOD_LIST_EXAMPLE} />
+              <MethodSectionView section={METHOD_PAIRS_EXAMPLE} />
+              <StudyTipList tips={TIP_EXAMPLES} onRemove={noopRemove} />
+              <StudyTipList tips={[]} onRemove={noopRemove} />
+            </div>
+          </Section>
+
+          <Section title="Chevron">
+            <div className="flex items-center gap-6">
+              <Chevron direction="down" />
+              <Chevron direction="up" />
+              <Chevron direction="right" />
+            </div>
+          </Section>
+
+          <Section title="StudyHeatmap">
+            <StudyHeatmap days={HEATMAP_EXAMPLE_DAYS} />
+          </Section>
+
+          <Section title="Mascot">
+            <ul className="grid grid-cols-2 gap-3">
+              {MASCOT_MOODS.map((mood) => (
+                <li key={`${idPrefix}-${mood}`} className="text-xs">
+                  <Mascot mood={mood} size={96} />
+                  <p>{mood}</p>
+                </li>
+              ))}
+            </ul>
+          </Section>
+
+          {/* SplashScreen 루트가 h-dvh라 창이 높으면 틀 안에서 내용이 아래로 밀린다 */}
+          <Section title="SplashScreen">
+            <div className="h-[600px] overflow-hidden rounded-xl border border-line">
+              <SplashScreen />
+            </div>
+          </Section>
+
+          <Section title="NotFoundPage">
+            <div className="h-[600px] overflow-hidden rounded-xl border border-line">
+              <NotFoundPage />
+            </div>
+          </Section>
+        </div>
+      </DialogProvider>
+    </div>
+  )
+}
+
+// 개발 모드에서만 열리는 컴포넌트 카탈로그. 라이트(왼쪽)와 다크(오른쪽)를 나란히 보여 준다
+export default function UiCatalogPage() {
+  return (
+    <div className="flex min-h-dvh">
+      <CatalogColumn themeClass="theme-light" idPrefix="light" />
+      <CatalogColumn themeClass="theme-dark" idPrefix="dark" />
+    </div>
+  )
+}

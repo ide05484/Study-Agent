@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" role="img" aria-label="코치 합격이 (응원)">
+  <defs><clipPath id="hapgyeok-cheer-body"><path d="M18,80 C16,50 36,30 60,30 C84,30 104,50 102,80 C102,98 86,106 60,106 C34,106 18,98 18,80 Z"/></clipPath></defs>
+  <path d="M100,14 l2.2,6 6,2.2 -6,2.2 -2.2,6 -2.2,-6 -6,-2.2 6,-2.2 Z" fill="#f6b07a"/><path d="M14,26 l1.5,4 4,1.5 -4,1.5 -1.5,4 -1.5,-4 -4,-1.5 4,-1.5 Z" fill="#f9c99a"/>
+  <ellipse cx="46" cy="106" rx="7" ry="4" fill="#fdfbf8" stroke="#7a6a60" stroke-width="1.8"/><ellipse cx="74" cy="106" rx="7" ry="4" fill="#fdfbf8" stroke="#7a6a60" stroke-width="1.8"/>
+  <ellipse cx="19" cy="58" rx="6" ry="9" transform="rotate(-28 19 58)" fill="#fdfbf8" stroke="#7a6a60" stroke-width="1.8"/><ellipse cx="101" cy="58" rx="6" ry="9" transform="rotate(28 101 58)" fill="#fdfbf8" stroke="#7a6a60" stroke-width="1.8"/>
+  <circle cx="38" cy="38" r="10" fill="#cfc6bd" stroke="#7a6a60" stroke-width="1.8"/><circle cx="82" cy="38" r="10" fill="#cfc6bd" stroke="#7a6a60" stroke-width="1.8"/><circle cx="38" cy="38" r="5" fill="#ece7e1"/><circle cx="82" cy="38" r="5" fill="#ece7e1"/>
+  <path d="M18,80 C16,50 36,30 60,30 C84,30 104,50 102,80 C102,98 86,106 60,106 C34,106 18,98 18,80 Z" fill="#fdfbf8"/>
+  <path d="M64,36 C90,30 108,50 104,74 C92,80 78,76 70,64 C63,54 58,44 64,36 Z" fill="#d8d0c7" clip-path="url(#hapgyeok-cheer-body)"/>
+  <g clip-path="url(#hapgyeok-cheer-body)"><path d="M0,62 C22,47 40,42 60,42 C80,42 98,47 120,62 L120,71 C98,56 80,51 60,51 C40,51 22,56 0,71 Z" fill="#c4530f"/><path d="M0,62 C22,47 40,42 60,42 C80,42 98,47 120,62 M120,71 C98,56 80,51 60,51 C40,51 22,56 0,71" fill="none" stroke="#7a6a60" stroke-width="1.8"/><circle cx="60" cy="46.5" r="2.8" fill="#ffffff"/></g>
+  <path d="M18,80 C16,50 36,30 60,30 C84,30 104,50 102,80 C102,98 86,106 60,106 C34,106 18,98 18,80 Z" fill="none" stroke="#7a6a60" stroke-width="1.8"/>
+  <path d="M98.8,52 C103,48 107,46 111,46 C110,50 106,54 99.8,57 Z" fill="#c4530f" stroke="#7a6a60" stroke-width="1.8" stroke-linejoin="round"/><path d="M99.8,57 C105,57 110,59 112,62.5 C108,64.5 104,63.5 100.2,60.5 Z" fill="#c4530f" stroke="#7a6a60" stroke-width="1.8" stroke-linejoin="round"/>
+  <ellipse cx="37" cy="76" rx="6" ry="4" fill="#f4b9a6"/><ellipse cx="83" cy="76" rx="6" ry="4" fill="#f4b9a6"/>
+  <path d="M42,69 Q47,61 52,69 M68,69 Q73,61 78,69" fill="none" stroke="#3a2e28" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M54,76 Q60,86 66,76 Z" fill="#f08a7a" stroke="#3a2e28" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
