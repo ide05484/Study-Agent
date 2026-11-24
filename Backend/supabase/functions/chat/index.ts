@@ -1,5 +1,5 @@
-// [chat] 프론트엔드 채팅 화면이 메시지·칩 답을 보낼 때와 오늘 채팅방을 열 때(`{ "open": true }`) 부르는 단일 엔드포인트.
-// 열기 요청은 오늘 메시지가 없으면 하루 첫 메시지를 넣는다(필요하면 이월 재분배 뒤, GPT 없이).
+// [chat] 프론트엔드 채팅 화면이 메시지·칩 답을 보낼 때 부르는 단일 엔드포인트.
+// 하루 첫 메시지는 이 함수를 거치지 않고 화면이 DB 함수 insert_first_message로 바로 저장한다.
 // LLM으로 메시지를 분석해(analysis.ts가 검증) 학습 기록은 study_logs와 report_progress로, 순공시간은 record_study_time으로,
 // 잘 맞은 방법은 study_tips로 저장하고 코치 말투로 답한다.
 // 질문 답변에는 필요한 공부법(study_methods)과 잘 맞은 방법을 넣는다.
@@ -18,7 +18,7 @@ import {
   STUDY_TIME_ASK,
   USAGE_GUIDE,
 } from "../_shared/coach.ts";
-import { addDays, studyTimeDate, toDateKey } from "../_shared/date.ts";
+import { studyTimeDate, toDateKey } from "../_shared/date.ts";
 import { replan, type ReplanResult } from "../_shared/replan.ts";
 import {
   type ChatAction,
@@ -48,9 +48,7 @@ import {
   claimUserMessages,
   countTodayUserMessages,
   discardUserMessage,
-  hasMissedTasks,
   insertBook,
-  insertFirstMessage,
   insertMessage,
   insertStudyTip,
   loadCoachContext,
@@ -75,7 +73,6 @@ import {
 } from "./knowledge.ts";
 import { analyzeMessage, generateReply } from "./llm.ts";
 import { type ChatRequest, parseChatRequest } from "./request.ts";
-import { welcomeText } from "./welcome.ts";
 import {
   fallbackReply,
   type RecordedLog,
@@ -113,7 +110,6 @@ export default {
     }
 
     try {
-      if ("open" in request) return await handleOpen(ctx.supabase);
       return await handleMessage(ctx.supabase, userId, request);
     } catch (e) {
       // DB 오류 원문은 로그에만 남기고 응답에는 고정 코드만 보낸다
@@ -131,56 +127,10 @@ async function readRequest(req: Request): Promise<ChatRequest | null> {
   }
 }
 
-// 채팅 화면을 열 때 하루 첫 메시지를 넣는다. 하루 상한을 보지 않고 GPT를 부르지 않는다
-async function handleOpen(sb: SupabaseClient): Promise<Response> {
-  const { profile } = await loadProfileAndBooks(sb);
-  const timezone = profile.timezone;
-  const today = toDateKey(new Date(), timezone);
-
-  // 오늘 메시지가 이미 있으면 아무것도 하지 않는다
-  const [existing] = await loadRecentMessages(sb, today, timezone, 1);
-  if (existing) return Response.json(openResult([]));
-
-  // 화면 useCarryOver와 같은 이월 조건. 실패해도 지금 계획으로 첫 메시지를 저장한다
-  let planChanged = false;
-  let replanFailed = false;
-  const examDate = profile.exam_date;
-  if (
-    examDate !== null && addDays(examDate, -1) >= today &&
-    await hasMissedTasks(sb, today)
-  ) {
-    try {
-      await replan(sb);
-      planChanged = true;
-    } catch (e) {
-      console.error(JSON.stringify({ call: "open_replan", error: String(e) }));
-      replanFailed = true;
-    }
-  }
-
-  const tasks = await loadTodayTasks(sb, today);
-  const { text, action } = welcomeText({ today, examDate, tasks });
-  // 그사이 다른 요청이 먼저 넣었으면 null이다
-  const row = await insertFirstMessage(sb, today, timezone, text, action);
-  return Response.json(
-    openResult(row ? [row] : [], { planChanged, replanFailed }),
-  );
-}
-
-function openResult(
-  messages: ChatMessageRow[],
-  flags: { planChanged: boolean; replanFailed: boolean } = {
-    planChanged: false,
-    replanFailed: false,
-  },
-) {
-  return { messages, logged: false, ...flags, superseded: false };
-}
-
 async function handleMessage(
   sb: SupabaseClient,
   userId: string,
-  request: Exclude<ChatRequest, { open: true }>,
+  request: ChatRequest,
 ): Promise<Response> {
   const { profile, books } = await loadProfileAndBooks(sb);
   const now = new Date();
@@ -712,7 +662,5 @@ function errorResponse(message: string): Response {
     --data '{"content":"보건행정 기본서 15~17강, 기출 20문제 중 5개 틀림"}'
 
   확인 칩: --data '{"choice":{"message_id":"<확인 메시지 id>","answer":"yes"}}'
-
-  채팅방 열기(하루 첫 메시지): --data '{"open":true}'
 
 */

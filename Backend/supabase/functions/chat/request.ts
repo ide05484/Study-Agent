@@ -3,10 +3,9 @@ import { isRecord } from "./bookDraft.ts";
 
 export type ChatRequest =
   | { content: string }
-  | { choice: { message_id: string; answer: "yes" | "no" } }
-  | { open: true };
+  | { choice: { message_id: string; answer: "yes" | "no" } };
 
-// 글(content)·칩(choice)·열기(open) 중 하나만 있어야 한다
+// 글(content)·칩(choice) 중 하나만 있어야 한다. 하루 첫 메시지는 화면이 DB 함수로 바로 저장한다
 export function parseChatRequest(
   body: unknown,
   maxLength: number,
@@ -14,12 +13,7 @@ export function parseChatRequest(
   if (!isRecord(body)) return null;
   const hasContent = body.content !== undefined;
   const hasChoice = body.choice !== undefined;
-  const hasOpen = body.open !== undefined;
-  if (Number(hasContent) + Number(hasChoice) + Number(hasOpen) !== 1) {
-    return null;
-  }
-
-  if (hasOpen) return body.open === true ? { open: true } : null;
+  if (hasContent === hasChoice) return null;
 
   if (hasContent) {
     if (typeof body.content !== "string") return null;

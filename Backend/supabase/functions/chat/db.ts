@@ -142,45 +142,6 @@ export async function insertMessage(
   return toMessageRow(data);
 }
 
-// 하루 첫 메시지. 그날 메시지가 이미 있으면 DB 함수가 넣지 않고 null을 돌려준다
-export async function insertFirstMessage(
-  sb: Client,
-  today: string,
-  timezone: string,
-  text: string,
-  action: ChatAction | null,
-): Promise<ChatMessageRow | null> {
-  const { data, error } = await sb.rpc("insert_first_message", {
-    p_from: dayStartUtc(today, timezone),
-    p_to: dayStartUtc(addDays(today, 1), timezone),
-    p_content: text,
-    p_action: action,
-  });
-  fail(error);
-  if (data === null) return null;
-  const { data: row, error: readError } = await sb
-    .from("chat_messages")
-    .select(MESSAGE_COLUMNS)
-    .eq("id", data as string)
-    .single();
-  fail(readError);
-  return toMessageRow(row);
-}
-
-// 오늘 이전 날짜에 못 끝낸(pending) 분량이 있는지
-export async function hasMissedTasks(
-  sb: Client,
-  today: string,
-): Promise<boolean> {
-  const { count, error } = await sb
-    .from("daily_tasks")
-    .select("id", { count: "exact", head: true })
-    .lt("task_date", today)
-    .eq("status", "pending");
-  fail(error);
-  return (count ?? 0) > 0;
-}
-
 // 오늘 분량 줄(교재 조인). 교재가 없는 행은 뺀다
 export async function loadTodayTasks(
   sb: Client,

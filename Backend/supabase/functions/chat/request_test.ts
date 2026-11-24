@@ -23,15 +23,6 @@ Deno.test("parseChatRequest", () => {
   assertEquals(parseChatRequest({}, 1000), null);
 });
 
-Deno.test("parseChatRequest: open", () => {
-  assertEquals(parseChatRequest({ open: true }, 1000), { open: true });
-  assertEquals(parseChatRequest({ open: false }, 1000), null);
-  assertEquals(parseChatRequest({ open: true, content: "a" }, 1000), null);
-  assertEquals(
-    parseChatRequest(
-      { open: true, choice: { message_id: "m1", answer: "yes" } },
-      1000,
-    ),
-    null,
-  );
+Deno.test("parseChatRequest: 열기 요청은 더 받지 않는다", () => {
+  assertEquals(parseChatRequest({ open: true }, 1000), null);
 });

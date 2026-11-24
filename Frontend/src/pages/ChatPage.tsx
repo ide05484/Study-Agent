@@ -36,9 +36,9 @@ function ChatRoom({ date, readOnly }: ChatRoomProps) {
   const { messages, loaded, opening, sending, error, send, choose } = useChat(date, readOnly)
   const [draft, setDraft] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
-  // 서버가 만든 첫 메시지(코치)가 없을 때만 고정 문구를 맨 위에 그린다. 열기 응답을 기다리는 동안은 그리지 않는다
+  // 첫 메시지(코치)가 없을 때만 고정 문구를 맨 위에 그린다(이 기능 전 날짜, 첫 메시지 저장 실패)
   const showsWelcome = loaded && !opening && messages[0]?.role !== 'assistant'
-  // 불러오거나 첫 메시지를 받는 동안은 보내지 않는다(조회 결과가 임시 말풍선을 덮어쓰지 않게)
+  // 불러오거나 첫 메시지를 저장하는 동안은 보내지 않는다(조회 결과가 임시 말풍선을 덮어쓰지 않게)
   const blocked = !loaded || opening
 
   useEffect(() => {

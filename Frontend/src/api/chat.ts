@@ -1,5 +1,6 @@
 import { FunctionsHttpError } from '@supabase/supabase-js'
-import type { ChatMessage, ChatRequest, ChatResponse } from '../interfaces/chat.ts'
+import type { ChatAction, ChatMessage, ChatRequest, ChatResponse } from '../interfaces/chat.ts'
+import type { Json } from '../interfaces/database.ts'
 import { dayRange, toDateKey } from '../libs/date.ts'
 import { emitPlanChanged } from '../libs/planEvents.ts'
 import { supabase } from '../libs/supabase.ts'
@@ -47,20 +48,29 @@ export async function sendChatChoice(messageId: string, answer: 'yes' | 'no'): P
   return invokeChat({ choice: { message_id: messageId, answer } })
 }
 
-// 열기 요청이 이 시간(ms) 안에 끝나지 않으면 실패로 보고 보내기 막힘을 푼다
-const OPEN_TIMEOUT_MS = 10_000
-
-// 채팅방을 열었을 때 첫 메시지를 받는다
-export async function openChatRoom(): Promise<ChatResponse> {
-  return invokeChat({ open: true }, OPEN_TIMEOUT_MS)
+// 하루 첫 메시지 저장. DB 함수가 사용자별 잠금 안에서 그날 메시지가 없을 때만 넣고 id를 돌려준다
+// 이미 있으면(다른 탭이 먼저 넣음) null
+export async function insertFirstMessage(
+  date: string,
+  content: string,
+  action: ChatAction | null,
+): Promise<string | null> {
+  const [from, to] = dayRange(date)
+  const { data, error } = await supabase.rpc('insert_first_message', {
+    p_from: from,
+    p_to: to,
+    p_content: content,
+    p_action: action as Json,
+  })
+  if (error) throw error
+  return data ?? null // 생성된 타입은 string이지만 이미 있으면 null이 온다
 }
 
 // 진도·학습 기록이 저장됐거나(logged) 계획이 바뀌었으면(planChanged) 오늘의 분량을 다시 불러오게 알린다
 // 401(로그인 만료)이면 로그아웃해서 세션 가드가 /login으로 보내게 한다
 // 로그아웃이 실패해도 원래 오류를 던진다
-// timeout(ms)을 주면 그 시간이 지나 요청을 끊고 오류를 던진다
-async function invokeChat(body: ChatRequest, timeout?: number): Promise<ChatResponse> {
-  const { data, error } = await supabase.functions.invoke<ChatResponse>('chat', { body, timeout })
+async function invokeChat(body: ChatRequest): Promise<ChatResponse> {
+  const { data, error } = await supabase.functions.invoke<ChatResponse>('chat', { body })
   if (error) {
     if (error instanceof FunctionsHttpError) {
       const status = (error.context as Response).status
