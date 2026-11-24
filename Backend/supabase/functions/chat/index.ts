@@ -89,7 +89,7 @@ import {
 import {
   appendWrapUp,
   expiredConfirmText,
-  isWrapUpAsked,
+  isWrapUpNeeded,
   WRAP_UP_ACTION,
   WRAP_UP_NO_TEXT,
   wrapUpYesText,
@@ -613,8 +613,8 @@ async function buildReply(p: {
   const replyIntent = hasLogs && intent === "study_time" ? "study_log" : intent;
   // 공부를 마치려는 말이면 답(대체 답변 포함) 끝에 마무리 질문과 칩을 붙인다.
   // 기록이 있어도 순공시간을 다시 묻는 답(handleMessage가 끝에 붙인다)과
-  // 마무리 뒤 순공시간을 물은 데 답한 말에는 붙이지 않는다
-  const askWrapUp = isWrapUpAsked({
+  // 직전에 순공시간을 물은 뒤의 답에는 붙이지 않는다
+  const askWrapUp = isWrapUpNeeded({
     wrapUp: p.analysis.wrapUp,
     intent: replyIntent,
     studyTimeAsk: p.studyTimeInvalid,

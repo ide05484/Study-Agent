@@ -27,9 +27,9 @@ export function appendWrapUp(text: string): string {
   return `${text}\n\n${WRAP_UP_QUESTION}`;
 }
 
-// 교재 추가·사용법 답과, 순공시간을 되묻는 답에는 마무리를 묻지 않는다.
-// 마무리 응 뒤 순공시간을 물은 데 답한 말(asked가 study_time)도 이미 마무리했으니 다시 묻지 않는다
-export function isWrapUpAsked(
+// 이번 답 끝에 마무리 질문과 칩을 붙일지. 공부를 마치려는 말(wrapUp)이어도
+// 교재 추가·사용법 답, 순공시간을 되묻는 답(studyTimeAsk), 직전에 순공시간을 물은 뒤의 답(asked가 study_time)이면 false다
+export function isWrapUpNeeded(
   p: {
     wrapUp: boolean;
     intent: Intent;
