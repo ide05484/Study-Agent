@@ -3,7 +3,7 @@ import { Navigate, useParams } from 'react-router'
 import ConfirmChips from '../components/chat/ConfirmChips.tsx'
 import TodayPlanButton from '../components/chat/TodayPlanButton.tsx'
 import TodayPlanSheet from '../components/chat/TodayPlanSheet.tsx'
-import { PENDING_REPLY, useChat } from '../hooks/useChat.ts'
+import { PENDING_REPLY_ID, useChat } from '../hooks/useChat.ts'
 import { useTodayTasks } from '../hooks/useTodayTasks.ts'
 import type { ChatRole } from '../interfaces/chat.ts'
 import { showsConfirmChips } from '../libs/chatAction.ts'
@@ -33,18 +33,21 @@ interface ChatRoomProps {
 }
 
 function ChatRoom({ date, readOnly }: ChatRoomProps) {
-  const { messages, sending, error, send, choose } = useChat(date)
+  const { messages, loaded, opening, sending, error, send, choose } = useChat(date, readOnly)
   const [draft, setDraft] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
+  // 서버가 만든 첫 메시지(코치)가 없을 때만 고정 문구를 맨 위에 그린다. 열기 응답을 기다리는 동안은 그리지 않는다
+  const showsWelcome = loaded && !opening && messages[0]?.role !== 'assistant'
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: 'end' })
   }, [messages])
 
+  // 답을 기다리는 동안에도 보낼 수 있다. 첫 메시지를 받는 중(opening)에만 막는다
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const content = draft.trim()
-    if (!content || sending) return
+    if (!content || opening) return
     setDraft('')
     void send(content).then((ok) => {
       if (ok) return
@@ -55,10 +58,10 @@ function ChatRoom({ date, readOnly }: ChatRoomProps) {
   return (
     <section className="flex h-full flex-col">
       <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-4">
-        <Bubble role="assistant">{WELCOME_MESSAGE}</Bubble>
+        {showsWelcome && <Bubble role="assistant">{WELCOME_MESSAGE}</Bubble>}
         {messages.map((m, i) => (
           <Fragment key={m.id}>
-            <Bubble role={m.role} muted={m.id.startsWith('pending-') && m.content === PENDING_REPLY}>
+            <Bubble role={m.role} muted={m.id === PENDING_REPLY_ID}>
               {m.content}
             </Bubble>
             {/* 확인 칩은 오늘 채팅방의 마지막 코치 메시지에만 붙는다. 지난 확인은 다음 말풍선이 고른 답이다 */}
@@ -92,7 +95,7 @@ function ChatRoom({ date, readOnly }: ChatRoomProps) {
               type="submit"
               className="grid size-11 flex-none place-items-center rounded-full bg-accent text-on-accent disabled:opacity-40"
               aria-label="보내기"
-              disabled={sending || !draft.trim()}
+              disabled={opening || !draft.trim()}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
                 <path
