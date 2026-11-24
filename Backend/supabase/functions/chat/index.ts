@@ -26,7 +26,12 @@ import {
   isConfirmAction,
   studyTimeAskAction,
 } from "./actions.ts";
-import type { Analysis, BookRef, StudyTip } from "./analysis.ts";
+import type {
+  Analysis,
+  BookRef,
+  StudyTimeReport,
+  StudyTip,
+} from "./analysis.ts";
 import { type AskedAbout, bundleInput } from "./analysisPrompt.ts";
 import {
   askText,
@@ -73,6 +78,7 @@ import {
 } from "./knowledge.ts";
 import { analyzeMessage, generateReply } from "./llm.ts";
 import { type ChatRequest, parseChatRequest } from "./request.ts";
+import { chatResult } from "./response.ts";
 import {
   fallbackReply,
   type RecordedLog,
@@ -206,13 +212,7 @@ async function handleMessage(
       DAILY_LIMIT_REPLY,
       null,
     );
-    return Response.json({
-      messages: [user, assistant],
-      logged: false,
-      planChanged: false,
-      replanFailed: false,
-      superseded: false,
-    });
+    return Response.json(chatResult([user, assistant]));
   }
 
   // 사용자 메시지를 먼저 저장하고(과목은 분석 뒤에 채운다), 앞서 보내 아직 처리 안 한 메시지와 묶어 분석한다
@@ -220,21 +220,6 @@ async function handleMessage(
   // 여기부터는 저장된 시각의 공부 날짜로 묶고 기록한다. 하루 경계(새벽 2시) 직전에 시작한 요청의 글이 다음 날로 저장돼도
   // 묶음 조회·처리 표시 범위에 들어가야 다음 날 다시 처리되지 않는다
   const day = studyDayKey(new Date(inserted.created_at), timezone);
-  // 여기부터 claim 결과가 나오기 전까지 실패하면 failBeforeClaim이 이 메시지를 지울지 남길지 정한다
-  const failBefore = (failure: Response) =>
-    failBeforeClaim(sb, inserted, day, timezone, failure);
-
-  let bundle: { id: string; content: string }[];
-  try {
-    const unhandled = await loadUnhandledUserMessages(sb, day, timezone);
-    // 이 메시지 뒤에 온 글은 그 요청이 묶는다. 목록에 없으면 더 새 요청이 이미 이 메시지까지 묶어 처리 표시했다
-    const end = unhandled.findIndex((m) => m.id === inserted.id);
-    if (end < 0) return Response.json(supersededResult(inserted));
-    bundle = unhandled.slice(0, end + 1);
-  } catch (e) {
-    console.error(JSON.stringify({ call: "load_bundle", error: String(e) }));
-    return await failBefore(errorResponse("server_error"));
-  }
 
   const coachAction = lastCoach?.action ?? null;
   const held: BookAddAction | null = coachAction?.kind === "book_add"
@@ -246,73 +231,36 @@ async function handleMessage(
     ? "time_available"
     : null;
 
-  let analysis: Analysis;
-  try {
-    analysis = await analyzeMessage(
-      bundle.map((m) => m.content),
-      books,
-      day,
-      held?.draft ?? null,
-      asked,
-    );
-  } catch (e) {
-    console.error(JSON.stringify({ call: "analyze", error: String(e) }));
-    return await failBefore(
-      Response.json({ error: "analysis_failed" }, { status: 502 }),
-    );
-  }
-
-  let claimed: boolean;
-  try {
-    claimed = await claimUserMessages(sb, inserted.id, day, timezone);
-  } catch (e) {
-    console.error(JSON.stringify({ call: "claim", error: String(e) }));
-    return await failBefore(errorResponse("server_error"));
-  }
-  // 분석하는 동안 더 새 글이 왔으면 그 요청이 이 메시지까지 묶어 답한다. 여기서는 아무것도 저장하지 않는다
-  if (!claimed) return Response.json(supersededResult(inserted));
+  const outcome = await analyzeBundle({
+    sb,
+    inserted,
+    day,
+    timezone,
+    books,
+    held,
+    asked,
+  });
+  if (outcome.kind === "done") return outcome.response;
+  const { bundle, analysis } = outcome;
 
   // 처리 표시를 했으면 답변까지 끝까지 간다(다시 확인하지 않는다).
-  // 여기서 500을 내면 처리 표시한 묶음이 답 없이 사라지므로 과목 저장 실패는 로그만 남긴다
-  try {
-    await setMessageSubject(sb, inserted.id, analysis.subject);
-  } catch (e) {
-    console.error(JSON.stringify({ call: "set_subject", error: String(e) }));
-  }
+  // 여기서 500을 내면 처리 표시한 묶음이 답 없이 사라지므로 과목 저장 실패는 로그만 남긴다.
+  // 아래 저장은 서로 결과를 쓰지 않으므로 함께 돌린다(진도 반영은 recordStudyLogs 안에서 기록 뒤에 한다)
   const user: ChatMessageRow = { ...inserted, subject: analysis.subject };
-
-  // 분석이 남긴 entry는 의도와 상관없이 학습 기록이다. 출처는 묶음의 마지막(이 메시지)이다
-  const recorded = analysis.entries.length > 0
-    ? await recordStudyLogs(
-      sb,
-      userId,
-      day,
-      user.id,
-      analysis.entries,
-      books,
-    )
-    : [];
-
-  let savedTime: { total: number; date: string } | null = null;
-  let studyTimeInvalid = analysis.studyTimeInvalid;
-  if (analysis.studyTime) {
-    const date = studyTimeDate(now, timezone, analysis.studyTime.day);
-    const total = await saveStudyTime(sb, date, analysis.studyTime);
-    if (total === null) studyTimeInvalid = true;
-    else savedTime = { total, date };
-  }
-
-  // 잘 맞은 방법도 의도와 상관없이 저장한다. 실패하거나 이미 있으면 답변에서 적어 뒀다고 하지 않는다
-  let savedTip: StudyTip | null = null;
-  if (analysis.studyTip) {
-    try {
-      if (await insertStudyTip(sb, userId, analysis.studyTip, user.id)) {
-        savedTip = analysis.studyTip;
-      }
-    } catch (e) {
-      console.error(JSON.stringify({ call: "tip", error: String(e) }));
-    }
-  }
+  const [, recorded, savedTime, savedTip] = await Promise.all([
+    setMessageSubject(sb, inserted.id, analysis.subject).catch((e) => {
+      console.error(JSON.stringify({ call: "set_subject", error: String(e) }));
+    }),
+    // 분석이 남긴 entry는 의도와 상관없이 학습 기록이다. 출처는 묶음의 마지막(이 메시지)이다
+    analysis.entries.length > 0
+      ? recordStudyLogs(sb, userId, day, user.id, analysis.entries, books)
+      : [],
+    saveReportedTime(sb, now, timezone, analysis.studyTime),
+    saveTip(sb, userId, analysis.studyTip, user.id),
+  ]);
+  // 순공시간을 말했는데 저장하지 못했으면(범위 밖) 다시 묻는다
+  const studyTimeInvalid = analysis.studyTimeInvalid ||
+    (analysis.studyTime !== null && savedTime === null);
 
   const reply = await buildReply({
     sb,
@@ -343,24 +291,114 @@ async function handleMessage(
     analysis.subject,
     reply.action,
   );
-  return Response.json({
-    messages: [user, assistant],
-    logged: recorded.length > 0,
-    planChanged: false,
-    replanFailed: false,
-    superseded: false,
+  return Response.json(
+    chatResult([user, assistant], { logged: recorded.length > 0 }),
+  );
+}
+
+// 이 요청이 답할 묶음과 분석. 답할 차례가 아니거나(밀림) claim 전에 실패했으면 바로 돌려줄 응답
+type BundleOutcome =
+  | {
+    kind: "claimed";
+    bundle: { id: string; content: string }[];
+    analysis: Analysis;
+  }
+  | { kind: "done"; response: Response };
+
+// 저장한 사용자 메시지(inserted)를 앞서 보내 아직 처리 안 한 메시지와 묶어 분석하고 처리 표시(claim)한다.
+// day는 inserted가 저장된 시각의 공부 날짜다
+async function analyzeBundle(p: {
+  sb: SupabaseClient;
+  inserted: ChatMessageRow;
+  day: string;
+  timezone: string;
+  books: BookRef[];
+  // 마지막 코치 메시지에 받아 둔 교재 초안과 직전 질문
+  held: BookAddAction | null;
+  asked: AskedAbout;
+}): Promise<BundleOutcome> {
+  const { sb, inserted, day, timezone } = p;
+  const done = (response: Response): BundleOutcome => ({
+    kind: "done",
+    response,
   });
+  // 여기부터 claim 결과가 나오기 전까지 실패하면 failBeforeClaim이 이 메시지를 지울지 남길지 정한다
+  const failBefore = async (failure: Response) =>
+    done(await failBeforeClaim(sb, inserted, day, timezone, failure));
+
+  let bundle: { id: string; content: string }[];
+  try {
+    const unhandled = await loadUnhandledUserMessages(sb, day, timezone);
+    // 이 메시지 뒤에 온 글은 그 요청이 묶는다. 목록에 없으면 더 새 요청이 이미 이 메시지까지 묶어 처리 표시했다
+    const end = unhandled.findIndex((m) => m.id === inserted.id);
+    if (end < 0) return done(supersededResponse(inserted));
+    bundle = unhandled.slice(0, end + 1);
+  } catch (e) {
+    console.error(JSON.stringify({ call: "load_bundle", error: String(e) }));
+    return await failBefore(errorResponse("server_error"));
+  }
+
+  let analysis: Analysis;
+  try {
+    analysis = await analyzeMessage(
+      bundle.map((m) => m.content),
+      p.books,
+      day,
+      p.held?.draft ?? null,
+      p.asked,
+    );
+  } catch (e) {
+    console.error(JSON.stringify({ call: "analyze", error: String(e) }));
+    return await failBefore(
+      Response.json({ error: "analysis_failed" }, { status: 502 }),
+    );
+  }
+
+  let claimed: boolean;
+  try {
+    claimed = await claimUserMessages(sb, inserted.id, day, timezone);
+  } catch (e) {
+    console.error(JSON.stringify({ call: "claim", error: String(e) }));
+    return await failBefore(errorResponse("server_error"));
+  }
+  // 분석하는 동안 더 새 글이 왔으면 그 요청이 이 메시지까지 묶어 답한다. 여기서는 아무것도 저장하지 않는다
+  if (!claimed) return done(supersededResponse(inserted));
+  return { kind: "claimed", bundle, analysis };
+}
+
+// 분석이 순공시간을 남겼으면 공부 날짜로 저장하고 그날 합계를 돌려준다.
+// 말하지 않았거나 값이 범위를 벗어나 저장하지 못하면 null
+async function saveReportedTime(
+  sb: SupabaseClient,
+  now: Date,
+  timezone: string,
+  report: StudyTimeReport | null,
+): Promise<{ total: number; date: string } | null> {
+  if (!report) return null;
+  const date = studyTimeDate(now, timezone, report.day);
+  const total = await saveStudyTime(sb, date, report);
+  return total === null ? null : { total, date };
+}
+
+// 잘 맞은 방법도 의도와 상관없이 저장한다. 실패하거나 이미 있으면 null(답변에서 적어 뒀다고 하지 않는다)
+async function saveTip(
+  sb: SupabaseClient,
+  userId: string,
+  tip: StudyTip | null,
+  messageId: string,
+): Promise<StudyTip | null> {
+  if (!tip) return null;
+  try {
+    if (await insertStudyTip(sb, userId, tip, messageId)) return tip;
+  } catch (e) {
+    console.error(JSON.stringify({ call: "tip", error: String(e) }));
+  }
+  return null;
 }
 
 // 더 새 요청이 묶어 답하는 요청. 저장한 사용자 메시지만 돌려준다
-function supersededResult(user: ChatMessageRow) {
-  return {
-    messages: [user],
-    logged: false,
-    planChanged: false,
-    replanFailed: false,
-    superseded: true,
-  };
+function supersededResponse(user: ChatMessageRow): Response {
+  return Response.json(chatResult([user], { superseded: true }));
 }
 
 // 사용자 메시지를 저장한 뒤 claim 결과가 나오기 전에 실패했을 때.
@@ -376,7 +414,7 @@ async function failBeforeClaim(
 ): Promise<Response> {
   try {
     if (!await discardUserMessage(sb, inserted.id, today, timezone)) {
-      return Response.json(supersededResult(inserted));
+      return supersededResponse(inserted);
     }
   } catch (e) {
     console.error(JSON.stringify({ call: "discard", error: String(e) }));
@@ -495,13 +533,9 @@ async function answerConfirm(p: {
     null,
     action,
   );
-  return Response.json({
-    messages: [user, assistant],
-    logged: false,
-    planChanged,
-    replanFailed,
-    superseded: false,
-  });
+  return Response.json(
+    chatResult([user, assistant], { planChanged, replanFailed }),
+  );
 }
 
 // 끝난 확인 문구. 칩이 도착 때 유효했으면(pending) 그 종류로 고르고,
