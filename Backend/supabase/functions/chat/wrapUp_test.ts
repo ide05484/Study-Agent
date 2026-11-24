@@ -1,10 +1,11 @@
 import { assertEquals } from "jsr:@std/assert";
 import type { Intent } from "./analysis.ts";
+import type { AskedAbout } from "./analysisPrompt.ts";
 import { CHOICE_EXPIRED_TEXT } from "./bookDraft.ts";
 import {
   appendWrapUp,
   expiredConfirmText,
-  shouldAskWrapUp,
+  isWrapUpAsked,
   WRAP_UP_EXPIRED_TEXT,
   wrapUpYesText,
 } from "./wrapUp.ts";
@@ -20,9 +21,13 @@ Deno.test("expiredConfirmText는 교재 칩만 교재 문구, 나머지는 공�
   assertEquals(expiredConfirmText(null), WRAP_UP_EXPIRED_TEXT);
 });
 
-Deno.test("shouldAskWrapUp 진리표", () => {
-  const ask = (wrapUp: boolean, intent: Intent, studyTimeAsk = false) =>
-    shouldAskWrapUp({ wrapUp, intent, studyTimeAsk });
+Deno.test("isWrapUpAsked 진리표", () => {
+  const ask = (
+    wrapUp: boolean,
+    intent: Intent,
+    studyTimeAsk = false,
+    asked: AskedAbout = null,
+  ) => isWrapUpAsked({ wrapUp, intent, studyTimeAsk, asked });
   assertEquals(ask(false, "study_log"), false);
   assertEquals(ask(true, "book_add"), false);
   assertEquals(ask(true, "usage"), false);
@@ -32,6 +37,14 @@ Deno.test("shouldAskWrapUp 진리표", () => {
   ) {
     assertEquals(ask(true, i), true);
   }
+});
+
+Deno.test("isWrapUpAsked: 순공시간을 물은 데 답한 말에는 다시 묻지 않는다", () => {
+  const ask = (intent: Intent, asked: AskedAbout) =>
+    isWrapUpAsked({ wrapUp: true, intent, studyTimeAsk: false, asked });
+  assertEquals(ask("study_time", "study_time"), false);
+  assertEquals(ask("study_log", "study_time"), false);
+  assertEquals(ask("study_time", "time_available"), true);
 });
 
 Deno.test("appendWrapUp은 빈 줄 뒤에 질문을 붙인다", () => {

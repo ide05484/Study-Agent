@@ -14,6 +14,13 @@ Deno.test("한국 0~9시는 UTC 전날이어도 한국 날짜", () =>
     toDateKey(new Date("2026-10-26T15:30:00Z"), "Asia/Seoul"),
     "2026-10-27",
   ));
+// chat이 저장한 메시지의 created_at(마이크로초, +00:00)으로 채팅방 날짜를 다시 잡을 때
+Deno.test("DB created_at 문자열은 자정 앞뒤로 그 시간대 날짜가 갈린다", () => {
+  const day = (createdAt: string) =>
+    toDateKey(new Date(createdAt), "Asia/Seoul");
+  assertEquals(day("2026-11-23T14:59:59.876543+00:00"), "2026-11-23");
+  assertEquals(day("2026-11-23T15:00:00.123456+00:00"), "2026-11-24");
+});
 Deno.test("새벽 1시의 오늘 순공은 전날", () =>
   assertEquals(
     studyTimeDate(new Date("2026-11-13T16:00:00Z"), "Asia/Seoul", "today"),

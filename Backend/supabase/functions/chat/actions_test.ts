@@ -1,5 +1,10 @@
 import { assertEquals } from "jsr:@std/assert";
-import { type ChatAction, isConfirmAction, parseAction } from "./actions.ts";
+import {
+  type ChatAction,
+  isConfirmAction,
+  parseAction,
+  studyTimeAskAction,
+} from "./actions.ts";
 
 const draft = {
   subject: "korean",
@@ -72,4 +77,24 @@ Deno.test("isConfirmAction", () => {
   assertEquals(isConfirmAction(book("ask")), false);
   assertEquals(isConfirmAction({ kind: "study_time_ask" }), false);
   assertEquals(isConfirmAction(null), false);
+});
+
+Deno.test("studyTimeAskAction: 초안이 없으면 순공시간 되묻기", () => {
+  assertEquals(studyTimeAskAction(null), { kind: "study_time_ask" });
+});
+
+Deno.test("studyTimeAskAction: 확인 단계 초안은 고치는 단계로 돌린다", () => {
+  assertEquals(
+    studyTimeAskAction({ kind: "book_add", step: "confirm", draft }),
+    { kind: "book_add", step: "edit", draft },
+  );
+});
+
+Deno.test("studyTimeAskAction: 묻는·고치는 단계 초안은 그대로", () => {
+  for (const step of ["ask", "edit"] as const) {
+    assertEquals(
+      studyTimeAskAction({ kind: "book_add", step, draft }),
+      { kind: "book_add", step, draft },
+    );
+  }
 });

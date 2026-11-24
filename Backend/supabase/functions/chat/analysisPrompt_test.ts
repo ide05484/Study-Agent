@@ -33,6 +33,7 @@ Deno.test("analysisInstructions: asked에 따라 직전 질문 지침", () => {
   assertEquals(tA.includes("순공시간이다"), false);
   const sT = analysisInstructions([], args[0], null, "study_time", false);
   assertStringIncludes(sT, "순공시간이다");
+  assertStringIncludes(sT, "시간이 없는 답");
   assertEquals(sT.includes("study_time이 아니다"), false);
   const none = analysisInstructions([], args[0], null, null, false);
   assertEquals(none.includes("study_time이 아니다"), false);

@@ -1,4 +1,5 @@
-// [chat] 프론트엔드 채팅 화면이 메시지를 보낼 때 부르는 단일 엔드포인트.
+// [chat] 프론트엔드 채팅 화면이 메시지·칩 답을 보낼 때와 오늘 채팅방을 열 때(`{ "open": true }`) 부르는 단일 엔드포인트.
+// 열기 요청은 오늘 메시지가 없으면 하루 첫 메시지를 넣는다(필요하면 이월 재분배 뒤, GPT 없이).
 // LLM으로 메시지를 분석해(analysis.ts가 검증) 학습 기록은 study_logs와 report_progress로, 순공시간은 record_study_time으로,
 // 잘 맞은 방법은 study_tips로 저장하고 코치 말투로 답한다.
 // 질문 답변에는 필요한 공부법(study_methods)과 잘 맞은 방법을 넣는다.
@@ -23,9 +24,10 @@ import {
   type ChatAction,
   type ConfirmAction,
   isConfirmAction,
+  studyTimeAskAction,
 } from "./actions.ts";
 import type { Analysis, BookRef, StudyTip } from "./analysis.ts";
-import type { AskedAbout } from "./analysisPrompt.ts";
+import { type AskedAbout, bundleInput } from "./analysisPrompt.ts";
 import {
   askText,
   type BookAddAction,
@@ -84,7 +86,7 @@ import {
 import {
   appendWrapUp,
   expiredConfirmText,
-  shouldAskWrapUp,
+  isWrapUpAsked,
   WRAP_UP_ACTION,
   WRAP_UP_NO_TEXT,
   wrapUpYesText,
@@ -265,18 +267,20 @@ async function handleMessage(
 
   // 사용자 메시지를 먼저 저장하고(과목은 분석 뒤에 채운다), 앞서 보내 아직 처리 안 한 메시지와 묶어 분석한다
   const inserted = await insertMessage(sb, userId, "user", content, null);
+  // 여기부터는 저장된 시각의 날짜로 묶고 기록한다. 자정 직전에 시작한 요청의 글이 다음 날로 저장돼도
+  // 묶음 조회·처리 표시 범위에 들어가야 다음 날 다시 처리되지 않는다
+  const day = toDateKey(new Date(inserted.created_at), timezone);
   // 여기부터 claim 결과가 나오기 전까지 실패하면 failBeforeClaim이 이 메시지를 지울지 남길지 정한다
   const failBefore = (failure: Response) =>
-    failBeforeClaim(sb, inserted, today, timezone, failure);
+    failBeforeClaim(sb, inserted, day, timezone, failure);
 
   let bundle: { id: string; content: string }[];
   try {
-    const unhandled = await loadUnhandledUserMessages(sb, today, timezone);
-    // 이 메시지 뒤에 온 글은 그 요청이 묶는다. 자정을 넘겨 저장돼 오늘 범위에 없으면 이 메시지만 분석한다
+    const unhandled = await loadUnhandledUserMessages(sb, day, timezone);
+    // 이 메시지 뒤에 온 글은 그 요청이 묶는다. 목록에 없으면 더 새 요청이 이미 이 메시지까지 묶어 처리 표시했다
     const end = unhandled.findIndex((m) => m.id === inserted.id);
-    bundle = end < 0
-      ? [{ id: inserted.id, content }]
-      : unhandled.slice(0, end + 1);
+    if (end < 0) return Response.json(supersededResult(inserted));
+    bundle = unhandled.slice(0, end + 1);
   } catch (e) {
     console.error(JSON.stringify({ call: "load_bundle", error: String(e) }));
     return await failBefore(errorResponse("server_error"));
@@ -297,7 +301,7 @@ async function handleMessage(
     analysis = await analyzeMessage(
       bundle.map((m) => m.content),
       books,
-      today,
+      day,
       held?.draft ?? null,
       asked,
     );
@@ -310,7 +314,7 @@ async function handleMessage(
 
   let claimed: boolean;
   try {
-    claimed = await claimUserMessages(sb, inserted.id, today, timezone);
+    claimed = await claimUserMessages(sb, inserted.id, day, timezone);
   } catch (e) {
     console.error(JSON.stringify({ call: "claim", error: String(e) }));
     return await failBefore(errorResponse("server_error"));
@@ -318,8 +322,13 @@ async function handleMessage(
   // 분석하는 동안 더 새 글이 왔으면 그 요청이 이 메시지까지 묶어 답한다. 여기서는 아무것도 저장하지 않는다
   if (!claimed) return Response.json(supersededResult(inserted));
 
-  // 처리 표시를 했으면 답변까지 끝까지 간다(다시 확인하지 않는다)
-  await setMessageSubject(sb, inserted.id, analysis.subject);
+  // 처리 표시를 했으면 답변까지 끝까지 간다(다시 확인하지 않는다).
+  // 여기서 500을 내면 처리 표시한 묶음이 답 없이 사라지므로 과목 저장 실패는 로그만 남긴다
+  try {
+    await setMessageSubject(sb, inserted.id, analysis.subject);
+  } catch (e) {
+    console.error(JSON.stringify({ call: "set_subject", error: String(e) }));
+  }
   const user: ChatMessageRow = { ...inserted, subject: analysis.subject };
 
   // 분석이 남긴 entry는 의도와 상관없이 학습 기록이다. 출처는 묶음의 마지막(이 메시지)이다
@@ -327,7 +336,7 @@ async function handleMessage(
     ? await recordStudyLogs(
       sb,
       userId,
-      today,
+      day,
       user.id,
       analysis.entries,
       books,
@@ -357,18 +366,20 @@ async function handleMessage(
 
   const reply = await buildReply({
     sb,
-    content: bundle.map((m) => m.content).join("\n"),
+    // 분석과 같은 길이 상한(최근 10개·4000자)으로 자른다
+    content: bundleInput(bundle.map((m) => m.content)),
     analysis,
     recorded,
     savedTime,
     studyTimeInvalid,
     savedTip,
-    today,
+    today: day,
     timezone,
     examDate: profile.exam_date,
     books,
     bundleIds: bundle.map((m) => m.id),
     pending: held,
+    asked,
   });
   if (recorded.length > 0 && studyTimeInvalid) {
     reply.text = `${reply.text}\n${STUDY_TIME_ASK}`;
@@ -468,16 +479,27 @@ async function answerConfirm(p: {
     if (p.answer === "no") {
       text = WRAP_UP_NO_TEXT;
     } else {
-      // 순공시간은 새벽 0~4시면 전날 것을, 분량은 오늘 채팅방 날짜 것을 본다
-      const [minutes, tasks] = await Promise.all([
-        loadStudyMinutes(sb, studyTimeDate(p.now, p.timezone, "today")),
-        loadTodayTasks(sb, p.today),
-      ]);
-      ({ text, action } = wrapUpYesText({
-        minutes,
-        done: tasks.filter((t) => t.status === "done").length,
-        total: tasks.length,
-      }));
+      // 순공시간은 새벽 0~4시면 전날 것을 본다. 그때는 분량을 세지 않는다(total 0이면 분량 문장이 빠진다):
+      // 새벽 채팅 보고는 새 날 분량에 들어가 전날 수가 적게 나오므로 틀린 숫자를 내지 않는다.
+      // 문구만 고르는 조회라 실패하면 로그만 남기고 순공시간·분량 없이 답한다
+      const timeDate = studyTimeDate(p.now, p.timezone, "today");
+      let minutes: number | null = null;
+      let done = 0;
+      let total = 0;
+      try {
+        const [loaded, tasks] = await Promise.all([
+          loadStudyMinutes(sb, timeDate),
+          timeDate === p.today ? loadTodayTasks(sb, p.today) : [],
+        ]);
+        minutes = loaded;
+        done = tasks.filter((t) => t.status === "done").length;
+        total = tasks.length;
+      } catch (e) {
+        console.error(
+          JSON.stringify({ call: "wrap_up_status", error: String(e) }),
+        );
+      }
+      ({ text, action } = wrapUpYesText({ minutes, done, total }));
     }
   } else if (fresh && pending?.kind === "book_add" && complete) {
     if (p.answer === "no") {
@@ -569,6 +591,8 @@ async function buildReply(p: {
   // 이번에 답하는 묶음의 메시지 id. 대화 이력에서 뺀다(content에 이미 들어 있다)
   bundleIds: string[];
   pending: BookAddAction | null;
+  // 직전 코치 메시지가 물은 것
+  asked: AskedAbout;
 }): Promise<Reply> {
   const { intent, subject, knowledge } = p.analysis;
   const hasLogs = p.recorded.length > 0;
@@ -581,8 +605,10 @@ async function buildReply(p: {
   });
 
   // 순공시간을 저장하지 못한 메시지는 의도보다 먼저 다시 묻는다(기록이 있으면 답 끝에 붙인다).
-  // 받아 둔 교재 초안이 있으면 그대로 붙여 다음 말에서 이어 간다
-  if (!hasLogs && p.studyTimeInvalid) return fixed(STUDY_TIME_ASK, p.pending);
+  // 붙일 action은 studyTimeAskAction이 정한다(교재 초안은 칩 없이 이어 간다)
+  if (!hasLogs && p.studyTimeInvalid) {
+    return fixed(STUDY_TIME_ASK, studyTimeAskAction(p.pending));
+  }
   if (intent === "usage") return fixed(USAGE_GUIDE);
   if (intent === "book_add") {
     // 받아 둔 초안에 이번 말을 합치고, 빠진 게 있으면 묻고 다 있으면 확인 칩을 띄운다
@@ -605,11 +631,13 @@ async function buildReply(p: {
   // 순공시간과 함께 보낸 학습 기록은 학습 기록 답변으로
   const replyIntent = hasLogs && intent === "study_time" ? "study_log" : intent;
   // 공부를 마치려는 말이면 답(대체 답변 포함) 끝에 마무리 질문과 칩을 붙인다.
-  // 기록이 있어도 순공시간을 다시 묻는 답(handleMessage가 끝에 붙인다)에는 붙이지 않는다
-  const askWrapUp = shouldAskWrapUp({
+  // 기록이 있어도 순공시간을 다시 묻는 답(handleMessage가 끝에 붙인다)과
+  // 마무리 뒤 순공시간을 물은 데 답한 말에는 붙이지 않는다
+  const askWrapUp = isWrapUpAsked({
     wrapUp: p.analysis.wrapUp,
     intent: replyIntent,
     studyTimeAsk: p.studyTimeInvalid,
+    asked: p.asked,
   });
   const closing = (text: string): Reply =>
     askWrapUp
@@ -684,5 +712,7 @@ function errorResponse(message: string): Response {
     --data '{"content":"보건행정 기본서 15~17강, 기출 20문제 중 5개 틀림"}'
 
   확인 칩: --data '{"choice":{"message_id":"<확인 메시지 id>","answer":"yes"}}'
+
+  채팅방 열기(하루 첫 메시지): --data '{"open":true}'
 
 */

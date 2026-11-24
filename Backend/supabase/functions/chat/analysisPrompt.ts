@@ -36,7 +36,7 @@ function askedBlock(asked: AskedAbout): string {
   if (asked === "study_time") {
     return `
 
-직전에 코치가 오늘 순공시간을 물었다. 시간만 와도 순공시간이다. intent는 study_time이고 study_time을 채운다.`;
+직전에 코치가 오늘 순공시간을 물었다. 시간만 와도 순공시간이다. 시간을 말했으면 intent는 study_time이고 study_time을 채운다. 시간이 없는 답(예: "몰라")이면 평소처럼 고른다.`;
   }
   if (asked === "time_available") {
     return `
