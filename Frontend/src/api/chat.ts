@@ -14,6 +14,7 @@ export async function fetchChatMessages(date: string): Promise<ChatMessage[]> {
     .gte('created_at', from)
     .lt('created_at', to)
     .order('created_at', { ascending: true })
+    .order('id', { ascending: true }) // created_at이 같을 때 순서를 고정한다
   if (error) throw error
   return data as ChatMessage[]
 }
@@ -44,6 +45,11 @@ export async function sendChatMessage(content: string): Promise<ChatResponse> {
 // 확인 메시지의 응/아니 칩 답
 export async function sendChatChoice(messageId: string, answer: 'yes' | 'no'): Promise<ChatResponse> {
   return invokeChat({ choice: { message_id: messageId, answer } })
+}
+
+// 채팅방을 열었을 때 첫 메시지를 받는다
+export async function openChatRoom(): Promise<ChatResponse> {
+  return invokeChat({ open: true })
 }
 
 // 진도·학습 기록이 저장됐거나(logged) 계획이 바뀌었으면(planChanged) 오늘의 분량을 다시 불러오게 알린다

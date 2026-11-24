@@ -6,6 +6,7 @@ import TodayPlanSheet from '../components/chat/TodayPlanSheet.tsx'
 import { PENDING_REPLY, useChat } from '../hooks/useChat.ts'
 import { useTodayTasks } from '../hooks/useTodayTasks.ts'
 import type { ChatRole } from '../interfaces/chat.ts'
+import { showsConfirmChips } from '../libs/chatAction.ts'
 import { isDateKey, todayKey } from '../libs/date.ts'
 import { WELCOME_MESSAGE } from '../libs/menu.ts'
 
@@ -53,8 +54,7 @@ function ChatRoom({ date, readOnly }: ChatRoomProps) {
 
   return (
     <section className="flex h-full flex-col">
-      {/* pb-16(64px): 오늘의 분량 버튼 44px + mb-2 8px = 52px보다 커야 한다. 버튼 크기를 바꾸면 함께 고친다 */}
-      <div className={`flex flex-1 flex-col gap-2 overflow-y-auto p-4 ${readOnly ? '' : 'pb-16'}`}>
+      <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-4">
         <Bubble role="assistant">{WELCOME_MESSAGE}</Bubble>
         {messages.map((m, i) => (
           <Fragment key={m.id}>
@@ -62,7 +62,7 @@ function ChatRoom({ date, readOnly }: ChatRoomProps) {
               {m.content}
             </Bubble>
             {/* 확인 칩은 오늘 채팅방의 마지막 코치 메시지에만 붙는다. 지난 확인은 다음 말풍선이 고른 답이다 */}
-            {!readOnly && i === messages.length - 1 && m.role === 'assistant' && m.action?.step === 'confirm' && (
+            {showsConfirmChips(m, i === messages.length - 1, readOnly) && (
               <ConfirmChips disabled={sending} onChoose={(answer) => void choose(m.id, answer)} />
             )}
           </Fragment>
@@ -77,7 +77,7 @@ function ChatRoom({ date, readOnly }: ChatRoomProps) {
       {readOnly ? (
         <p className="border-t border-line px-4 py-3.5 text-center text-sm text-muted">지난 대화는 볼 수만 있어요.</p>
       ) : (
-        <div className="relative">
+        <div>
           <TodayPlanDock date={date} />
           <form className="flex gap-2 border-t border-line px-3 py-2" onSubmit={handleSubmit}>
             <input
@@ -123,7 +123,7 @@ function TodayPlanDock({ date }: TodayPlanDockProps) {
 
   return (
     <>
-      <div className="absolute right-3 bottom-full mb-2">
+      <div className="flex min-h-[3.25rem] justify-end px-3 pb-2">
         <TodayPlanButton
           tasks={tasks}
           error={error}
