@@ -2,6 +2,7 @@ import {
   COACH_TONE_INSTRUCTIONS,
   HARD_TIMES_INSTRUCTIONS,
 } from "../_shared/coach.ts";
+import { dayLabel } from "../_shared/date.ts";
 import { type Subject, SUBJECT_LABELS } from "../_shared/subjects.ts";
 import { formatMinutes } from "../_shared/units.ts";
 import type { Intent, StudyTip } from "./analysis.ts";
@@ -34,6 +35,8 @@ export interface ReplyOptions {
   hasTips: boolean;
   hardTimes: boolean;
   savedTip: StudyTip | null;
+  // 참이면 마무리 질문이 따로 붙는다
+  closingQuestion: boolean;
 }
 
 export function replyInstructions(
@@ -64,6 +67,9 @@ export function replyInstructions(
       }'에 적어 뒀다. 한 문장으로 알려 준다.`,
     );
   }
+  if (options.closingQuestion) {
+    parts.push("이번 답은 질문으로 끝내지 않는다. 마무리 질문은 따로 붙는다.");
+  }
   return parts.join("\n\n");
 }
 
@@ -77,20 +83,13 @@ export function tipSavedReply(subject: Subject | null): string {
   return `잘 맞은 방법은 ${tipPlace(subject)}에 적어 뒀어요.`;
 }
 
-// "2026-11-13" → "11월 13일"
-function monthDayLabel(date: string): string {
-  const [, month, day] = date.split("-").map(Number);
-  return `${month}월 ${day}일`;
-}
-
 // 답변 지침에 넘길 저장된 순공시간. 그날 합계라서 날짜를 함께 적는다("오늘 합계 4시간 20분")
 export function savedStudyTimeLabel(
   totalMinutes: number,
   date: string,
   today: string,
 ): string {
-  const day = date === today ? "오늘" : monthDayLabel(date);
-  return `${day} 합계 ${formatMinutes(totalMinutes)}`;
+  return `${dayLabel(date, today)} 합계 ${formatMinutes(totalMinutes)}`;
 }
 
 // 답변 호출이 실패했을 때 쓰는 문구. 저장한 순공시간이 있으면 알려서 다시 보내지 않게 한다
@@ -123,9 +122,7 @@ export function fallbackReply(
   });
   // 순공시간도 저장했으면 인사가 두 번 나오지 않게 한 문장으로 합친다
   if (savedTime) {
-    const day = savedTime.date === ctx.today
-      ? "오늘"
-      : monthDayLabel(savedTime.date);
+    const day = dayLabel(savedTime.date, ctx.today);
     progress.push(
       `${day} 순공 ${formatMinutes(savedTime.total)}도 적어 뒀어요`,
     );
@@ -143,6 +140,6 @@ export function studyTimeReply(
   if (date === today) {
     return `오늘 순공 ${time}으로 적어 뒀어요. 오늘도 수고 많으셨어요.`;
   }
-  const day = monthDayLabel(date);
+  const day = dayLabel(date, today);
   return `${day} 순공 ${time}으로 적어 뒀어요. 수고 많으셨어요.`;
 }

@@ -1,6 +1,8 @@
 // DB enum `public.book_unit`과 값이 일치해야 한다
 export type BookUnit = "day" | "chapter" | "session";
 
+export const BOOK_UNITS: readonly BookUnit[] = ["day", "chapter", "session"];
+
 // Frontend `libs/books.ts`의 표기와 같게 맞춘다
 export interface ProgressBook {
   unit: BookUnit;

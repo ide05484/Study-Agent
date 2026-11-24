@@ -89,6 +89,7 @@ export type Database = {
           action: Json | null
           content: string
           created_at: string
+          handled_at: string | null
           id: string
           role: Database["public"]["Enums"]["chat_role"]
           subject: Database["public"]["Enums"]["subject"] | null
@@ -98,6 +99,7 @@ export type Database = {
           action?: Json | null
           content: string
           created_at?: string
+          handled_at?: string | null
           id?: string
           role: Database["public"]["Enums"]["chat_role"]
           subject?: Database["public"]["Enums"]["subject"] | null
@@ -107,6 +109,7 @@ export type Database = {
           action?: Json | null
           content?: string
           created_at?: string
+          handled_at?: string | null
           id?: string
           role?: Database["public"]["Enums"]["chat_role"]
           subject?: Database["public"]["Enums"]["subject"] | null
@@ -458,6 +461,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_user_messages: {
+        Args: { p_from: string; p_message_id: string; p_to: string }
+        Returns: boolean
+      }
+      discard_user_message: {
+        Args: { p_from: string; p_message_id: string; p_to: string }
+        Returns: boolean
+      }
+      insert_first_message: {
+        Args: {
+          p_action: Json
+          p_content: string
+          p_from: string
+          p_to: string
+        }
+        Returns: string
+      }
       record_study_time: {
         Args: { p_add: boolean; p_date: string; p_minutes: number }
         Returns: number

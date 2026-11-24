@@ -7,7 +7,7 @@
 // 오류는 Error를 던진다.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { addDays, diffDays, toDateKey } from "./date.ts";
+import { addDays, diffDays, studyDayKey } from "./date.ts";
 import {
   LAST_WEEK_DAYS,
   type PlanBook,
@@ -47,7 +47,8 @@ export async function replan(sb: SupabaseClient): Promise<ReplanResult> {
     .single();
   if (profileError) throw new Error(profileError.message);
 
-  const today = toDateKey(new Date(), profile.timezone);
+  // 공부 날짜 기준(새벽 2시 전이면 전날). 그 전에 고쳐도 전날 분량을 지난 날로 보지 않는다
+  const today = studyDayKey(new Date(), profile.timezone);
 
   // 시험일이 없거나 지났으면 오늘부터의 미진행 계획만 지운다(빈 배열로 교체)
   if (!profile.exam_date) {

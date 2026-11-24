@@ -1,16 +1,34 @@
-import { useCallback, useEffect, useState } from 'react'
-import { fetchChatDates, fetchChatMessages, InvalidContentError, sendChatChoice, sendChatMessage } from '../api/chat.ts'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  fetchChatDates,
+  fetchChatMessages,
+  insertFirstMessage,
+  InvalidContentError,
+  sendChatChoice,
+  sendChatMessage,
+} from '../api/chat.ts'
 import { regeneratePlan } from '../api/plan.ts'
+import { fetchProfile } from '../api/profile.ts'
 import type { ChatMessage, ChatResponse } from '../interfaces/chat.ts'
 import { todayKey } from '../libs/date.ts'
 import { toErrorMessage } from '../libs/errors.ts'
+import { welcomeText } from '../libs/welcome.ts'
 
-export const PENDING_REPLY = '답변을 쓰고 있어요…'
+// 답변 대기 말풍선. 진행 중인 요청이 몇 개든 목록 맨 끝에 하나만 둔다
+export const PENDING_REPLY_ID = 'pending-reply'
+// 저장 전 하루 첫 메시지
+const LOCAL_WELCOME_ID = 'welcome-local'
+const PENDING_REPLY = '답변을 쓰고 있어요…'
 const SEND_ERROR = '메시지를 보내지 못했어요. 잠시 후 다시 보내주세요.'
 const INVALID_CONTENT_ERROR = '메시지를 보내지 못했어요. 1000자 안으로 적어 다시 보내 주세요.'
 
 export interface ChatState {
   messages: ChatMessage[]
+  // 처음 메시지 조회가 끝남(실패 포함)
+  loaded: boolean
+  // 하루 첫 메시지를 저장하는 중
+  opening: boolean
+  // 답을 기다리는 요청이 하나라도 있음
   sending: boolean
   error: string | null
   send: (content: string) => Promise<boolean>
@@ -18,52 +36,110 @@ export interface ChatState {
 }
 
 // date 날짜의 채팅방 메시지. 날짜가 바뀌면 호출하는 쪽에서 key로 다시 마운트한다
-export function useChat(date: string): ChatState {
+// 오늘 채팅방(readOnly가 아님)이 비어 있으면 하루 첫 메시지를 바로 보이고 DB에 저장한다
+export function useChat(date: string, readOnly: boolean): ChatState {
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [sending, setSending] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+  const [opening, setOpening] = useState(false)
+  const [inFlight, setInFlight] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  const seqRef = useRef(0)
+  // 답을 기다리는 요청의 순번. 늦게 온 응답이 최신 진행 상태를 읽도록 ref에 둔다(상태는 화면용 개수)
+  const inFlightRef = useRef(new Set<number>())
 
   useEffect(() => {
     let ignore = false
-    fetchChatMessages(date)
-      .then((history) => {
-        if (!ignore) setMessages(history)
+    // 오늘 채팅방이면 첫 메시지에 쓸 시험일을 메시지와 함께 읽는다. 프로필을 못 읽으면 첫 메시지 없이 고정 문구다
+    const profile = readOnly ? Promise.resolve(null) : fetchProfile().catch(() => null)
+    Promise.all([fetchChatMessages(date), profile])
+      .then(([history, me]) => {
+        if (ignore) return
+        // 메시지가 이미 있는 날에는 첫 메시지를 만들지 않는다
+        if (readOnly || history.length > 0 || !me) {
+          setMessages(history)
+          setLoaded(true)
+          return
+        }
+        // 첫 메시지는 바로 보이고, 저장은 뒤에서 한다. 저장이 끝날 때까지만 보내기를 막는다(첫 메시지가 사용자 글보다 앞에 오게)
+        const { content, action } = welcomeText(date, me.exam_date)
+        const first: ChatMessage = {
+          id: LOCAL_WELCOME_ID,
+          role: 'assistant',
+          content,
+          subject: null,
+          action,
+          created_at: new Date().toISOString(),
+        }
+        setMessages([first])
+        setLoaded(true)
+        setOpening(true)
+        insertFirstMessage(date, content, action)
+          .then(async (id) => {
+            // null이면 다른 탭이 먼저 넣은 것이라 저장된 대화로 바꾼다
+            const next = id ? [{ ...first, id }] : await fetchChatMessages(date)
+            if (!ignore) setMessages(next)
+          })
+          .catch((e: unknown) => {
+            // 저장하지 못한 첫 메시지는 내리고 고정 문구를 보여 준다
+            console.error('첫 메시지 저장 실패', e)
+            if (!ignore) setMessages([])
+          })
+          .finally(() => {
+            if (!ignore) setOpening(false)
+          })
       })
       .catch((e: unknown) => {
-        if (!ignore) setError(toErrorMessage(e))
+        if (ignore) return
+        setError(toErrorMessage(e))
+        setLoaded(true)
       })
     return () => {
       ignore = true
     }
-  }, [date])
+  }, [date, readOnly])
 
-  // 임시 말풍선을 보이고 request를 보낸다. 성공 여부를 돌려준다. 실패하면 임시 말풍선을 지우고 error를 보인다
+  // 임시 말풍선을 보이고 request를 보낸다. 성공 여부를 돌려준다. 답을 기다리는 동안에도 또 보낼 수 있다
+  // 응답이 오면 임시 말풍선을 저장된 메시지로 제자리에서 바꾸고, 실패하면 그 말풍선만 지우고 error를 보인다
   const deliver = useCallback(async (content: string, request: () => Promise<ChatResponse>): Promise<boolean> => {
-    const now = Date.now()
-    const created_at = new Date(now).toISOString()
-    const pendingUser: ChatMessage = {
-      id: `pending-${now}`,
-      role: 'user',
-      content,
-      subject: null,
-      action: null,
-      created_at,
-    }
+    seqRef.current += 1
+    const seq = seqRef.current
+    const pendingId = `pending-${seq}`
+    const created_at = new Date().toISOString()
+    const pendingUser: ChatMessage = { id: pendingId, role: 'user', content, subject: null, action: null, created_at }
     const pendingReply: ChatMessage = {
-      id: `pending-${now}-reply`,
+      id: PENDING_REPLY_ID,
       role: 'assistant',
       content: PENDING_REPLY,
       subject: null,
       action: null,
       created_at,
     }
-    const isPending = (m: ChatMessage) => m.id === pendingUser.id || m.id === pendingReply.id
-    setSending(true)
+    const inFlightSeqs = inFlightRef.current
+    inFlightSeqs.add(seq)
+    setInFlight(inFlightSeqs.size)
     setError(null)
-    setMessages((prev) => [...prev, pendingUser, pendingReply])
+    setMessages((prev) => [...prev.filter((m) => m.id !== PENDING_REPLY_ID), pendingUser, pendingReply])
+
+    // 이 요청을 끝냈다고 센다. 남은 요청이 없거나, 코치 답이 왔고 이보다 새 요청이 진행 중이 아니면 대기 말풍선을 지운다
+    // (서버는 가장 새 요청에만 답한다). 뒤늦게 온 밀린 응답은 사용자 말풍선만 확정하고 대기 말풍선을 다시 만들지 않는다
+    function settle(replacement: ChatMessage[]) {
+      inFlightSeqs.delete(seq)
+      setInFlight(inFlightSeqs.size)
+      const answered = replacement.some((m) => m.role === 'assistant')
+      const done = inFlightSeqs.size === 0 || (answered && ![...inFlightSeqs].some((s) => s > seq))
+      setMessages((prev) => {
+        const next = prev.flatMap((m) => (m.id === pendingId ? replacement : [m]))
+        return done ? next.filter((m) => m.id !== PENDING_REPLY_ID) : next
+      })
+    }
+
     try {
       const response = await request()
-      setMessages((prev) => [...prev.filter((m) => !isPending(m)), ...response.messages])
+      // 사용자 메시지를 제자리에 두고 코치 답은 바로 뒤에 둔다. 밀려난 응답(superseded)은 사용자 메시지뿐이다
+      settle([
+        ...response.messages.filter((m) => m.role === 'user'),
+        ...response.messages.filter((m) => m.role === 'assistant'),
+      ])
       if (response.replanFailed) {
         // 교재는 저장됐으니 재분배만 한 번 다시 시도한다. 실패해도 대화는 그대로 둔다
         await regeneratePlan().catch((e: unknown) => console.error('계획 다시 나누기 실패', e))
@@ -71,11 +147,9 @@ export function useChat(date: string): ChatState {
       return true
     } catch (e) {
       console.error('채팅 전송 실패', e) // 오류 객체만 남기고 메시지 내용은 남기지 않는다
-      setMessages((prev) => prev.filter((m) => !isPending(m)))
+      settle([])
       setError(e instanceof InvalidContentError ? INVALID_CONTENT_ERROR : SEND_ERROR)
       return false
-    } finally {
-      setSending(false)
     }
   }, [])
 
@@ -87,7 +161,7 @@ export function useChat(date: string): ChatState {
     [deliver],
   )
 
-  return { messages, sending, error, send, choose }
+  return { messages, loaded, opening, sending: inFlight > 0, error, send, choose }
 }
 
 // 사이드바 채팅방 목록. 열릴 때마다 다시 불러오며, 오늘 채팅방은 항상 맨 위에 둔다

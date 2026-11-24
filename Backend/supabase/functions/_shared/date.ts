@@ -51,32 +51,42 @@ function offsetMs(date: Date, timeZone: string): number {
   return local - Math.floor(date.getTime() / 1000) * 1000;
 }
 
-// 날짜 키의 timeZone 자정을 UTC ISO 문자열로. created_at으로 그날 메시지를 거를 때 쓴다
+// 공부 하루는 새벽 2시에 시작한다. 자정~1시 59분의 기록(채팅 보고·순공시간·분량 체크)과 대화는 전날 것이다.
+// 새벽 재분배(아침 알림 단계)는 이 경계 뒤인 2~4시에 돈다. 화면(Frontend/src/libs/date.ts)과 같은 값이어야 한다
+export const DAY_START_HOUR = 2;
+const DAY_START_MS = DAY_START_HOUR * 60 * 60 * 1000;
+
+// date 순간이 속한 공부 날짜. 오늘 채팅방·오늘 분량·기록 날짜는 모두 이 값을 쓴다
+export function studyDayKey(date: Date, timeZone: string): string {
+  return toDateKey(new Date(date.getTime() - DAY_START_MS), timeZone);
+}
+
+// 공부 날짜의 시작(그 날 timeZone 새벽 2시)을 UTC ISO 문자열로. created_at으로 그날 메시지를 거를 때 쓴다
 export function dayStartUtc(key: string, timeZone: string): string {
   const midnight = parseKey(key).getTime();
   let start = midnight - offsetMs(new Date(midnight), timeZone);
   // 서머타임 경계에서는 자정 무렵의 오프셋으로 한 번 더 맞춘다
   start = midnight - offsetMs(new Date(start), timeZone);
-  return new Date(start).toISOString();
+  return new Date(start + DAY_START_MS).toISOString();
 }
 
-// timeZone 기준 시각(0~23)
-export function localHour(date: Date, timeZone: string): number {
-  const hour = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    hour: "numeric",
-    hourCycle: "h23",
-  }).format(date);
-  return Number(hour);
-}
-
-// 순공시간을 기록할 날짜. 새벽 0~3시 59분에 "오늘"이라고 보내면 전날로 센다
+// 순공시간을 기록할 날짜. "오늘"은 공부 날짜(새벽 2시 전이면 전날), "어제"는 그 하루 전
 export function studyTimeDate(
   now: Date,
   timeZone: string,
   day: "today" | "yesterday",
 ): string {
-  const today = toDateKey(now, timeZone);
-  if (day === "yesterday") return addDays(today, -1);
-  return localHour(now, timeZone) < 4 ? addDays(today, -1) : today;
+  const today = studyDayKey(now, timeZone);
+  return day === "yesterday" ? addDays(today, -1) : today;
+}
+
+// "2026-11-13" → "11월 13일"
+function monthDayLabel(date: string): string {
+  const [, month, day] = date.split("-").map(Number);
+  return `${month}월 ${day}일`;
+}
+
+// 오늘이면 "오늘", 아니면 "11월 13일"
+export function dayLabel(date: string, today: string): string {
+  return date === today ? "오늘" : monthDayLabel(date);
 }

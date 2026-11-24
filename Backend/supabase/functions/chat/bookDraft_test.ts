@@ -1,7 +1,8 @@
-import { assertEquals } from "jsr:@std/assert";
+import { assertEquals, assertNotEquals } from "jsr:@std/assert";
 import {
   askText,
   type BookDraft,
+  CHOICE_EXPIRED_TEXT,
   type CompleteDraft,
   completeDraft,
   confirmAnswer,
@@ -11,8 +12,6 @@ import {
   isDuplicateTitle,
   mergeDraft,
   missingFields,
-  parseAction,
-  parseChatRequest,
   savedText,
   toTitle,
 } from "./bookDraft.ts";
@@ -49,6 +48,59 @@ Deno.test("mergeDraft: patch의 null 아닌 값만 덮어쓴다", () => {
   assertEquals(mergeDraft(base, null), base);
 });
 
+const other: BookDraft = {
+  subject: "korean",
+  title: "기출",
+  unit: "session",
+  total_units: 20,
+  target_rounds: 3,
+};
+
+Deno.test("mergeDraft: 다른 교재를 통째로 말하면 초안을 비우고 시작", () => {
+  assertEquals(
+    mergeDraft(other, {
+      subject: "english",
+      title: "단어장",
+      unit: "day",
+      total_units: 60,
+      target_rounds: null,
+    }),
+    {
+      subject: "english",
+      title: "단어장",
+      unit: "day",
+      total_units: 60,
+      target_rounds: 1,
+    },
+  );
+});
+
+Deno.test("mergeDraft: 제목만 바꾸면 나머지는 유지", () => {
+  assertEquals(
+    mergeDraft(other, {
+      subject: null,
+      title: "기출 모의",
+      unit: null,
+      total_units: null,
+      target_rounds: null,
+    }),
+    { ...other, title: "기출 모의" },
+  );
+});
+
+Deno.test("mergeDraft: 회독만 말하면 회독만 바뀜", () => {
+  assertEquals(
+    mergeDraft(other, {
+      subject: null,
+      title: null,
+      unit: null,
+      total_units: null,
+      target_rounds: 4,
+    }),
+    { ...other, target_rounds: 4 },
+  );
+});
+
 Deno.test("missingFields: 순서와 amount", () => {
   assertEquals(missingFields(EMPTY_DRAFT), ["subject", "title", "amount"]);
   assertEquals(missingFields({ ...EMPTY_DRAFT, unit: "day" }), [
@@ -77,74 +129,6 @@ Deno.test("completeDraft: 범위 밖이면 null", () => {
   });
   assertEquals(completeDraft({ ...complete, subject: null } as never), null);
   assertEquals(completeDraft(complete), complete);
-});
-
-Deno.test("parseAction: 정상 값은 그대로", () => {
-  const action = {
-    kind: "book_add",
-    step: "confirm",
-    draft: {
-      subject: "korean",
-      title: "봉투모의고사",
-      unit: "session",
-      total_units: 20,
-      target_rounds: 3,
-    },
-  } as const;
-  assertEquals(parseAction(action), action);
-});
-
-Deno.test("parseAction: 틀린 모양은 null", () => {
-  assertEquals(
-    parseAction({ kind: "book_add", step: "done", draft: {} }),
-    null,
-  );
-  assertEquals(parseAction({ kind: "x", step: "ask", draft: {} }), null);
-  assertEquals(parseAction("x"), null);
-  assertEquals(parseAction(null), null);
-});
-
-Deno.test("parseAction: 틀린 항목만 null, 회독은 1", () => {
-  const parsed = parseAction({
-    kind: "book_add",
-    step: "ask",
-    draft: {
-      subject: "math",
-      title: "a",
-      unit: "session",
-      total_units: 5000,
-      target_rounds: 99,
-    },
-  });
-  assertEquals(parsed?.draft, {
-    subject: null,
-    title: "a",
-    unit: "session",
-    total_units: null,
-    target_rounds: 1,
-  });
-});
-
-Deno.test("parseChatRequest", () => {
-  assertEquals(parseChatRequest({ content: " 안녕 " }, 1000), {
-    content: "안녕",
-  });
-  const choice = { choice: { message_id: "m1", answer: "yes" } } as const;
-  assertEquals(parseChatRequest(choice, 1000), choice);
-  assertEquals(
-    parseChatRequest({ content: "a", choice: choice.choice }, 1000),
-    null,
-  );
-  assertEquals(
-    parseChatRequest({ choice: { message_id: "", answer: "yes" } }, 1000),
-    null,
-  );
-  assertEquals(
-    parseChatRequest({ choice: { message_id: "m1", answer: "maybe" } }, 1000),
-    null,
-  );
-  assertEquals(parseChatRequest({ content: "a".repeat(1001) }, 1000), null);
-  assertEquals(parseChatRequest({}, 1000), null);
 });
 
 Deno.test("confirmAnswer", () => {
@@ -209,16 +193,52 @@ Deno.test("savedText", () => {
       "\n\n시험일을 정하면 분량을 나눠 드려요. 메뉴의 '공부 설정 변경'에서 정할 수 있어요.",
   );
   assertEquals(savedText(d, { kind: "failed" }), first);
+  const passed = savedText(d, { kind: "exam_passed" });
+  assertEquals(
+    passed,
+    first +
+      "\n\n시험일이 이미 지나서 분량은 나누지 않았어요. 시험일을 바꾸면 나눠 드려요. 메뉴의 '공부 설정 변경'에서 바꿀 수 있어요.",
+  );
+  assertNotEquals(passed, savedText(d, { kind: "no_exam" }));
 });
 
+Deno.test("CHOICE_EXPIRED_TEXT", () => {
+  assertEquals(
+    CHOICE_EXPIRED_TEXT,
+    "이 확인은 끝났어요. 추가할 교재를 다시 말해 주세요.",
+  );
+});
+
+Deno.test("completeDraft: 경계값", () => {
+  for (const total_units of [1, 1000]) {
+    assertEquals(
+      completeDraft({ ...complete, total_units })?.total_units,
+      total_units,
+    );
+  }
+  for (const total_units of [0, 1001]) {
+    assertEquals(completeDraft({ ...complete, total_units }), null);
+  }
+  for (const target_rounds of [1, 10]) {
+    assertEquals(
+      completeDraft({ ...complete, target_rounds })?.target_rounds,
+      target_rounds,
+    );
+  }
+  for (const target_rounds of [0, 11]) {
+    assertEquals(
+      completeDraft({ ...complete, target_rounds })?.target_rounds,
+      1,
+    );
+  }
+});
+
+// 초안 제목은 completeDraft(toTitle)가 이미 다듬었다. 등록된 교재 제목만 앞뒤 공백을 지워 비교한다
 Deno.test("isDuplicateTitle", () => {
   const books = [
-    { subject: "korean", title: "봉투모의고사" },
+    { subject: "korean", title: " 봉투모의고사 " },
   ] as BookRef[];
-  assertEquals(
-    isDuplicateTitle({ ...complete, title: " 봉투모의고사 " }, books),
-    true,
-  );
+  assertEquals(isDuplicateTitle(complete, books), true);
   assertEquals(
     isDuplicateTitle({ ...complete, subject: "english" }, books),
     false,

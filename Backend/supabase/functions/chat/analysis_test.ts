@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert";
-import { type BookRef, parseAnalysis } from "./analysis.ts";
+import { ANALYSIS_SCHEMA, type BookRef, parseAnalysis } from "./analysis.ts";
 
 const books: BookRef[] = [
   {
@@ -357,5 +357,19 @@ Deno.test("book: 모든 항목이 null이거나 없거나 객체가 아니면 nu
       books,
     ).book,
     null,
+  );
+});
+
+Deno.test("parseAnalysis: wrap_up은 true일 때만 wrapUp", () => {
+  assertEquals(parseAnalysis(raw({ wrap_up: true }), books).wrapUp, true);
+  assertEquals(parseAnalysis(raw({ wrap_up: false }), books).wrapUp, false);
+  assertEquals(parseAnalysis(raw({}), books).wrapUp, false);
+  assertEquals(parseAnalysis(raw({ wrap_up: "true" }), books).wrapUp, false);
+});
+
+Deno.test("ANALYSIS_SCHEMA: wrap_up은 필수", () => {
+  assertEquals(
+    (ANALYSIS_SCHEMA.required as string[]).includes("wrap_up"),
+    true,
   );
 });

@@ -3,9 +3,10 @@ import { Navigate, useParams } from 'react-router'
 import ConfirmChips from '../components/chat/ConfirmChips.tsx'
 import TodayPlanButton from '../components/chat/TodayPlanButton.tsx'
 import TodayPlanSheet from '../components/chat/TodayPlanSheet.tsx'
-import { PENDING_REPLY, useChat } from '../hooks/useChat.ts'
+import { PENDING_REPLY_ID, useChat } from '../hooks/useChat.ts'
 import { useTodayTasks } from '../hooks/useTodayTasks.ts'
 import type { ChatRole } from '../interfaces/chat.ts'
+import { isConfirmChipShown } from '../libs/chatAction.ts'
 import { isDateKey, todayKey } from '../libs/date.ts'
 import { WELCOME_MESSAGE } from '../libs/menu.ts'
 
@@ -32,37 +33,43 @@ interface ChatRoomProps {
 }
 
 function ChatRoom({ date, readOnly }: ChatRoomProps) {
-  const { messages, sending, error, send, choose } = useChat(date)
+  const { messages, loaded, opening, sending, error, send, choose } = useChat(date, readOnly)
   const [draft, setDraft] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
+  // 첫 메시지(코치)가 없을 때만 고정 문구를 맨 위에 그린다(이 기능 전 날짜, 첫 메시지 저장 실패)
+  const showsWelcome = loaded && !opening && messages[0]?.role !== 'assistant'
+  // 불러오거나 첫 메시지를 저장하는 동안은 보내지 않는다(조회 결과가 임시 말풍선을 덮어쓰지 않게)
+  const blocked = !loaded || opening
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: 'end' })
   }, [messages])
 
+  // 답을 기다리는 동안에도 보낼 수 있다
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const content = draft.trim()
-    if (!content || sending) return
+    if (!content || blocked) return
     setDraft('')
     void send(content).then((ok) => {
       if (ok) return
-      setDraft((current) => current || content)
+      // 연달아 보낸 글이 함께 실패해도 모두 되돌리고, 그 사이 새로 친 글도 남긴다
+      // 한 줄 입력창은 줄바꿈을 지우므로 공백으로 잇는다
+      setDraft((current) => (current ? `${current} ${content}` : content))
     })
   }
 
   return (
     <section className="flex h-full flex-col">
-      {/* pb-16(64px): 오늘의 분량 버튼 44px + mb-2 8px = 52px보다 커야 한다. 버튼 크기를 바꾸면 함께 고친다 */}
-      <div className={`flex flex-1 flex-col gap-2 overflow-y-auto p-4 ${readOnly ? '' : 'pb-16'}`}>
-        <Bubble role="assistant">{WELCOME_MESSAGE}</Bubble>
+      <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-4">
+        {showsWelcome && <Bubble role="assistant">{WELCOME_MESSAGE}</Bubble>}
         {messages.map((m, i) => (
           <Fragment key={m.id}>
-            <Bubble role={m.role} muted={m.id.startsWith('pending-') && m.content === PENDING_REPLY}>
+            <Bubble role={m.role} muted={m.id === PENDING_REPLY_ID}>
               {m.content}
             </Bubble>
             {/* 확인 칩은 오늘 채팅방의 마지막 코치 메시지에만 붙는다. 지난 확인은 다음 말풍선이 고른 답이다 */}
-            {!readOnly && i === messages.length - 1 && m.role === 'assistant' && m.action?.step === 'confirm' && (
+            {isConfirmChipShown(m, i === messages.length - 1, readOnly) && (
               <ConfirmChips disabled={sending} onChoose={(answer) => void choose(m.id, answer)} />
             )}
           </Fragment>
@@ -77,7 +84,7 @@ function ChatRoom({ date, readOnly }: ChatRoomProps) {
       {readOnly ? (
         <p className="border-t border-line px-4 py-3.5 text-center text-sm text-muted">지난 대화는 볼 수만 있어요.</p>
       ) : (
-        <div className="relative">
+        <div>
           <TodayPlanDock date={date} />
           <form className="flex gap-2 border-t border-line px-3 py-2" onSubmit={handleSubmit}>
             <input
@@ -92,7 +99,7 @@ function ChatRoom({ date, readOnly }: ChatRoomProps) {
               type="submit"
               className="grid size-11 flex-none place-items-center rounded-full bg-accent text-on-accent disabled:opacity-40"
               aria-label="보내기"
-              disabled={sending || !draft.trim()}
+              disabled={blocked || !draft.trim()}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
                 <path
@@ -123,7 +130,8 @@ function TodayPlanDock({ date }: TodayPlanDockProps) {
 
   return (
     <>
-      <div className="absolute right-3 bottom-full mb-2">
+      {/* 버튼(44px) + pb-2(8px) 높이를 미리 잡아 분량을 불러오는 동안(버튼 없음) 입력창이 움직이지 않게 한다 */}
+      <div className="flex min-h-13 justify-end px-3 pb-2">
         <TodayPlanButton
           tasks={tasks}
           error={error}

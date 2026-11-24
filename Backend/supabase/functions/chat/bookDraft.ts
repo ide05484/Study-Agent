@@ -1,6 +1,11 @@
 // 교재 추가 초안의 순수 로직. OpenAI·Supabase를 import하지 않는다.
 import { type Subject, SUBJECT_LABELS } from "../_shared/subjects.ts";
-import { type BookUnit, rangeLabel, withUnit } from "../_shared/units.ts";
+import {
+  BOOK_UNITS,
+  type BookUnit,
+  rangeLabel,
+  withUnit,
+} from "../_shared/units.ts";
 import type { BookRef } from "./analysis.ts";
 
 export const MAX_CHAT_TOTAL_UNITS = 1000;
@@ -34,14 +39,8 @@ export interface BookAddAction {
   draft: BookDraft;
 }
 
-export type ChatAction = BookAddAction;
-
 // amount는 단위나 총량이 빠졌다는 뜻
 export type MissingField = "subject" | "title" | "amount";
-
-export type ChatRequest =
-  | { content: string }
-  | { choice: { message_id: string; answer: "yes" | "no" } };
 
 export type SaveOutcome =
   | {
@@ -49,6 +48,7 @@ export type SaveOutcome =
     today: { start_unit: number; end_unit: number } | null;
   }
   | { kind: "no_exam" }
+  | { kind: "exam_passed" }
   | { kind: "failed" };
 
 export const EMPTY_DRAFT: BookDraft = {
@@ -59,10 +59,9 @@ export const EMPTY_DRAFT: BookDraft = {
   target_rounds: 1,
 };
 
-const UNITS: readonly BookUnit[] = ["day", "chapter", "session"];
 const STEPS: readonly BookAddStep[] = ["ask", "confirm", "edit"];
 
-function isRecord(v: unknown): v is Record<string, unknown> {
+export function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
@@ -73,7 +72,7 @@ export function toSubject(v: unknown): Subject | null {
 }
 
 export function toUnit(v: unknown): BookUnit | null {
-  return UNITS.find((u) => u === v) ?? null;
+  return BOOK_UNITS.find((u) => u === v) ?? null;
 }
 
 export function toTitle(v: unknown): string | null {
@@ -102,6 +101,13 @@ export function mergeDraft(
   patch: BookPatch | null,
 ): BookDraft {
   if (!patch) return { ...base };
+  // 새 제목에 과목·단위·총량까지 함께 말하면 다른 교재를 통째로 말한 것이라 이전 값을 넘기지 않는다.
+  // 제목만 말하면 제목 고치기로 본다
+  const newBook = patch.title !== null && base.title !== null &&
+    patch.title !== base.title &&
+    (patch.subject !== null || patch.unit !== null ||
+      patch.total_units !== null);
+  if (newBook) base = EMPTY_DRAFT;
   return {
     subject: patch.subject ?? base.subject,
     title: patch.title ?? base.title,
@@ -134,7 +140,7 @@ export function completeDraft(d: BookDraft): CompleteDraft | null {
 }
 
 // DB jsonb는 믿지 않는다. 틀린 항목은 null(회독은 1)로 돌린다
-export function parseAction(v: unknown): ChatAction | null {
+export function parseBookAddAction(v: unknown): BookAddAction | null {
   if (!isRecord(v) || v.kind !== "book_add") return null;
   const step = STEPS.find((s) => s === v.step);
   if (!step) return null;
@@ -150,30 +156,6 @@ export function parseAction(v: unknown): ChatAction | null {
       target_rounds: toRounds(d.target_rounds) ?? 1,
     },
   };
-}
-
-export function parseChatRequest(
-  body: unknown,
-  maxLength: number,
-): ChatRequest | null {
-  if (!isRecord(body)) return null;
-  const hasContent = body.content !== undefined;
-  const hasChoice = body.choice !== undefined;
-  if (hasContent === hasChoice) return null;
-
-  if (hasContent) {
-    if (typeof body.content !== "string") return null;
-    const content = body.content.trim();
-    return content.length >= 1 && content.length <= maxLength
-      ? { content }
-      : null;
-  }
-
-  const c = body.choice;
-  if (!isRecord(c)) return null;
-  if (typeof c.message_id !== "string" || c.message_id === "") return null;
-  if (c.answer !== "yes" && c.answer !== "no") return null;
-  return { choice: { message_id: c.message_id, answer: c.answer } };
 }
 
 const YES_WORDS = new Set([
@@ -203,8 +185,9 @@ export function confirmAnswer(text: string): "yes" | "no" | null {
 }
 
 export function isDuplicateTitle(d: CompleteDraft, books: BookRef[]): boolean {
-  const title = d.title.trim();
-  return books.some((b) => b.subject === d.subject && b.title.trim() === title);
+  return books.some((b) =>
+    b.subject === d.subject && b.title.trim() === d.title
+  );
 }
 
 const ASK_LINES: Record<MissingField, string> = {
@@ -251,6 +234,10 @@ export function savedText(d: CompleteDraft, outcome: SaveOutcome): string {
     }
     case "no_exam":
       return `${first}\n\n시험일을 정하면 분량을 나눠 드려요. 메뉴의 '공부 설정 변경'에서 정할 수 있어요.`;
+    case "exam_passed":
+      return `${first}
+
+시험일이 이미 지나서 분량은 나누지 않았어요. 시험일을 바꾸면 나눠 드려요. 메뉴의 '공부 설정 변경'에서 바꿀 수 있어요.`;
     case "failed":
       return first;
   }

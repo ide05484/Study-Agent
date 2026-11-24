@@ -95,6 +95,7 @@ const NO_OPTIONS: ReplyOptions = {
   hasTips: false,
   hardTimes: false,
   savedTip: null,
+  closingQuestion: false,
 };
 
 Deno.test("replyInstructions: intent와 순공시간", () => {
@@ -184,5 +185,18 @@ Deno.test("fallbackReply: 순공시간과 잘 맞은 방법을 함께 저장했�
       tip,
     ),
     "기록했어요. 보건행정 진도 13%, 오늘 순공 4시간도 적어 뒀어요. 오늘도 수고했어요. 잘 맞은 방법은 공중보건 공부법에 적어 뒀어요.",
+  );
+});
+
+Deno.test("replyInstructions: closingQuestion일 때만 질문으로 끝내지 않는다", () => {
+  assertStringIncludes(
+    replyInstructions("question", { ...NO_OPTIONS, closingQuestion: true }),
+    "질문으로 끝내지 않는다",
+  );
+  assertEquals(
+    replyInstructions("question", NO_OPTIONS).includes(
+      "질문으로 끝내지 않는다",
+    ),
+    false,
   );
 });
