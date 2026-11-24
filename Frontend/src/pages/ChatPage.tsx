@@ -38,20 +38,24 @@ function ChatRoom({ date, readOnly }: ChatRoomProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
   // 서버가 만든 첫 메시지(코치)가 없을 때만 고정 문구를 맨 위에 그린다. 열기 응답을 기다리는 동안은 그리지 않는다
   const showsWelcome = loaded && !opening && messages[0]?.role !== 'assistant'
+  // 불러오거나 첫 메시지를 받는 동안은 보내지 않는다(조회 결과가 임시 말풍선을 덮어쓰지 않게)
+  const blocked = !loaded || opening
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: 'end' })
   }, [messages])
 
-  // 답을 기다리는 동안에도 보낼 수 있다. 첫 메시지를 받는 중(opening)에만 막는다
+  // 답을 기다리는 동안에도 보낼 수 있다
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const content = draft.trim()
-    if (!content || opening) return
+    if (!content || blocked) return
     setDraft('')
     void send(content).then((ok) => {
       if (ok) return
-      setDraft((current) => current || content)
+      // 연달아 보낸 글이 함께 실패해도 모두 되돌리고, 그 사이 새로 친 글도 남긴다
+      // 한 줄 입력창은 줄바꿈을 지우므로 공백으로 잇는다
+      setDraft((current) => (current ? `${current} ${content}` : content))
     })
   }
 
@@ -95,7 +99,7 @@ function ChatRoom({ date, readOnly }: ChatRoomProps) {
               type="submit"
               className="grid size-11 flex-none place-items-center rounded-full bg-accent text-on-accent disabled:opacity-40"
               aria-label="보내기"
-              disabled={opening || !draft.trim()}
+              disabled={blocked || !draft.trim()}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
                 <path
