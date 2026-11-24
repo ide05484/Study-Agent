@@ -40,8 +40,8 @@ export function useChat(date: string, readOnly: boolean): ChatState {
   const [inFlight, setInFlight] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const seqRef = useRef(0)
-  // 늦게 온 응답이 최신 진행 수를 읽도록 ref에도 둔다(상태는 화면용)
-  const inFlightRef = useRef(0)
+  // 답을 기다리는 요청의 순번. 늦게 온 응답이 최신 진행 상태를 읽도록 ref에 둔다(상태는 화면용 개수)
+  const inFlightRef = useRef(new Set<number>())
 
   useEffect(() => {
     let ignore = false
@@ -54,12 +54,14 @@ export function useChat(date: string, readOnly: boolean): ChatState {
         if (readOnly || history.length > 0) return
         setOpening(true)
         openChatRoom()
-          .then((response) => {
-            if (!ignore) setMessages((prev) => [...response.messages, ...prev])
+          .then(async (response) => {
             if (response.replanFailed) {
               // 첫 메시지는 저장됐으니 재분배만 한 번 다시 시도한다. 실패해도 대화는 그대로 둔다
               regeneratePlan().catch((e: unknown) => console.error('계획 다시 나누기 실패', e))
             }
+            // 오류 없이 비었으면 다른 탭이 먼저 첫 메시지를 넣은 것이라 한 번 다시 불러온다. 그래도 비면 고정 문구다
+            const opened = response.messages.length > 0 ? response.messages : await fetchChatMessages(date)
+            if (!ignore) setMessages((prev) => [...opened, ...prev])
           })
           // 실패하면 오류 문구 없이 고정 문구를 보여 준다
           .catch((e: unknown) => console.error('채팅방 열기 실패', e))
@@ -81,7 +83,8 @@ export function useChat(date: string, readOnly: boolean): ChatState {
   // 응답이 오면 임시 말풍선을 저장된 메시지로 제자리에서 바꾸고, 실패하면 그 말풍선만 지우고 error를 보인다
   const deliver = useCallback(async (content: string, request: () => Promise<ChatResponse>): Promise<boolean> => {
     seqRef.current += 1
-    const pendingId = `pending-${seqRef.current}`
+    const seq = seqRef.current
+    const pendingId = `pending-${seq}`
     const created_at = new Date().toISOString()
     const pendingUser: ChatMessage = { id: pendingId, role: 'user', content, subject: null, action: null, created_at }
     const pendingReply: ChatMessage = {
@@ -92,16 +95,19 @@ export function useChat(date: string, readOnly: boolean): ChatState {
       action: null,
       created_at,
     }
-    inFlightRef.current += 1
-    setInFlight(inFlightRef.current)
+    const inFlightSeqs = inFlightRef.current
+    inFlightSeqs.add(seq)
+    setInFlight(inFlightSeqs.size)
     setError(null)
     setMessages((prev) => [...prev.filter((m) => m.id !== PENDING_REPLY_ID), pendingUser, pendingReply])
 
-    // 이 요청을 끝냈다고 세고, 남은 요청이 없으면 대기 말풍선을 지운다
+    // 이 요청을 끝냈다고 센다. 남은 요청이 없거나, 코치 답이 왔고 이보다 새 요청이 진행 중이 아니면 대기 말풍선을 지운다
+    // (서버는 가장 새 요청에만 답한다). 뒤늦게 온 밀린 응답은 사용자 말풍선만 확정하고 대기 말풍선을 다시 만들지 않는다
     function settle(replacement: ChatMessage[]) {
-      inFlightRef.current -= 1
-      const done = inFlightRef.current === 0
-      setInFlight(inFlightRef.current)
+      inFlightSeqs.delete(seq)
+      setInFlight(inFlightSeqs.size)
+      const answered = replacement.some((m) => m.role === 'assistant')
+      const done = inFlightSeqs.size === 0 || (answered && ![...inFlightSeqs].some((s) => s > seq))
       setMessages((prev) => {
         const next = prev.flatMap((m) => (m.id === pendingId ? replacement : [m]))
         return done ? next.filter((m) => m.id !== PENDING_REPLY_ID) : next
