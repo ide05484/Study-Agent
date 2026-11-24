@@ -186,7 +186,7 @@ export function confirmAnswer(text: string): "yes" | "no" | null {
 
 export function isDuplicateTitle(d: CompleteDraft, books: BookRef[]): boolean {
   return books.some((b) =>
-    b.subject === d.subject && b.title.trim() === d.title.trim()
+    b.subject === d.subject && b.title.trim() === d.title
   );
 }
 

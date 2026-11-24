@@ -82,7 +82,7 @@ export function studyTimeDate(
 }
 
 // "2026-11-13" → "11월 13일"
-export function monthDayLabel(date: string): string {
+function monthDayLabel(date: string): string {
   const [, month, day] = date.split("-").map(Number);
   return `${month}월 ${day}일`;
 }

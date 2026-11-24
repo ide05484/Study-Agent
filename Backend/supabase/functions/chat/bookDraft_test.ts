@@ -233,14 +233,12 @@ Deno.test("completeDraft: 경계값", () => {
   }
 });
 
+// 초안 제목은 completeDraft(toTitle)가 이미 다듬었다. 등록된 교재 제목만 앞뒤 공백을 지워 비교한다
 Deno.test("isDuplicateTitle", () => {
   const books = [
-    { subject: "korean", title: "봉투모의고사" },
+    { subject: "korean", title: " 봉투모의고사 " },
   ] as BookRef[];
-  assertEquals(
-    isDuplicateTitle({ ...complete, title: " 봉투모의고사 " }, books),
-    true,
-  );
+  assertEquals(isDuplicateTitle(complete, books), true);
   assertEquals(
     isDuplicateTitle({ ...complete, subject: "english" }, books),
     false,

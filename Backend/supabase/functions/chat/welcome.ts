@@ -19,7 +19,7 @@ export const CHEERS: readonly string[] = [
 ];
 
 // 한 번에 보여 줄 분량 수. 넘으면 " 외 k개"
-export const MAX_LISTED_TASKS = 4;
+const MAX_LISTED_TASKS = 4;
 
 const NO_EXAM_DATE =
   "시험일을 정하면 오늘 분량을 나눠 드려요. 메뉴의 '공부 설정 변경'에서 정할 수 있어요.";
