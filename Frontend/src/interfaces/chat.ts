@@ -53,13 +53,13 @@ export type ChatRequest =
   { content: string } | { choice: { message_id: string; answer: 'yes' | 'no' } } | { open: true }
 
 export interface ChatResponse {
-  // 저장된 사용자 메시지 + 코치 답변
+  // 저장된 사용자 메시지 + 코치 답변. 열기면 하루 첫 메시지 0~1개, 밀림(superseded)이면 사용자 메시지만
   messages: ChatMessage[]
   // 진도·학습 기록을 저장했으면 true (오늘의 분량을 다시 불러온다)
   logged: boolean
-  // 교재 추가로 계획이 다시 나뉘었으면 true (오늘의 분량을 다시 불러온다)
+  // 교재 추가나 열기의 이월 재분배로 계획이 다시 나뉘었으면 true (오늘의 분량을 다시 불러온다)
   planChanged: boolean
-  // 교재는 저장했지만 계획을 다시 나누지 못했으면 true (프런트가 재분배를 한 번 부른다)
+  // 교재 추가·열기 이월 뒤 계획을 다시 나누지 못했으면 true (프런트가 재분배를 한 번 부른다)
   replanFailed: boolean
   // 더 새 글이 있어 이 요청의 답변을 건너뛰었으면 true
   superseded: boolean

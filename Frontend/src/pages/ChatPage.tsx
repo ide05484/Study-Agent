@@ -6,7 +6,7 @@ import TodayPlanSheet from '../components/chat/TodayPlanSheet.tsx'
 import { PENDING_REPLY_ID, useChat } from '../hooks/useChat.ts'
 import { useTodayTasks } from '../hooks/useTodayTasks.ts'
 import type { ChatRole } from '../interfaces/chat.ts'
-import { showsConfirmChips } from '../libs/chatAction.ts'
+import { isConfirmChipShown } from '../libs/chatAction.ts'
 import { isDateKey, todayKey } from '../libs/date.ts'
 import { WELCOME_MESSAGE } from '../libs/menu.ts'
 
@@ -69,7 +69,7 @@ function ChatRoom({ date, readOnly }: ChatRoomProps) {
               {m.content}
             </Bubble>
             {/* 확인 칩은 오늘 채팅방의 마지막 코치 메시지에만 붙는다. 지난 확인은 다음 말풍선이 고른 답이다 */}
-            {showsConfirmChips(m, i === messages.length - 1, readOnly) && (
+            {isConfirmChipShown(m, i === messages.length - 1, readOnly) && (
               <ConfirmChips disabled={sending} onChoose={(answer) => void choose(m.id, answer)} />
             )}
           </Fragment>
@@ -130,7 +130,8 @@ function TodayPlanDock({ date }: TodayPlanDockProps) {
 
   return (
     <>
-      <div className="flex min-h-[3.25rem] justify-end px-3 pb-2">
+      {/* 버튼(44px) + pb-2(8px) 높이를 미리 잡아 분량을 불러오는 동안(버튼 없음) 입력창이 움직이지 않게 한다 */}
+      <div className="flex min-h-13 justify-end px-3 pb-2">
         <TodayPlanButton
           tasks={tasks}
           error={error}
