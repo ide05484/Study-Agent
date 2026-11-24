@@ -18,7 +18,7 @@ import {
   STUDY_TIME_ASK,
   USAGE_GUIDE,
 } from "../_shared/coach.ts";
-import { studyTimeDate, toDateKey } from "../_shared/date.ts";
+import { studyDayKey, studyTimeDate } from "../_shared/date.ts";
 import { replan, type ReplanResult } from "../_shared/replan.ts";
 import {
   type ChatAction,
@@ -135,7 +135,8 @@ async function handleMessage(
   const { profile, books } = await loadProfileAndBooks(sb);
   const now = new Date();
   const timezone = profile.timezone;
-  const today = toDateKey(now, timezone);
+  // 오늘 = 공부 날짜(새벽 2시 전이면 전날). 채팅방·기록·분량 날짜가 모두 이 값이다
+  const today = studyDayKey(now, timezone);
 
   // 칩·확답 글은 오늘의 마지막 메시지(사용자·코치 무관)가 확인 메시지일 때만 처리한다.
   // 글 분석에 넘길 받아 둔 초안과 직전 질문은 마지막 코치 메시지에서 읽는다(그 뒤에 처리 안 한 사용자 메시지가 있어도 이어진다).
@@ -161,7 +162,6 @@ async function handleMessage(
     answerConfirm({
       sb,
       userId,
-      now,
       today,
       timezone,
       last,
@@ -217,9 +217,9 @@ async function handleMessage(
 
   // 사용자 메시지를 먼저 저장하고(과목은 분석 뒤에 채운다), 앞서 보내 아직 처리 안 한 메시지와 묶어 분석한다
   const inserted = await insertMessage(sb, userId, "user", content, null);
-  // 여기부터는 저장된 시각의 날짜로 묶고 기록한다. 자정 직전에 시작한 요청의 글이 다음 날로 저장돼도
+  // 여기부터는 저장된 시각의 공부 날짜로 묶고 기록한다. 하루 경계(새벽 2시) 직전에 시작한 요청의 글이 다음 날로 저장돼도
   // 묶음 조회·처리 표시 범위에 들어가야 다음 날 다시 처리되지 않는다
-  const day = toDateKey(new Date(inserted.created_at), timezone);
+  const day = studyDayKey(new Date(inserted.created_at), timezone);
   // 여기부터 claim 결과가 나오기 전까지 실패하면 failBeforeClaim이 이 메시지를 지울지 남길지 정한다
   const failBefore = (failure: Response) =>
     failBeforeClaim(sb, inserted, day, timezone, failure);
@@ -391,7 +391,6 @@ async function failBeforeClaim(
 async function answerConfirm(p: {
   sb: SupabaseClient;
   userId: string;
-  now: Date;
   today: string;
   timezone: string;
   last: ChatMessageRow | null;
@@ -429,17 +428,15 @@ async function answerConfirm(p: {
     if (p.answer === "no") {
       text = WRAP_UP_NO_TEXT;
     } else {
-      // 순공시간은 새벽 0~4시면 전날 것을 본다. 그때는 분량을 세지 않는다(total 0이면 분량 문장이 빠진다):
-      // 새벽 채팅 보고는 새 날 분량에 들어가 전날 수가 적게 나오므로 틀린 숫자를 내지 않는다.
+      // 순공시간과 분량 모두 공부 날짜(새벽 2시 전이면 전날)로 읽는다.
       // 문구만 고르는 조회라 실패하면 로그만 남기고 순공시간·분량 없이 답한다
-      const timeDate = studyTimeDate(p.now, p.timezone, "today");
       let minutes: number | null = null;
       let done = 0;
       let total = 0;
       try {
         const [loaded, tasks] = await Promise.all([
-          loadStudyMinutes(sb, timeDate),
-          timeDate === p.today ? loadTodayTasks(sb, p.today) : [],
+          loadStudyMinutes(sb, p.today),
+          loadTodayTasks(sb, p.today),
         ]);
         minutes = loaded;
         done = tasks.filter((t) => t.status === "done").length;

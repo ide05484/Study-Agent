@@ -73,6 +73,7 @@ Frontend 의존 방향은 `pages → hooks → api → libs`이고, 타입은 `i
 
 ### 꼭 맞춰야 하는 것
 
+- 공부 하루는 새벽 2시에 시작한다(자정~2시 기록·체크·채팅은 전날). 서버 `_shared/date.ts`와 화면 `libs/date.ts`의 `DAY_START_HOUR`가 같아야 하고, "오늘"은 서버 `studyDayKey`·화면 `todayKey`로만 구한다([SERVICE_FLOW 하루 경계](SERVICE_FLOW.md#하루-경계-새벽-2시)).
 - 과목 값은 DB enum `public.subject`(`korean`, `english`, `public_health`, `health_admin`), [Frontend/src/interfaces/subject.ts](Frontend/src/interfaces/subject.ts), [Backend/supabase/functions/_shared/subjects.ts](Backend/supabase/functions/_shared/subjects.ts)가 일치해야 한다.
 - `interfaces/`의 도메인 타입은 DB 컬럼과 맞춰 둔다. `npm run gen:types`로 `interfaces/database.ts`가 생기면 그 타입을 기준으로 삼는다.
 - 스키마 변경은 `npx supabase migration new <이름>`으로 새 마이그레이션을 추가한다. 개발 프로젝트에 `db push`하기 전인 초기 스키마 초안은 직접 수정해도 된다.

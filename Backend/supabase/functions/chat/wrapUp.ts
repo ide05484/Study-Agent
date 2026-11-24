@@ -41,7 +41,7 @@ export function isWrapUpAsked(
   return p.intent !== "book_add" && p.intent !== "usage";
 }
 
-// total이 0이면 분량 문장을 뺀다(새벽에 전날을 마무리할 때도 0을 넘긴다)
+// total이 0이면 분량 문장을 뺀다(오늘 분량이 없거나 조회에 실패했을 때)
 export function wrapUpYesText(
   p: { minutes: number | null; done: number; total: number },
 ): { text: string; action: StudyTimeAskAction | null } {

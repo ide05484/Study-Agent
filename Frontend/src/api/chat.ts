@@ -1,7 +1,7 @@
 import { FunctionsHttpError } from '@supabase/supabase-js'
 import type { ChatAction, ChatMessage, ChatRequest, ChatResponse } from '../interfaces/chat.ts'
 import type { Json } from '../interfaces/database.ts'
-import { dayRange, toDateKey } from '../libs/date.ts'
+import { dayRange, studyDayKey } from '../libs/date.ts'
 import { emitPlanChanged } from '../libs/planEvents.ts'
 import { supabase } from '../libs/supabase.ts'
 import { signOut } from './auth.ts'
@@ -28,7 +28,7 @@ export async function fetchChatDates(): Promise<string[]> {
     .select('created_at')
     .order('created_at', { ascending: false })
   if (error) throw error
-  return [...new Set((data as { created_at: string }[]).map((row) => toDateKey(row.created_at)))]
+  return [...new Set((data as { created_at: string }[]).map((row) => studyDayKey(row.created_at)))]
 }
 
 // chat 함수가 400 invalid_content(빈 내용·1000자 초과)로 거절했을 때
